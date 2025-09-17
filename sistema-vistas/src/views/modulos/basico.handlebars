@@ -1,0 +1,148 @@
+{{!-- Vista básica para módulos en desarrollo --}}
+<div class="container-fluid">
+  <!-- Breadcrumbs -->
+  {{#if breadcrumbs}}
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+      {{#each breadcrumbs}}
+        {{#if url}}
+          <li class="breadcrumb-item"><a href="{{url}}">{{name}}</a></li>
+        {{else}}
+          <li class="breadcrumb-item active" aria-current="page">{{name}}</li>
+        {{/if}}
+      {{/each}}
+    </ol>
+  </nav>
+  {{/if}}
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-body text-center p-5">
+          <!-- Icono principal -->
+          <div class="mb-4">
+            <i class="fas fa-cogs fa-4x text-primary"></i>
+          </div>
+
+          <!-- Título y mensaje -->
+          <h1 class="h2 mb-3">{{title}}</h1>
+          <p class="lead text-muted mb-4">{{message}}</p>
+
+          <!-- Estado del módulo -->
+          <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Estado:</strong> {{moduleInfo.status}}
+            <br>
+            <small>Última actualización: {{moduleInfo.lastUpdate}}</small>
+          </div>
+
+          <!-- Funcionalidades planificadas -->
+          <div class="row mt-4">
+            <div class="col-md-4">
+              <div class="feature-box">
+                <i class="fas fa-list-alt fa-2x text-success mb-2"></i>
+                <h5>Listados</h5>
+                <p class="text-muted small">Visualización completa de datos</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="feature-box">
+                <i class="fas fa-edit fa-2x text-warning mb-2"></i>
+                <h5>Gestión</h5>
+                <p class="text-muted small">Creación y edición de registros</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="feature-box">
+                <i class="fas fa-chart-bar fa-2x text-info mb-2"></i>
+                <h5>Reportes</h5>
+                <p class="text-muted small">Análisis y exportación de datos</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navegación -->
+          <div class="mt-5">
+            <a href="/" class="btn btn-primary me-2">
+              <i class="fas fa-home me-2"></i>Volver al Inicio
+            </a>
+            <a href="/dashboard" class="btn btn-outline-secondary">
+              <i class="fas fa-chart-pie me-2"></i>Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información adicional -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-road me-2"></i>Hoja de Ruta
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-marker bg-success"></div>
+              <div class="timeline-content">
+                <h6 class="timeline-title">Fase 1: Análisis</h6>
+                <p class="text-muted small">Definición de requerimientos y estructura de datos</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-marker bg-warning"></div>
+              <div class="timeline-content">
+                <h6 class="timeline-title">Fase 2: Desarrollo</h6>
+                <p class="text-muted small">Implementación de funcionalidades core</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-marker bg-secondary"></div>
+              <div class="timeline-content">
+                <h6 class="timeline-title">Fase 3: Testing</h6>
+                <p class="text-muted small">Pruebas y validación de funcionalidades</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.feature-box {
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.timeline {
+  position: relative;
+  padding: 0;
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 1rem;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: 0;
+  top: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+}
+
+.timeline-content {
+  padding-left: 0.5rem;
+}
+
+.timeline-title {
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+</style>

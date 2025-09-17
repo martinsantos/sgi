@@ -1,0 +1,154 @@
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h4 class="page-title">{{title}}: {{cliente.nombre}} {{cliente.apellido}}</h4>
+                <div class="page-options">
+                    <a href="/clientes/ver/{{cliente.id}}" class="btn btn-outline-secondary">
+                        <i class="fe fe-arrow-left"></i> Volver al cliente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Información del Cliente</h3>
+                </div>
+                <div class="card-body">
+                    <form id="clienteForm" method="POST" action="/clientes/actualizar/{{cliente.id}}">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="nombre">Nombre *</label>
+                                    <input type="text" name="nombre" id="nombre" class="form-control" value="{{cliente.nombre}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="apellido">Apellido *</label>
+                                    <input type="text" name="apellido" id="apellido" class="form-control" value="{{cliente.apellido}}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="codigo">Código</label>
+                                    <input type="text" name="codigo" id="codigo" class="form-control" value="{{cliente.codigo}}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="tipo">Tipo *</label>
+                                    <select name="tipo" id="tipo" class="form-control" required>
+                                        <option value="P" {{#if (eq cliente.tipo "P")}}selected{{/if}}>Particular</option>
+                                        <option value="E" {{#if (eq cliente.tipo "E")}}selected{{/if}}>Empresa</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="condicion_iva">Condición IVA</label>
+                                    <select name="condicion_iva" id="condicion_iva" class="form-control">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Responsable Inscripto" {{#if (eq cliente.condicion_iva "Responsable Inscripto")}}selected{{/if}}>Responsable Inscripto</option>
+                                        <option value="Monotributista" {{#if (eq cliente.condicion_iva "Monotributista")}}selected{{/if}}>Monotributista</option>
+                                        <option value="Exento" {{#if (eq cliente.condicion_iva "Exento")}}selected{{/if}}>Exento</option>
+                                        <option value="Consumidor Final" {{#if (eq cliente.condicion_iva "Consumidor Final")}}selected{{/if}}>Consumidor Final</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="telefono">Teléfono</label>
+                                    <input type="tel" name="telefono" id="telefono" class="form-control" value="{{cliente.telefono}}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" name="email" id="email" class="form-control" value="{{cliente.email}}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="direccion">Dirección</label>
+                                    <input type="text" name="direccion" id="direccion" class="form-control" value="{{cliente.direccion}}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="ciudad">Ciudad</label>
+                                    <input type="text" name="ciudad" id="ciudad" class="form-control" value="{{cliente.ciudad}}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="provincia">Provincia</label>
+                                    <input type="text" name="provincia" id="provincia" class="form-control" value="{{cliente.provincia}}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="codigo_postal">Código Postal</label>
+                                    <input type="text" name="codigo_postal" id="codigo_postal" class="form-control" value="{{cliente.codigo_postal}}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer text-right">
+                            <button type="button" class="btn btn-secondary" onclick="window.location.href='/clientes/ver/{{cliente.id}}'">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fe fe-save"></i> Actualizar Cliente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form submission
+    $('#clienteForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        
+        $.ajax({
+            url: '/clientes/actualizar/{{cliente.id}}',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    alert('Cliente actualizado exitosamente');
+                    window.location.href = '/clientes/ver/{{cliente.id}}';
+                } else {
+                    alert('Error: ' + (response.message || 'Error desconocido'));
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error al actualizar cliente: ' + error);
+            }
+        });
+    });
+});
+</script>

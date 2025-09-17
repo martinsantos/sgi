@@ -1,0 +1,658 @@
+{{!-- Cotizaciones a Proveedores --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-dollar-sign me-2"></i>
+            Cotizaciones a Proveedores
+          </h4>
+          <div class="btn-group">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaCotizacionModal">
+              <i class="fas fa-plus me-1"></i>
+              Nueva Cotización
+            </button>
+            <button type="button" class="btn btn-success" onclick="exportarCotizaciones()">
+              <i class="fas fa-file-excel me-1"></i>
+              Exportar Excel
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-filter me-1"></i>
+                Filtros
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('todos')">Todos</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('borrador')">Borradores</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('enviado')">Enviadas</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('recibido')">Recibidas</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('comparando')">En Comparación</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorProveedor()">Por Proveedor</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorRequerimiento()">Por Requerimiento</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {{#if cotizaciones}}
+        <div class="table-responsive">
+          <table class="table table-hover" id="cotizacionesTable">
+            <thead class="table-light">
+              <tr>
+                <th width="8%">N° Cot.</th>
+                <th width="15%">Proveedor</th>
+                <th width="12%">Requerimiento</th>
+                <th width="12%">Proyecto</th>
+                <th width="10%">Fecha Solicitud</th>
+                <th width="8%">Items</th>
+                <th width="12%">Monto Total</th>
+                <th width="10%">Estado</th>
+                <th width="8%">Válida Hasta</th>
+                <th width="5%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each cotizaciones}}
+              <tr class="{{#if this.vencida}}table-warning{{/if}}{{#if this.seleccionada}}table-success{{/if}}">
+                <td>
+                  <strong>COT-{{this.numero}}</strong>
+                </td>
+                <td>
+                  <strong>{{this.proveedor_nombre}}</strong>
+                  {{#if this.proveedor_contacto}}
+                  <br><small class="text-muted">{{this.proveedor_contacto}}</small>
+                  {{/if}}
+                </td>
+                <td>
+                  {{#if this.requerimiento_numero}}
+                  <a href="/requerimientos/ver/{{this.requerimiento_id}}" class="text-decoration-none">
+                    REQ-{{this.requerimiento_numero}}
+                  </a>
+                  {{else}}
+                  <span class="text-muted">Directo</span>
+                  {{/if}}
+                </td>
+                <td>{{this.proyecto_nombre}}</td>
+                <td>{{formatDate this.fecha_solicitud}}</td>
+                <td class="text-center">
+                  <span class="badge bg-info">{{this.total_items}}</span>
+                </td>
+                <td>
+                  <strong>${{formatNumber this.monto_total}}</strong>
+                  {{#if this.moneda}}
+                  <small class="text-muted">{{this.moneda}}</small>
+                  {{/if}}
+                </td>
+                <td>
+                  <span class="badge 
+                    {{#eq this.estado 'borrador'}}bg-secondary{{/eq}}
+                    {{#eq this.estado 'enviado'}}bg-primary{{/eq}}
+                    {{#eq this.estado 'recibido'}}bg-info{{/eq}}
+                    {{#eq this.estado 'comparando'}}bg-warning{{/eq}}
+                    {{#eq this.estado 'seleccionado'}}bg-success{{/eq}}
+                    {{#eq this.estado 'rechazado'}}bg-danger{{/eq}}
+                    {{#eq this.estado 'vencido'}}bg-dark{{/eq}}
+                  ">
+                    {{capitalize this.estado}}
+                  </span>
+                </td>
+                <td>
+                  {{#if this.fecha_vencimiento}}
+                    <span class="{{#if this.vencida}}text-danger{{/if}}">
+                      {{formatDate this.fecha_vencimiento}}
+                    </span>
+                  {{else}}
+                    <span class="text-muted">--</span>
+                  {{/if}}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/cotizaciones/ver/{{this.id}}" class="btn btn-outline-info" title="Ver Detalle">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    {{#eq this.estado 'borrador'}}
+                    <button class="btn btn-outline-primary" onclick="editarCotizacion('{{this.id}}')" title="Editar">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-success" onclick="enviarCotizacion('{{this.id}}')" title="Enviar">
+                      <i class="fas fa-paper-plane"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'recibido'}}
+                    <button class="btn btn-outline-warning" onclick="compararCotizacion('{{this.id}}')" title="Comparar">
+                      <i class="fas fa-balance-scale"></i>
+                    </button>
+                    <button class="btn btn-outline-success" onclick="seleccionarCotizacion('{{this.id}}')" title="Seleccionar">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'seleccionado'}}
+                    <button class="btn btn-outline-primary" onclick="generarOrdenCompra('{{this.id}}')" title="Generar O.C.">
+                      <i class="fas fa-shopping-bag"></i>
+                    </button>
+                    {{/eq}}
+                  </div>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        {{else}}
+        <div class="text-center py-4">
+          <i class="fas fa-dollar-sign fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay cotizaciones registradas</h5>
+          <p class="text-muted">Las cotizaciones se generan automáticamente desde requerimientos aprobados o pueden crearse manualmente</p>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaCotizacionModal">
+            <i class="fas fa-plus me-1"></i>
+            Crear Primera Cotización
+          </button>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Resumen de Cotizaciones -->
+{{#if resumen}}
+<div class="row mt-4">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Enviadas</h6>
+            <h4>{{resumen.enviadas}}</h4>
+          </div>
+          <i class="fas fa-paper-plane fa-2x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-info">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Recibidas</h6>
+            <h4>{{resumen.recibidas}}</h4>
+          </div>
+          <i class="fas fa-inbox fa-2x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-warning">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">En Comparación</h6>
+            <h4>{{resumen.comparando}}</h4>
+          </div>
+          <i class="fas fa-balance-scale fa-2x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Seleccionadas</h6>
+            <h4>{{resumen.seleccionadas}}</h4>
+          </div>
+          <i class="fas fa-check-circle fa-2x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{/if}}
+
+<!-- Modal Nueva Cotización -->
+<div class="modal fade" id="nuevaCotizacionModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nueva Cotización a Proveedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="nuevaCotizacionForm">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Requerimiento (Opcional)</label>
+                <select class="form-select" id="cot_requerimiento_id" onchange="cargarMaterialesRequerimiento()">
+                  <option value="">Cotización directa (sin requerimiento)</option>
+                  {{#each requerimientos}}
+                  <option value="{{this.id}}">REQ-{{this.numero}} - {{this.proyecto_nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proyecto (si no hay requerimiento)</label>
+                <select class="form-select" id="cot_proyecto_id">
+                  <option value="">Seleccionar proyecto...</option>
+                  {{#each proyectos}}
+                  <option value="{{this.id}}">{{this.descripcion}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proveedor *</label>
+                <input type="text" class="form-control" id="cot_proveedor_nombre" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Contacto del Proveedor</label>
+                <input type="text" class="form-control" id="cot_proveedor_contacto">
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="cot_proveedor_email">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-control" id="cot_proveedor_telefono">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Moneda</label>
+                <select class="form-select" id="cot_moneda">
+                  <option value="USD">USD</option>
+                  <option value="ARS" selected>ARS</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha Límite Respuesta</label>
+                <input type="date" class="form-control" id="cot_fecha_vencimiento">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Condiciones de Pago</label>
+                <select class="form-select" id="cot_condiciones_pago">
+                  <option value="Contado">Contado</option>
+                  <option value="30 días">30 días</option>
+                  <option value="60 días">60 días</option>
+                  <option value="90 días">90 días</option>
+                  <option value="50% adelanto - 50% entrega">50% adelanto - 50% entrega</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Observaciones/Requerimientos Especiales</label>
+            <textarea class="form-control" id="cot_observaciones" rows="3"></textarea>
+          </div>
+          
+          <div class="mb-3" id="materialesCotizacion">
+            <h6>Items a Cotizar</h6>
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle"></i>
+              Selecciona un requerimiento para cargar materiales automáticamente, o agrega items manualmente
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Cotización</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Comparar Cotizaciones -->
+<div class="modal fade" id="compararCotizacionesModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Comparar Cotizaciones</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="comparacionContent">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" onclick="seleccionarMejorCotizacion()">
+          Seleccionar Mejor Cotización
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+let itemsCotizacion = [];
+let requerimientoSeleccionado = null;
+
+// Cargar materiales del requerimiento seleccionado
+function cargarMaterialesRequerimiento() {
+    const requerimientoId = document.getElementById('cot_requerimiento_id').value;
+    const proyectoSelect = document.getElementById('cot_proyecto_id');
+    const container = document.getElementById('materialesCotizacion');
+    
+    if (!requerimientoId) {
+        proyectoSelect.disabled = false;
+        container.innerHTML = `
+            <h6>Items a Cotizar</h6>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Selecciona un requerimiento para cargar materiales automáticamente, o agrega items manualmente
+            </div>
+        `;
+        return;
+    }
+    
+    proyectoSelect.disabled = true;
+    container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando materiales...</div>';
+    
+    fetch(`/api/requerimientos/${requerimientoId}/materiales`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.materiales && data.materiales.length > 0) {
+                itemsCotizacion = data.materiales.map(m => ({
+                    material_id: m.id,
+                    nombre: m.nombre,
+                    descripcion: m.descripcion,
+                    cantidad: m.cantidad_solicitada,
+                    unidad: m.unidad,
+                    precio_unitario: 0,
+                    total: 0
+                }));
+                
+                renderizarItemsCotizacion();
+            } else {
+                container.innerHTML = `
+                    <h6>Items a Cotizar</h6>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No hay materiales en este requerimiento
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = `
+                <h6>Items a Cotizar</h6>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Error al cargar materiales del requerimiento
+                </div>
+            `;
+        });
+}
+
+// Renderizar items de cotización
+function renderizarItemsCotizacion() {
+    const container = document.getElementById('materialesCotizacion');
+    
+    let html = `
+        <h6>Items a Cotizar <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="agregarItemManual()">
+            <i class="fas fa-plus"></i> Agregar Item
+        </button></h6>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Material</th>
+                        <th width="10%">Cantidad</th>
+                        <th width="10%">Unidad</th>
+                        <th width="12%">Precio Unit.</th>
+                        <th width="12%">Total</th>
+                        <th width="5%">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    itemsCotizacion.forEach((item, index) => {
+        html += `
+            <tr>
+                <td>
+                    <strong>${item.nombre}</strong>
+                    ${item.descripcion ? '<br><small class="text-muted">' + item.descripcion + '</small>' : ''}
+                </td>
+                <td>${item.cantidad}</td>
+                <td>${item.unidad}</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${item.precio_unitario}" min="0" step="0.01"
+                           onchange="actualizarPrecioItem(${index}, this.value)">
+                </td>
+                <td>
+                    <strong>$${(item.cantidad * item.precio_unitario).toLocaleString()}</strong>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarItem(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    const montoTotal = itemsCotizacion.reduce((sum, item) => sum + (item.cantidad * item.precio_unitario), 0);
+    
+    html += `
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <th colspan="4" class="text-end">Total Cotización:</th>
+                        <th><strong>$${montoTotal.toLocaleString()}</strong></th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Actualizar precio de item
+function actualizarPrecioItem(index, precio) {
+    itemsCotizacion[index].precio_unitario = parseFloat(precio) || 0;
+    itemsCotizacion[index].total = itemsCotizacion[index].cantidad * itemsCotizacion[index].precio_unitario;
+    renderizarItemsCotizacion();
+}
+
+// Agregar item manual
+function agregarItemManual() {
+    const nombre = prompt('Nombre del material:');
+    if (nombre) {
+        const cantidad = parseFloat(prompt('Cantidad:')) || 1;
+        const unidad = prompt('Unidad:') || 'Unidad';
+        
+        itemsCotizacion.push({
+            material_id: null,
+            nombre: nombre,
+            descripcion: '',
+            cantidad: cantidad,
+            unidad: unidad,
+            precio_unitario: 0,
+            total: 0
+        });
+        
+        renderizarItemsCotizacion();
+    }
+}
+
+// Eliminar item
+function eliminarItem(index) {
+    itemsCotizacion.splice(index, 1);
+    renderizarItemsCotizacion();
+}
+
+// Crear cotización
+document.getElementById('nuevaCotizacionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (itemsCotizacion.length === 0) {
+        alert('Debe agregar al menos un item a la cotización');
+        return;
+    }
+    
+    const formData = {
+        requerimiento_id: document.getElementById('cot_requerimiento_id').value || null,
+        proyecto_id: document.getElementById('cot_proyecto_id').value || null,
+        proveedor_nombre: document.getElementById('cot_proveedor_nombre').value,
+        proveedor_contacto: document.getElementById('cot_proveedor_contacto').value,
+        proveedor_email: document.getElementById('cot_proveedor_email').value,
+        proveedor_telefono: document.getElementById('cot_proveedor_telefono').value,
+        moneda: document.getElementById('cot_moneda').value,
+        fecha_vencimiento: document.getElementById('cot_fecha_vencimiento').value,
+        condiciones_pago: document.getElementById('cot_condiciones_pago').value,
+        observaciones: document.getElementById('cot_observaciones').value,
+        items: itemsCotizacion
+    };
+    
+    fetch('/api/cotizaciones/crear', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al crear cotización: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear cotización');
+    });
+});
+
+// Enviar cotización
+function enviarCotizacion(id) {
+    if (confirm('¿Enviar esta cotización al proveedor?')) {
+        cambiarEstadoCotizacion(id, 'enviado');
+    }
+}
+
+// Comparar cotización
+function compararCotizacion(id) {
+    fetch(`/api/cotizaciones/${id}/comparar`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('comparacionContent').innerHTML = data.html;
+                new bootstrap.Modal(document.getElementById('compararCotizacionesModal')).show();
+            }
+        })
+        .catch(console.error);
+}
+
+// Seleccionar cotización
+function seleccionarCotizacion(id) {
+    if (confirm('¿Seleccionar esta cotización como ganadora?')) {
+        cambiarEstadoCotizacion(id, 'seleccionado');
+    }
+}
+
+// Cambiar estado de cotización
+function cambiarEstadoCotizacion(id, nuevoEstado) {
+    fetch(`/api/cotizaciones/${id}/estado`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al cambiar estado: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar estado');
+    });
+}
+
+// Generar orden de compra
+function generarOrdenCompra(id) {
+    if (confirm('¿Generar orden de compra desde esta cotización?')) {
+        fetch(`/api/cotizaciones/${id}/generar-orden-compra`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Orden de compra generada exitosamente');
+                window.open(`/ordenes-compra/ver/${data.ordenId}`, '_blank');
+            } else {
+                alert('Error al generar orden de compra: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al generar orden de compra');
+        });
+    }
+}
+
+// Exportar cotizaciones
+function exportarCotizaciones() {
+    window.open('/cotizaciones/export/excel', '_blank');
+}
+
+// Initialize DataTables
+$(document).ready(function() {
+    if ($.fn.DataTable) {
+        $('#cotizacionesTable').DataTable({
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
+            },
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true
+        });
+    }
+});
+</script>
+{{/section}}

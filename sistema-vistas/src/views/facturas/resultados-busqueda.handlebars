@@ -1,0 +1,176 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Resultados de Búsqueda</h1>
+  <div>
+    <button id="btnExportarBusqueda" class="btn btn-success">
+      <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+    </button>
+    <a href="/facturas/emitidas" class="btn btn-secondary ms-2">
+      <i class="bi bi-arrow-left"></i> Volver al listado
+    </a>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Criterios de Búsqueda</h5>
+  </div>
+  <div class="card-body">
+    <form id="formBusqueda" class="row g-3">
+      <div class="col-md-3">
+        <label for="numero_factura" class="form-label">N° Factura</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          id="numero_factura" 
+          name="numero_factura" 
+          value="{{filters.numero_factura}}"
+          placeholder="Número de factura">
+      </div>
+      
+      <div class="col-md-3">
+        <label for="cliente_nombre" class="form-label">Cliente</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          id="cliente_nombre" 
+          name="cliente_nombre" 
+          value="{{filters.cliente_nombre}}"
+          placeholder="Nombre del cliente">
+      </div>
+      
+      <div class="col-md-2">
+        <label for="fecha_desde" class="form-label">Desde</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          id="fecha_desde" 
+          name="fecha_desde" 
+          value="{{filters.fecha_desde}}">
+      </div>
+      
+      <div class="col-md-2">
+        <label for="fecha_hasta" class="form-label">Hasta</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          id="fecha_hasta" 
+          name="fecha_hasta" 
+          value="{{filters.fecha_hasta}}">
+      </div>
+      
+      <div class="col-md-2">
+        <label for="estado" class="form-label">Estado</label>
+        <select class="form-select" id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="1" {{#if (eq filters.estado 1)}}selected{{/if}}>Pendiente</option>
+          <option value="2" {{#if (eq filters.estado 2)}}selected{{/if}}>Pagada</option>
+          <option value="3" {{#if (eq filters.estado 3)}}selected{{/if}}>Anulada</option>
+          <option value="4" {{#if (eq filters.estado 4)}}selected{{/if}}>En proceso</option>
+          <option value="5" {{#if (eq filters.estado 5)}}selected{{/if}}>Rechazada</option>
+        </select>
+      </div>
+      
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
+          <i class="bi bi-eraser"></i> Limpiar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    {{#if facturas.length}}
+      <div class="table-responsive">
+        <table class="table table-hover" id="tablaResultados">
+          <thead>
+            <tr>
+              <th>N° Factura</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th class="text-end">Total</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each facturas}}
+              <tr>
+                <td>{{this.numero_factura}}</td>
+                <td>{{formatDate this.fecha_emision}}</td>
+                <td>{{this.cliente_nombre}}</td>
+                <td class="text-end">{{formatCurrency this.total}}</td>
+                <td>
+                  {{{getEstadoBadge this.estado}}}
+                </td>
+                <td>
+                  <a href="/facturas/emitidas/{{this.id}}" class="btn btn-sm btn-primary" title="Ver detalle">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+      
+      {{> pagination pagination=pagination currentPage=currentPage }}
+      
+    {{else}}
+      <div class="alert alert-info mb-0">
+        <i class="bi bi-info-circle"></i> No se encontraron facturas que coincidan con los criterios de búsqueda.
+      </div>
+    {{/if}}
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Manejar envío del formulario
+    const formBusqueda = document.getElementById('formBusqueda');
+    
+    if (formBusqueda) {
+      formBusqueda.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Obtener valores del formulario
+        const formData = new FormData(formBusqueda);
+        const params = new URLSearchParams();
+        
+        // Agregar solo los valores que no estén vacíos
+        for (const [key, value] of formData.entries()) {
+          if (value) {
+            params.append(key, value);
+          }
+        }
+        
+        // Redirigir con los parámetros de búsqueda
+        window.location.href = `/facturas/buscar?${params.toString()}`;
+      });
+      
+      // Manejar botón limpiar
+      const btnLimpiar = document.getElementById('btnLimpiar');
+      if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', function() {
+          window.location.href = '/facturas/emitidas';
+        });
+      }
+    }
+    
+    // Manejar exportación a Excel
+    const btnExportar = document.getElementById('btnExportarBusqueda');
+    if (btnExportar) {
+      btnExportar.addEventListener('click', function() {
+        const url = new URL(window.location.href);
+        url.pathname = '/facturas/exportar';
+        window.location.href = url.toString();
+      });
+    }
+  });
+</script>
+{{/section}}

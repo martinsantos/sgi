@@ -1,0 +1,688 @@
+<div class="container-fluid mt-4">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-receipt"></i> Nueva Factura de Venta
+      </h4>
+    </div>
+    <div class="card-body">
+      <form id="nuevaFacturaForm" method="POST" action="/facturas/crear">
+        <div class="row">
+          <!-- Información de la Factura -->
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="mb-0">Información de la Factura</h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="tipo_factura" class="form-label">Tipo de Factura</label>
+                      <select class="form-select" id="tipo_factura" name="tipo_factura" required>
+                        <option value="">Seleccionar tipo</option>
+                        <option value="A">Factura A</option>
+                        <option value="B">Factura B</option>
+                        <option value="C">Factura C</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="punto_venta" class="form-label">Punto de Venta</label>
+                      <input type="number" class="form-control" id="punto_venta" name="punto_venta" value="1" required>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="fecha_emision" class="form-label">Fecha de Emisión</label>
+                      <input type="date" class="form-control" id="fecha_emision" name="fecha_emision" required>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="fecha_vencimiento" class="form-label">Fecha de Vencimiento</label>
+                      <input type="date" class="form-control" id="fecha_vencimiento" name="fecha_vencimiento">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Información del Cliente -->
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="mb-0">Cliente</h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-12">
+                    <label for="cliente" class="form-label">Cliente</label>
+                    <div class="position-relative">
+                      <div class="input-group">
+                        <input type="text" class="form-control" id="clienteSearch" placeholder="Buscar cliente por nombre, código o CUIT..." autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" id="clienteSearchBtn" data-bs-toggle="modal" data-bs-target="#clienteModal">
+                          <i class="bi bi-search"></i>
+                        </button>
+                      </div>
+                      <input type="hidden" id="clienteId" name="cliente_id" required>
+                      <div id="clienteSuggestions" class="position-absolute w-100" style="z-index: 1050; max-height: 300px; overflow-y: auto;"></div>
+                      <div class="form-text">Escriba para buscar por nombre, código o CUIT</div>
+                    </div>
+                    
+                    <!-- Cliente seleccionado -->
+                    <div id="cliente_selected" class="mt-2 p-2 bg-light border rounded" style="display: none;">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong id="cliente_nombre"></strong>
+                          <small class="text-muted d-block" id="cliente_info"></small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearCliente()">
+                          <i class="bi bi-x"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="row mt-3">
+                  <div class="col-md-12">
+                    <label for="proyecto" class="form-label">Proyecto (Opcional)</label>
+                    <select class="form-select" id="proyecto" name="proyecto_id" disabled>
+                      <option value="">Seleccione primero un cliente</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalles de la Factura -->
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Detalles de la Factura</h5>
+            <button type="button" class="btn btn-success btn-sm" id="agregarItem">
+              <i class="bi bi-plus"></i> Agregar Ítem
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-bordered" id="itemsTable">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 40%">Descripción</th>
+                    <th style="width: 10%">Cantidad</th>
+                    <th style="width: 15%">Precio Unit.</th>
+                    <th style="width: 10%">IVA %</th>
+                    <th style="width: 15%">Subtotal</th>
+                    <th style="width: 10%">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                  <tr class="item-row">
+                    <td>
+                      <input type="text" class="form-control descripcion" name="items[0][descripcion]" placeholder="Descripción del producto/servicio" required>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control cantidad" name="items[0][cantidad]" min="1" step="0.01" value="1" required>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control precio_unitario" name="items[0][precio_unitario]" min="0" step="0.01" required>
+                    </td>
+                    <td>
+                      <select class="form-select iva_porcentaje" name="items[0][iva_porcentaje]" required>
+                        <option value="0">0%</option>
+                        <option value="10.5">10.5%</option>
+                        <option value="21" selected>21%</option>
+                        <option value="27">27%</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control subtotal" readonly>
+                    </td>
+                    <td>
+                      <button type="button" class="btn btn-danger btn-sm eliminar-item">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Totales -->
+        <div class="row">
+          <div class="col-md-8"></div>
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">Totales</h6>
+              </div>
+              <div class="card-body">
+                <div class="row mb-2">
+                  <div class="col-6"><strong>Subtotal:</strong></div>
+                  <div class="col-6 text-end" id="totalSubtotal">$0.00</div>
+                </div>
+                <div class="row mb-2">
+                  <div class="col-6"><strong>IVA:</strong></div>
+                  <div class="col-6 text-end" id="totalIva">$0.00</div>
+                </div>
+                <hr>
+                <div class="row">
+                  <div class="col-6"><strong>Total:</strong></div>
+                  <div class="col-6 text-end"><strong id="totalGeneral">$0.00</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h6 class="mb-0">Observaciones</h6>
+          </div>
+          <div class="card-body">
+            <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Observaciones adicionales (opcional)"></textarea>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="d-flex justify-content-between mt-4">
+          <a href="/facturas" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+          <div>
+            <button type="button" class="btn btn-primary me-2" id="guardarBorrador">
+              <i class="bi bi-save"></i> Guardar Borrador
+            </button>
+            <button type="submit" class="btn btn-success" name="action" value="autorizar">
+              <i class="bi bi-check-circle"></i> Generar y Autorizar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de búsqueda de clientes -->
+<div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clienteModalLabel">
+          <i class="bi bi-search"></i> Buscar Cliente
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="modalClienteSearch" placeholder="Buscar por nombre, código, CUIT..." autocomplete="off">
+          </div>
+        </div>
+        
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-sm table-hover">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>Cliente</th>
+                <th>Código</th>
+                <th>CUIT</th>
+                <th>Proyectos</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="clientesTableBody">
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                  <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  Cargando clientes...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  let itemCounter = 1;
+  
+    
+    // Add new item row
+    document.getElementById('agregarItem').addEventListener('click', function() {
+        itemCounter++;
+        const tbody = document.querySelector('#itemsTable tbody');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>
+                <input type="text" class="form-control descripcion" name="items[${itemCounter}][descripcion]" placeholder="Descripción del producto/servicio" required>
+            </td>
+            <td>
+                <input type="number" class="form-control cantidad" name="items[${itemCounter}][cantidad]" min="1" step="0.01" value="1" required>
+            </td>
+            <td>
+                <input type="number" class="form-control precio_unitario" name="items[${itemCounter}][precio_unitario]" min="0" step="0.01" required>
+            </td>
+            <td>
+                <select class="form-select iva_porcentaje" name="items[${itemCounter}][iva_porcentaje]" required>
+                    <option value="0">0%</option>
+                    <option value="10.5">10.5%</option>
+                    <option value="21" selected>21%</option>
+                    <option value="27">27%</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" class="form-control subtotal" readonly>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm eliminar-item">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(newRow);
+        
+        // Add event listeners to new row
+        attachRowEvents(newRow);
+        calculateTotals();
+    });
+    
+    // Remove item row
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('eliminar-item') || e.target.closest('.eliminar-item')) {
+            const row = e.target.closest('tr');
+            if (document.querySelectorAll('#itemsTable tbody tr').length > 1) {
+                row.remove();
+                calculateTotals();
+            } else {
+                alert('Debe mantener al menos un item en la factura');
+            }
+        }
+    });
+    
+    // Add event listeners to existing rows
+    document.querySelectorAll('#itemsTable tbody tr').forEach(attachRowEvents);
+    
+    function attachRowEvents(row) {
+        const cantidad = row.querySelector('.cantidad');
+        const precio = row.querySelector('.precio_unitario');
+        const iva = row.querySelector('.iva_porcentaje');
+        const subtotal = row.querySelector('.subtotal');
+        const eliminar = row.querySelector('.eliminar-item');
+        
+        function calcularSubtotal() {
+            const cant = parseFloat(cantidad.value) || 0;
+            const prec = parseFloat(precio.value) || 0;
+            const ivaPorc = parseFloat(iva.value) || 0;
+            
+            const subtotalSinIva = cant * prec;
+            const ivaAmount = subtotalSinIva * (ivaPorc / 100);
+            const total = subtotalSinIva + ivaAmount;
+            
+            subtotal.value = total.toFixed(2);
+            calculateTotals();
+        }
+        
+        cantidad.addEventListener('input', calcularSubtotal);
+        precio.addEventListener('input', calcularSubtotal);
+        iva.addEventListener('change', calcularSubtotal);
+        
+        eliminar.addEventListener('click', function() {
+            if (document.querySelectorAll('.item-row').length > 1) {
+                row.remove();
+                calculateTotals();
+            }
+        });
+    }
+    
+    // Calculate totals
+    function calculateTotals() {
+        let totalSubtotal = 0;
+        let totalIva = 0;
+        
+        document.querySelectorAll('.item-row').forEach(row => {
+            const cantidad = parseFloat(row.querySelector('.cantidad').value) || 0;
+            const precio = parseFloat(row.querySelector('.precio_unitario').value) || 0;
+            const ivaPorc = parseFloat(row.querySelector('.iva_porcentaje').value) || 0;
+            
+            const subtotalSinIva = cantidad * precio;
+            const ivaAmount = subtotalSinIva * (ivaPorc / 100);
+            
+            totalSubtotal += subtotalSinIva;
+            totalIva += ivaAmount;
+        });
+        
+        const totalGeneral = totalSubtotal + totalIva;
+        
+        document.getElementById('totalSubtotal').textContent = '$' + totalSubtotal.toFixed(2);
+        document.getElementById('totalIva').textContent = '$' + totalIva.toFixed(2);
+        document.getElementById('totalGeneral').textContent = '$' + totalGeneral.toFixed(2);
+    }
+    
+    // Client search functionality
+    let clientesData = [];
+    
+    // Load clients data
+    fetch('/clientes/api')
+        .then(response => response.json())
+        .then(result => {
+            clientesData = result.success ? result.data : [];
+        });
+    
+    // Client search input
+    document.getElementById('clienteSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        if (searchTerm.length >= 2) {
+            const filtered = clientesData.filter(cliente => 
+                cliente.nombre.toLowerCase().includes(searchTerm) ||
+                (cliente.codigo && cliente.codigo.toLowerCase().includes(searchTerm)) ||
+                (cliente.cuit && cliente.cuit.includes(searchTerm))
+            );
+            showClienteSuggestions(filtered);
+        } else {
+            hideClienteSuggestions();
+        }
+    });
+    
+    function showClienteSuggestions(clientes) {
+        let suggestionsDiv = document.getElementById('clienteSuggestions');
+        if (!suggestionsDiv) {
+            suggestionsDiv = document.createElement('div');
+            suggestionsDiv.id = 'clienteSuggestions';
+            suggestionsDiv.className = 'list-group position-absolute w-100';
+            suggestionsDiv.style.zIndex = '1000';
+            document.getElementById('clienteSearch').parentNode.appendChild(suggestionsDiv);
+        }
+        
+        suggestionsDiv.innerHTML = '';
+        clientes.slice(0, 10).forEach(cliente => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'list-group-item list-group-item-action';
+            item.innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${cliente.nombre}</h6>
+                    <small>${cliente.codigo || ''}</small>
+                </div>
+                <p class="mb-1">${cliente.cuit || 'Sin CUIT'}</p>
+            `;
+            item.onclick = () => selectCliente(cliente);
+            suggestionsDiv.appendChild(item);
+        });
+        
+        suggestionsDiv.style.display = 'block';
+    }
+    
+    function hideClienteSuggestions() {
+        const suggestionsDiv = document.getElementById('clienteSuggestions');
+        if (suggestionsDiv) {
+            suggestionsDiv.style.display = 'none';
+        }
+    }
+    
+    // Select cliente function (unified)
+    function selectCliente(cliente) {
+        document.getElementById('clienteId').value = cliente.id;
+        document.getElementById('clienteSearch').value = cliente.nombre;
+        document.getElementById('cliente_nombre').textContent = `${cliente.nombre} (${cliente.codigo || 'Sin código'})`;
+        document.getElementById('cliente_info').textContent = cliente.codigo ? `Código: ${cliente.codigo}` : 'Sin código';
+        document.getElementById('cliente_selected').style.display = 'block';
+        hideClienteSuggestions();
+        
+        // Load projects for this client
+        loadClientProjects(cliente.id);
+    }
+    
+    window.clearCliente = function() {
+        document.getElementById('clienteId').value = '';
+        document.getElementById('clienteSearch').value = '';
+        document.getElementById('cliente_selected').style.display = 'none';
+        document.getElementById('proyecto').innerHTML = '<option value="">Seleccione primero un cliente</option>';
+        document.getElementById('proyecto').disabled = true;
+    }
+    
+    function loadClientProjects(clienteId) {
+        const proyectoSelect = document.getElementById('proyecto');
+        
+        // Reset and enable project select
+        proyectoSelect.innerHTML = '<option value="">Cargando proyectos...</option>';
+        proyectoSelect.disabled = true;
+        
+        fetch(`/clientes/api/${clienteId}/proyectos`)
+            .then(response => response.json())
+            .then(proyectos => {
+                proyectoSelect.innerHTML = '<option value="">Sin proyecto asociado</option>';
+                
+                if (proyectos.length > 0) {
+                    proyectos.forEach(proyecto => {
+                        const option = document.createElement('option');
+                        option.value = proyecto.id;
+                        option.textContent = `${proyecto.nombre} (${proyecto.codigo || 'Sin código'})`;
+                        proyectoSelect.appendChild(option);
+                    });
+                    proyectoSelect.disabled = false;
+                } else {
+                    proyectoSelect.innerHTML = '<option value="">No hay proyectos disponibles</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading projects:', error);
+                proyectoSelect.innerHTML = '<option value="">Error al cargar proyectos</option>';
+            });
+    }
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#clienteSearch') && !e.target.closest('#clienteSuggestions')) {
+            hideClienteSuggestions();
+        }
+    });
+    
+    // Modal client search
+    const modalClienteSearch = document.getElementById('modalClienteSearch');
+    const clientesTableBody = document.getElementById('clientesTableBody');
+    let modalSearchTimeout;
+    
+    // Load all clients when modal opens
+    document.getElementById('clienteModal').addEventListener('shown.bs.modal', function() {
+        loadModalClients('');
+        document.getElementById('modalClienteSearch').focus();
+    });
+    
+    if (modalClienteSearch) {
+        modalClienteSearch.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(modalSearchTimeout);
+            modalSearchTimeout = setTimeout(() => {
+                loadModalClients(query);
+            }, 300);
+        });
+    }
+    
+    function loadModalClients(query) {
+        if (!clientesTableBody) return;
+        
+        clientesTableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    Cargando clientes...
+                </td>
+            </tr>
+        `;
+        
+        const url = query ? `/clientes/api?search=${encodeURIComponent(query)}` : '/clientes/api';
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(result => {
+                clientesTableBody.innerHTML = '';
+                
+                // La API devuelve { success: true, data: [...] }
+                const clientes = result.success ? result.data : [];
+                
+                if (!clientes || clientes.length === 0) {
+                    clientesTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No se encontraron clientes</td>
+                        </tr>
+                    `;
+                } else {
+                    clientes.slice(0, 50).forEach(cliente => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <strong>${cliente.nombre_completo || cliente.nombre || 'Sin nombre'}</strong>
+                                ${cliente.codigo ? `<br><small class="text-muted">Código: ${cliente.codigo}</small>` : ''}
+                            </td>
+                            <td>${cliente.codigo || '-'}</td>
+                            <td>${cliente.cuil_cuit || '-'}</td>
+                            <td>
+                                ${cliente.total_proyectos > 0 ? 
+                                    `<span class="badge bg-info">${cliente.total_proyectos}</span>` : 
+                                    '<span class="text-muted">0</span>'
+                                }
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary select-cliente" data-cliente-id="${cliente.id}" data-cliente-nombre="${cliente.nombre_completo || cliente.nombre || ''}" data-cliente-codigo="${cliente.codigo || ''}">
+                                    <i class="bi bi-check"></i> Seleccionar
+                                </button>
+                            </td>
+                        `;
+                        clientesTableBody.appendChild(row);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading clients:', error);
+                clientesTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-danger py-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Error al cargar clientes
+                        </td>
+                    </tr>
+                `;
+            });
+    }
+    
+    // Handle client selection from modal
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('select-cliente') || e.target.closest('.select-cliente')) {
+            const button = e.target.classList.contains('select-cliente') ? e.target : e.target.closest('.select-cliente');
+            const cliente = {
+                id: button.getAttribute('data-cliente-id'),
+                nombre: button.getAttribute('data-cliente-nombre'),
+                codigo: button.getAttribute('data-cliente-codigo')
+            };
+            selectCliente(cliente);
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('clienteModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+    });
+    
+    // Draft save functionality
+    document.getElementById('guardarBorrador').addEventListener('click', function() {
+        const formData = new FormData(document.getElementById('nuevaFacturaForm'));
+        const items = [];
+        
+        // Collect items data
+        document.querySelectorAll('#itemsTable tbody tr').forEach((row, index) => {
+            const descripcion = row.querySelector('[name*="[descripcion]"]')?.value;
+            const cantidad = row.querySelector('[name*="[cantidad]"]')?.value;
+            const precio_unitario = row.querySelector('[name*="[precio_unitario]"]')?.value;
+            const iva_porcentaje = row.querySelector('[name*="[iva_porcentaje]"]')?.value;
+            
+            if (descripcion && cantidad && precio_unitario) {
+                items.push({
+                    descripcion,
+                    cantidad: parseFloat(cantidad),
+                    precio_unitario: parseFloat(precio_unitario),
+                    iva_porcentaje: parseFloat(iva_porcentaje)
+                });
+            }
+        });
+        
+        const draftData = {
+            cliente_id: formData.get('cliente_id'),
+            proyecto_id: formData.get('proyecto_id'),
+            tipo_factura: formData.get('tipo_factura'),
+            punto_venta: formData.get('punto_venta'),
+            fecha_emision: formData.get('fecha_emision'),
+            fecha_vencimiento: formData.get('fecha_vencimiento'),
+            observaciones: formData.get('observaciones'),
+            items: items
+        };
+        
+        if (!draftData.cliente_id) {
+            alert('Debe seleccionar un cliente antes de guardar el borrador');
+            return;
+        }
+        
+        if (items.length === 0) {
+            alert('Debe agregar al menos un item antes de guardar el borrador');
+            return;
+        }
+        
+        // Show loading state
+        const btn = this;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+        btn.disabled = true;
+        
+        fetch('/facturas/api/facturas/borrador', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(draftData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Borrador guardado exitosamente');
+                // Optionally redirect to drafts list
+                // window.location.href = '/facturas/borradores';
+            } else {
+                alert('Error al guardar borrador: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error saving draft:', error);
+            alert('Error al guardar borrador: ' + error.message);
+        })
+        .finally(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    });
+    
+    // Initial calculations
+    calculateTotals();
+});
+</script>

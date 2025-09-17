@@ -1,0 +1,263 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">📊 Gestión de Prospectos</h1>
+      <p class="text-muted mb-0">Dashboard de oportunidades comerciales</p>
+    </div>
+    <div>
+      <a href="/prospectos/crear" class="btn btn-success me-2">
+        <i class="fas fa-plus"></i> Nuevo Prospecto
+      </a>
+      <a href="/prospectos/listar" class="btn btn-primary">
+        <i class="fas fa-list"></i> Ver Todos
+      </a>
+    </div>
+  </div>
+
+  <!-- Tarjetas de estadísticas -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Prospectos</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{estadisticas.total}}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-users fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Convertidos</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">{{estadisticas.convertidos}}</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Pipeline Total</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                ${{formatCurrency estadisticas.pipeline_total}}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Valor Promedio</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                ${{formatCurrency estadisticas.valor_promedio}}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Distribución por Estado -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">Distribución por Estado</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col">
+              <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                  <span class="text-xs">Nuevos</span>
+                  <span class="text-xs font-weight-bold">{{estadisticas.nuevos}}</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-secondary" style="width: {{multiply (divide estadisticas.nuevos estadisticas.total) 100}}%"></div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                  <span class="text-xs">Contactados</span>
+                  <span class="text-xs font-weight-bold">{{estadisticas.contactados}}</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-info" style="width: {{multiply (divide estadisticas.contactados estadisticas.total) 100}}%"></div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                  <span class="text-xs">Calificados</span>
+                  <span class="text-xs font-weight-bold">{{estadisticas.calificados}}</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-warning" style="width: {{multiply (divide estadisticas.calificados estadisticas.total) 100}}%"></div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                  <span class="text-xs">Con Propuesta</span>
+                  <span class="text-xs font-weight-bold">{{estadisticas.propuesta}}</span>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-primary" style="width: {{multiply (divide estadisticas.propuesta estadisticas.total) 100}}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prospectos Recientes -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">Prospectos Recientes</h6>
+          <a href="/prospectos/listar" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+        </div>
+        <div class="card-body">
+          {{#if recientes}}
+            {{#each recientes}}
+              <div class="d-flex align-items-center py-2 border-bottom">
+                <div class="me-3">
+                  <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    {{substring nombre_completo 0 1}}
+                  </div>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold">{{nombre_completo}}</div>
+                  <div class="text-muted small">
+                    {{#if empresa}}{{empresa}}{{else}}Sin empresa{{/if}}
+                  </div>
+                  <div class="text-muted small">
+                    {{formatDate created}}
+                  </div>
+                </div>
+                <div>
+                  {{#if (eq estado 0)}}
+                    <span class="badge bg-secondary">Nuevo</span>
+                  {{else if (eq estado 1)}}
+                    <span class="badge bg-info">Contactado</span>
+                  {{else if (eq estado 2)}}
+                    <span class="badge bg-warning">Calificado</span>
+                  {{else if (eq estado 3)}}
+                    <span class="badge bg-primary">Propuesta</span>
+                  {{else if (eq estado 4)}}
+                    <span class="badge bg-danger">No Interesado</span>
+                  {{/if}}
+                </div>
+              </div>
+            {{/each}}
+          {{else}}
+            <div class="text-center py-4">
+              <i class="fas fa-inbox fa-2x text-gray-300 mb-2"></i>
+              <p class="text-muted">No hay prospectos recientes</p>
+              <a href="/prospectos/crear" class="btn btn-primary">Crear Primer Prospecto</a>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prospectos que necesitan seguimiento -->
+  {{#if seguimiento}}
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow">
+          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-warning">
+              <i class="fas fa-exclamation-triangle"></i> Prospectos que Necesitan Seguimiento
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Prospecto</th>
+                    <th>Empresa</th>
+                    <th>Estado</th>
+                    <th>Último Contacto</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each seguimiento}}
+                    <tr>
+                      <td>
+                        <div class="fw-bold">{{nombre_completo}}</div>
+                        {{#if email}}<div class="text-muted small">{{email}}</div>{{/if}}
+                      </td>
+                      <td>{{#if empresa}}{{empresa}}{{else}}<span class="text-muted">Sin empresa</span>{{/if}}</td>
+                      <td>
+                        {{#if (eq estado 0)}}
+                          <span class="badge bg-secondary">Nuevo</span>
+                        {{else if (eq estado 1)}}
+                          <span class="badge bg-info">Contactado</span>
+                        {{else if (eq estado 2)}}
+                          <span class="badge bg-warning">Calificado</span>
+                        {{else if (eq estado 3)}}
+                          <span class="badge bg-primary">Propuesta</span>
+                        {{/if}}
+                      </td>
+                      <td>{{formatDate fecha_contacto}}</td>
+                      <td>
+                        <a href="/prospectos/ver/{{id}}" class="btn btn-sm btn-outline-primary me-1">
+                          <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="/prospectos/{{id}}/editar" class="btn btn-sm btn-outline-warning">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                      </td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+</div>
+
+<script>
+$(document).ready(function() {
+  // Cualquier inicialización adicional de JavaScript
+  console.log('Dashboard de prospectos cargado');
+});
+</script>

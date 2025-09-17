@@ -1,0 +1,706 @@
+{{!-- presupuestos/ver-nuevo.handlebars - REDESIGNED --}}
+<div class="container-fluid">
+    {{!-- Header --}}
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">{{title}}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/presupuestos">Presupuestos</a></li>
+                        <li class="breadcrumb-item active">Presupuesto #{{presupuesto.numero}}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- PRIORITY 1: Financial Summary, Status & Actions --}}
+    <div class="row mb-4">
+        {{!-- 💰 FINANCIAL HIGHLIGHT --}}
+        <div class="col-lg-4">
+            <div class="card border-success shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-money-dollar-circle-line me-2"></i>Resumen Financiero
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <h1 class="text-success mb-2">{{formatCurrency presupuesto.importe_total}}</h1>
+                    <p class="text-muted mb-3">Importe Total del Presupuesto</p>
+                    
+                    {{#if presupuesto.probabilidad}}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-medium">Probabilidad de Cierre</span>
+                            <span class="fw-bold fs-5">{{presupuesto.probabilidad}}%</span>
+                        </div>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar bg-{{#if (gte presupuesto.probabilidad 70)}}success{{else if (gte presupuesto.probabilidad 40)}}warning{{else}}danger{{/if}}" 
+                                 role="progressbar" style="width: {{presupuesto.probabilidad}}%"></div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.margen_contribucion}}
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <h6 class="text-muted mb-1">Margen</h6>
+                            <div class="fw-bold h5 mb-0">{{formatCurrency presupuesto.margen_contribucion}}</div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-muted mb-1">% Margen</h6>
+                            <div class="fw-bold h5 mb-0">{{presupuesto.porcentaje_margen_contribucion}}%</div>
+                        </div>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        
+        {{!-- 📅 STATUS & DATES --}}
+        <div class="col-lg-4">
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-calendar-line me-2"></i>Estado y Fechas Críticas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {{#eq presupuesto.estado "borrador"}}
+                            <span class="badge bg-warning fs-6 px-3 py-2">🟡 BORRADOR</span>
+                        {{/eq}}
+                        {{#eq presupuesto.estado "enviado"}}
+                            <span class="badge bg-info fs-6 px-3 py-2">📤 ENVIADO</span>
+                        {{/eq}}
+                        {{#eq presupuesto.estado "aprobado"}}
+                            <span class="badge bg-success fs-6 px-3 py-2">✅ APROBADO</span>
+                        {{/eq}}
+                        {{#eq presupuesto.estado "rechazado"}}
+                            <span class="badge bg-danger fs-6 px-3 py-2">❌ RECHAZADO</span>
+                        {{/eq}}
+                        {{#if presupuesto.is_expired}}
+                            <br><span class="badge bg-secondary fs-6 px-3 py-2 mt-2">⏰ VENCIDO</span>
+                        {{/if}}
+                    </div>
+                    
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted"><i class="ri-calendar-event-line me-1"></i>Emisión:</span>
+                            <span class="fw-medium">{{formatDate presupuesto.fecha}}</span>
+                        </div>
+                    </div>
+                    
+                    {{#if presupuesto.validez}}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted"><i class="ri-time-line me-1"></i>Validez:</span>
+                            <div>
+                                <span class="fw-medium {{#if presupuesto.is_expired}}text-danger{{else}}text-success{{/if}}">
+                                    {{formatDate presupuesto.validez}}
+                                </span>
+                                {{#if presupuesto.is_expired}}
+                                    <i class="ri-error-warning-line text-danger ms-1"></i>
+                                {{/if}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.fecha_presentacion}}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted"><i class="ri-presentation-line me-1"></i>Presentación:</span>
+                            <span class="fw-medium">{{formatDate presupuesto.fecha_presentacion}}</span>
+                        </div>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        
+        {{!-- ⚡ QUICK ACTIONS --}}
+        <div class="col-lg-4">
+            <div class="card border-info shadow-sm">
+                <div class="card-header bg-info">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-settings-3-line me-2"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {{#eq presupuesto.estado "borrador"}}
+                            <button type="button" class="btn btn-success btn-lg" onclick="enviarPresupuesto('{{presupuesto.id}}')">
+                                <i class="ri-send-plane-fill me-2"></i>Enviar Presupuesto
+                            </button>
+                        {{/eq}}
+                        
+                        {{#eq presupuesto.estado "enviado"}}
+                            <button type="button" class="btn btn-success" onclick="aprobarPresupuesto('{{presupuesto.id}}')">
+                                <i class="ri-check-double-line me-2"></i>Aprobar
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="rechazarPresupuesto('{{presupuesto.id}}')">
+                                <i class="ri-close-circle-line me-2"></i>Rechazar
+                            </button>
+                        {{/eq}}
+                        
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="imprimirPresupuesto('{{presupuesto.id}}')">
+                                <i class="ri-printer-line me-1"></i>Imprimir
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="exportarPDF('{{presupuesto.id}}')">
+                                <i class="ri-file-pdf-line me-1"></i>PDF
+                            </button>
+                        </div>
+                        
+                        <a href="/presupuestos" class="btn btn-light">
+                            <i class="ri-arrow-left-line me-1"></i>Volver al Listado
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {{!-- PRIORITY 2: Client & Project Information --}}
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-building-2-line me-2"></i>Información del Cliente y Proyecto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {{!-- CLIENT INFO --}}
+                        <div class="col-lg-6">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="ri-user-line text-white"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="mb-1">{{presupuesto.cliente_nombre}}</h5>
+                                    {{#if presupuesto.cliente_codigo}}
+                                        <p class="text-muted mb-0">Código: {{presupuesto.cliente_codigo}}</p>
+                                    {{/if}}
+                                    {{#if presupuesto.cliente_cuil_cuit}}
+                                        <p class="text-muted mb-0">CUIT/CUIL: {{presupuesto.cliente_cuil_cuit}}</p>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            
+                            {{!-- Contact Info --}}
+                            <div class="contact-info">
+                                {{#if presupuesto.cliente_telefono}}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri-phone-line me-3 text-muted"></i>
+                                    <div>
+                                        <a href="tel:{{presupuesto.cliente_telefono}}" class="text-decoration-none">
+                                            {{presupuesto.cliente_telefono}}
+                                        </a>
+                                        {{#if presupuesto.cliente_telefono_auxiliar}}
+                                            <br><small class="text-muted">Auxiliar: {{presupuesto.cliente_telefono_auxiliar}}</small>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                                {{/if}}
+                                
+                                {{#if presupuesto.cliente_email}}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri-mail-line me-3 text-muted"></i>
+                                    <a href="mailto:{{presupuesto.cliente_email}}" class="text-decoration-none">
+                                        {{presupuesto.cliente_email}}
+                                    </a>
+                                </div>
+                                {{/if}}
+                                
+                                {{#if presupuesto.cliente_web}}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="ri-global-line me-3 text-muted"></i>
+                                    <a href="{{presupuesto.cliente_web}}" target="_blank" class="text-decoration-none">
+                                        {{presupuesto.cliente_web}}
+                                    </a>
+                                </div>
+                                {{/if}}
+                                
+                                {{#if presupuesto.cliente_direccion_calle}}
+                                <div class="d-flex align-items-start mb-2">
+                                    <i class="ri-map-pin-line me-3 text-muted mt-1"></i>
+                                    <div>
+                                        {{presupuesto.cliente_direccion_calle}}
+                                        {{#if presupuesto.cliente_direccion_numero}} {{presupuesto.cliente_direccion_numero}}{{/if}}
+                                        {{#if presupuesto.cliente_direccion_piso}}, Piso {{presupuesto.cliente_direccion_piso}}{{/if}}
+                                        {{#if presupuesto.cliente_codigo_postal}}<br><small class="text-muted">CP: {{presupuesto.cliente_codigo_postal}}</small>{{/if}}
+                                    </div>
+                                </div>
+                                {{/if}}
+                            </div>
+                            
+                            {{#if presupuesto.cliente_id}}
+                            <div class="mt-3">
+                                <a href="/clientes/ver/{{presupuesto.cliente_id}}" class="btn btn-sm btn-outline-primary">
+                                    <i class="ri-eye-line me-1"></i>Ver Perfil del Cliente
+                                </a>
+                            </div>
+                            {{/if}}
+                        </div>
+                        
+                        {{!-- PROJECT INFO --}}
+                        <div class="col-lg-6">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-sm bg-success rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="ri-briefcase-line text-white"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="mb-1">Detalles del Proyecto</h5>
+                                    <p class="text-muted mb-0">Presupuesto #{{presupuesto.numero}}</p>
+                                </div>
+                            </div>
+                            
+                            {{#if presupuesto.descripcion}}
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">📋 Descripción</h6>
+                                <p class="mb-0">{{presupuesto.descripcion}}</p>
+                            </div>
+                            {{/if}}
+                            
+                            {{#if presupuesto.alcance}}
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">🎯 Alcance del Proyecto</h6>
+                                <p class="mb-0">{{presupuesto.alcance}}</p>
+                            </div>
+                            {{/if}}
+                            
+                            <div class="row">
+                                <div class="col-6">
+                                    <h6 class="text-muted mb-1">Tipo</h6>
+                                    <p class="fw-medium text-capitalize mb-2">{{presupuesto.tipo}}</p>
+                                    {{#if presupuesto.revision}}
+                                        <small class="text-muted">Revisión: {{presupuesto.revision}}</small>
+                                    {{/if}}
+                                </div>
+                                <div class="col-6">
+                                    <h6 class="text-muted mb-1">Moneda</h6>
+                                    <p class="fw-medium mb-2">
+                                        {{#if presupuesto.moneda_nombre}}{{presupuesto.moneda_nombre}}{{else}}ARS{{/if}}
+                                    </p>
+                                    {{#if presupuesto.moneda_cotizacion}}
+                                        <small class="text-muted">Cotización: {{formatCurrency presupuesto.moneda_cotizacion}}</small>
+                                    {{/if}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {{!-- PRIORITY 3: Team & Lead Information --}}
+    <div class="row mb-4">
+        {{!-- PROJECT TEAM --}}
+        {{#if (or presupuesto.responsable_nombre presupuesto.vendedor_nombre presupuesto.celula_nombre)}}
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-team-line me-2"></i>Equipo del Proyecto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{#if presupuesto.celula_nombre}}
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">
+                            <i class="ri-building-4-line me-1"></i>Departamento/Célula
+                        </h6>
+                        <p class="fw-medium mb-1">{{presupuesto.celula_nombre}}</p>
+                        {{#if presupuesto.celula_codigo}}
+                            <small class="text-muted">Código: {{presupuesto.celula_codigo}}</small>
+                        {{/if}}
+                        {{#if presupuesto.celula_informacion}}
+                            <p class="text-muted small mt-1">{{presupuesto.celula_informacion}}</p>
+                        {{/if}}
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.responsable_nombre}}
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">
+                            <i class="ri-user-star-line me-1"></i>Responsable del Proyecto
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-xs bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                <span class="text-white small fw-bold">{{substring presupuesto.responsable_nombre 0 1}}</span>
+                            </div>
+                            <div>
+                                <p class="fw-medium mb-0">{{presupuesto.responsable_nombre}} {{presupuesto.responsable_apellido}}</p>
+                                {{#if presupuesto.responsable_profesion}}
+                                    <small class="text-muted">{{presupuesto.responsable_profesion}}</small>
+                                {{/if}}
+                                {{#if presupuesto.responsable_legajo}}
+                                    <br><small class="text-muted">Legajo: {{presupuesto.responsable_legajo}}</small>
+                                {{/if}}
+                            </div>
+                        </div>
+                        {{#if presupuesto.responsable_email}}
+                            <div class="mt-2">
+                                <a href="mailto:{{presupuesto.responsable_email}}" class="btn btn-sm btn-outline-primary">
+                                    <i class="ri-mail-line me-1"></i>Contactar
+                                </a>
+                            </div>
+                        {{/if}}
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.vendedor_nombre}}
+                    <div class="mb-2">
+                        <h6 class="text-success mb-2">
+                            <i class="ri-user-smile-line me-1"></i>Vendedor/Comercial
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-xs bg-success rounded-circle d-flex align-items-center justify-content-center me-2">
+                                <span class="text-white small fw-bold">{{substring presupuesto.vendedor_nombre 0 1}}</span>
+                            </div>
+                            <div>
+                                <p class="fw-medium mb-0">{{presupuesto.vendedor_nombre}} {{presupuesto.vendedor_apellido}}</p>
+                                {{#if presupuesto.vendedor_email}}
+                                    <a href="mailto:{{presupuesto.vendedor_email}}" class="small text-muted text-decoration-none">
+                                        {{presupuesto.vendedor_email}}
+                                    </a>
+                                {{/if}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        {{/if}}
+        
+        {{!-- LEAD INFORMATION --}}
+        {{#if presupuesto.lead_numero}}
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-flashlight-line me-2"></i>Lead de Origen
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="ri-lightbulb-line text-white"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="mb-1">Lead #{{presupuesto.lead_numero}}</h5>
+                            {{#if presupuesto.lead_estado}}
+                                <span class="badge bg-info">{{presupuesto.lead_estado}}</span>
+                            {{/if}}
+                        </div>
+                    </div>
+                    
+                    {{#if presupuesto.lead_descripcion}}
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Descripción del Lead</h6>
+                        <p class="mb-0">{{presupuesto.lead_descripcion}}</p>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.lead_valor_estimado}}
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Valor Estimado Original</h6>
+                        <h5 class="text-warning mb-0">{{formatCurrency presupuesto.lead_valor_estimado}}</h5>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.lead_imagen}}
+                    <div class="mt-3">
+                        <h6 class="text-muted mb-2">Imagen Adjunta</h6>
+                        <img src="{{presupuesto.lead_imagen_directorio}}/{{presupuesto.lead_imagen}}" 
+                             class="img-thumbnail rounded" 
+                             style="max-width: 200px; max-height: 150px; object-fit: cover;"
+                             alt="Imagen del Lead" 
+                             onerror="this.style.display='none'">
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        {{/if}}
+    </div>
+    
+    {{!-- PRIORITY 4: Items & Financial Breakdown --}}
+    {{#if items}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-list-check me-2"></i>Items del Presupuesto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Descripción</th>
+                                    <th style="width: 100px;" class="text-center">Cantidad</th>
+                                    <th style="width: 130px;" class="text-end">Precio Unit.</th>
+                                    <th style="width: 130px;" class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each items}}
+                                <tr>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{add @index 1}}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-medium">{{descripcion}}</div>
+                                    </td>
+                                    <td class="text-center">{{formatNumber cantidad}}</td>
+                                    <td class="text-end">{{formatCurrency precio_unitario}}</td>
+                                    <td class="text-end">
+                                        <span class="fw-bold">{{formatCurrency subtotal}}</span>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                            <tfoot class="table-success">
+                                <tr>
+                                    <th colspan="4" class="text-end fs-5">TOTAL DEL PRESUPUESTO:</th>
+                                    <th class="text-end">
+                                        <span class="fs-4 fw-bold text-success">{{formatCurrency presupuesto.importe_total}}</span>
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+    
+    {{!-- PRIORITY 5: Additional Details & Financial Breakdown --}}
+    <div class="row mb-4">
+        {{!-- FINANCIAL DETAILS --}}
+        {{#if (or presupuesto.comision_venta presupuesto.cotizacion_dolar presupuesto.costo_equipo presupuesto.costo_servicio)}}
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-calculator-line me-2"></i>Desglose Financiero
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{#if presupuesto.comision_venta}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Comisión de Venta:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.comision_venta}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.cotizacion_dolar}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Cotización USD:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.cotizacion_dolar}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.costo_equipo}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Costo de Equipos:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.costo_equipo}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.costo_servicio}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Costo de Servicios:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.costo_servicio}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.costo_logistica}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Costo Logística:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.costo_logistica}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.material_equipo}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Material/Equipo:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.material_equipo}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.servicio_propio}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Servicio Propio:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.servicio_propio}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.servicio_subcontratado}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Servicio Subcontratado:</span>
+                        <span class="fw-bold">{{formatCurrency presupuesto.servicio_subcontratado}}</span>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        {{/if}}
+        
+        {{!-- ADDITIONAL INFO --}}
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-information-line me-2"></i>Información Adicional
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Fecha de Creación:</span>
+                        <span class="fw-medium">{{formatDate presupuesto.fecha_creacion}}</span>
+                    </div>
+                    
+                    {{#if presupuesto.fecha_modificacion}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Última Modificación:</span>
+                        <span class="fw-medium">{{formatDate presupuesto.fecha_modificacion}}</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.prioridad}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Prioridad:</span>
+                        <span class="badge bg-{{#if (gt presupuesto.prioridad 3)}}danger{{else if (gt presupuesto.prioridad 1)}}warning{{else}}success{{/if}}">
+                            Nivel {{presupuesto.prioridad}}
+                        </span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.destacado}}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Destacado:</span>
+                        <span class="text-warning"><i class="ri-star-fill"></i> Sí</span>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.observacion}}
+                    <div class="mt-3">
+                        <h6 class="text-muted mb-2">Observaciones</h6>
+                        <div class="bg-light p-3 rounded">
+                            <p class="mb-0 small">{{presupuesto.observacion}}</p>
+                        </div>
+                    </div>
+                    {{/if}}
+                    
+                    {{#if presupuesto.validez}}
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Estado de Validez:</span>
+                        <span class="{{#if presupuesto.is_expired}}text-danger{{else}}text-success{{/if}} fw-bold">
+                            {{#if presupuesto.is_expired}}
+                                ⏰ Vencido
+                            {{else}}
+                                ✅ Vigente
+                            {{/if}}
+                        </span>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- Scripts --}}
+<script>
+function enviarPresupuesto(id) {
+    if (confirm('¿Está seguro de que desea enviar este presupuesto?')) {
+        fetch(`/api/presupuestos/${id}/enviar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al enviar presupuesto: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al enviar presupuesto');
+        });
+    }
+}
+
+function aprobarPresupuesto(id) {
+    if (confirm('¿Está seguro de que desea aprobar este presupuesto?')) {
+        fetch(`/api/presupuestos/${id}/aprobar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al aprobar presupuesto: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al aprobar presupuesto');
+        });
+    }
+}
+
+function rechazarPresupuesto(id) {
+    const motivo = prompt('Ingrese el motivo del rechazo:');
+    if (motivo && motivo.trim()) {
+        fetch(`/api/presupuestos/${id}/rechazar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motivo: motivo.trim() })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al rechazar presupuesto: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al rechazar presupuesto');
+        });
+    }
+}
+
+function imprimirPresupuesto(id) {
+    window.open(`/presupuestos/imprimir/${id}`, '_blank', 'width=800,height=600');
+}
+
+function exportarPDF(id) {
+    window.open(`/presupuestos/pdf/${id}`, '_blank');
+}
+</script>

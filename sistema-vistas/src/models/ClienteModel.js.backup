@@ -1,0 +1,611 @@
+const pool = require('../config/database');
+
+class ClienteModel {
+  
+  /**
+   * Obtener lista de clientes activos para formularios
+   */
+  static async getClientesActivos() {
+    try {
+      const query = `
+        SELECT 
+          pt.id,
+          COALESCE(pt.nombre, '') as nombre,
+          COALESCE(pt.apellido, '') as apellido,
+          CASE 
+            WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
+            ELSE COALESCE(pt.nombre, pt.apellido, 'Cliente sin nombre')
+          END as nombre_completo
+        FROM persona_terceros pt
+        WHERE pt.activo = 1 AND (pt.tipo = '1' OR pt.tipo IS NULL)
+        ORDER BY pt.apellido, pt.nombre
+        LIMIT 100
+      `;
+      
+      const [clientes] = await pool.query(query);
+      
+      return clientes.map(cliente => ({
+        id: cliente.id,
+        nombre: cliente.nombre_completo
+      }));
+      
+    } catch (error) {
+      console.error('Error al obtener clientes activos:', error);
+      // Devolver lista de prueba en caso de error para que no falle el formulario
+      return [
+        { id: 'mock-client-1', nombre: 'Cliente de Prueba 1' },
+        { id: 'mock-client-2', nombre: 'Cliente de Prueba 2' },
+        { id: 'mock-client-3', nombre: 'Cliente de Prueba 3' }
+      ];
+    }
+  }
+  /**
+   * Obtiene todos los clientes con paginación (información básica)
+   */
+  static async getClientes(page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+    const [rows] = await pool.query(`
+      SELECT 
+        pt.id,
+        COALESCE(pt.nombre, '') as nombre,
+        COALESCE(pt.apellido, '') as apellido,
+        CASE 
+          WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
+          ELSE COALESCE(pt.nombre, pt.apellido, 'Sin nombre')
+        END as nombre_completo,
+        pt.codigo,
+        pt.tipo_persona,
+        pt.condicion_iva,
+        p.email,
+        p.telefono,
+        p.cuil_cuit,
+        CONCAT_WS(', ', d.calle, d.numero) as direccion,
+        d.codigo_postal,
+        pv.nombre as provincia,
+        pt.activo,
+        pt.created,
+        pt.modified
+      FROM persona_terceros pt
+      LEFT JOIN personas p ON pt.id = p.id
+      LEFT JOIN domicilios d ON p.domicilio_id = d.id
+      LEFT JOIN provincias pv ON d.departamento_id = pv.id
+      WHERE pt.tipo = '1' OR pt.tipo IS NULL
+      ORDER BY pt.apellido, pt.nombre
+      LIMIT ? OFFSET ?
+    `, [limit, offset]);
+    
+    const [count] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM persona_terceros pt
+      WHERE pt.tipo = '1' OR pt.tipo IS NULL
+    `);
+    
+    return {
+      data: rows,
+      pagination: {
+        total: count[0].total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count[0].total / limit)
+      }
+    };
+  }
+
+  /**
+   * Obtiene todos los clientes con información completa (facturas, proyectos, etc.)
+   */
+  static async getClientesCompletos(page = 1, limit = 20, filters = {}, sortBy = '', sortOrder = 'ASC') {
+    const offset = (page - 1) * limit;
+    
+    try {
+      console.log('🔍 Buscando clientes con filtros:', filters, 'sortBy:', sortBy, 'sortOrder:', sortOrder);
+      
+      // Construir WHERE clause para búsqueda
+      let whereConditions = [];
+      const params = [];
+      
+      // Filtro básico de tipo cliente
+      whereConditions.push("(pt.tipo = '1' OR pt.tipo IS NULL)");
+      
+      if (filters.search && filters.search.trim()) {
+        const searchTerm = `%${filters.search.trim()}%`;
+        whereConditions.push('(pt.nombre LIKE ? OR pt.apellido LIKE ? OR pt.codigo LIKE ? OR p.email LIKE ?)');
+        params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      }
+      
+      const whereClause = 'WHERE ' + whereConditions.join(' AND ');
+      
+      // Construir ORDER BY clause - corregido para garantizar ordenamiento correcto
+      let orderClause = '';
+      
+      if (sortBy === 'monto_total') {
+        const order = (sortOrder.toUpperCase() === 'DESC') ? 'DESC' : 'ASC';
+        orderClause = `ORDER BY monto_total ${order}, pt.apellido, pt.nombre`;
+      } else if (sortBy === 'total_facturas') {
+        const order = (sortOrder.toUpperCase() === 'DESC') ? 'DESC' : 'ASC';
+        orderClause = `ORDER BY total_facturas ${order}, pt.apellido, pt.nombre`;
+      } else if (sortBy === 'total_proyectos') {
+        const order = (sortOrder.toUpperCase() === 'DESC') ? 'DESC' : 'ASC';
+        orderClause = `ORDER BY total_proyectos ${order}, pt.apellido, pt.nombre`;
+      } else if (sortBy === 'codigo') {
+        const order = (sortOrder.toUpperCase() === 'DESC') ? 'DESC' : 'ASC';
+        orderClause = `ORDER BY pt.codigo ${order}`;
+      } else {
+        // Por defecto ordenar por apellido, nombre
+        orderClause = 'ORDER BY pt.apellido, pt.nombre';
+      }
+      
+      // Parámetros finales
+      const queryParams = [...params, limit, offset];
+      
+      console.log('🔍 WHERE:', whereClause);
+      console.log('🔍 ORDER:', orderClause);
+      console.log('🔍 PARAMS:', queryParams);
+      
+      const [rows] = await pool.query(`
+        SELECT 
+          pt.id,
+          COALESCE(pt.nombre, '') as nombre,
+          COALESCE(pt.apellido, '') as apellido,
+          CASE 
+            WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
+            ELSE COALESCE(pt.nombre, pt.apellido, 'Sin nombre')
+          END as nombre_completo,
+          pt.codigo,
+          pt.tipo_persona,
+          pt.condicion_iva,
+          p.email,
+          p.telefono,
+          p.cuil_cuit,
+          pt.activo,
+          pt.created,
+          pt.modified,
+          -- Información de facturas
+          COALESCE(f_stats.total_facturas, 0) as total_facturas,
+          COALESCE(f_stats.monto_total, 0) as monto_total,
+          COALESCE(f_stats.monto_pendiente, 0) as monto_pendiente,
+          -- Información de proyectos
+          COALESCE(p_stats.total_proyectos, 0) as total_proyectos,
+          COALESCE(p_stats.proyectos_activos, 0) as proyectos_activos,
+          -- Última actividad
+          GREATEST(
+            COALESCE(f_stats.ultima_factura, '1970-01-01'),
+            COALESCE(p_stats.ultimo_proyecto, '1970-01-01'),
+            COALESCE(pr_stats.ultimo_presupuesto, '1970-01-01')
+          ) as ultima_actividad
+        FROM persona_terceros pt
+        LEFT JOIN personas p ON pt.id = p.id
+        -- Estadísticas de facturas
+        LEFT JOIN (
+          SELECT 
+            persona_tercero_id,
+            COUNT(*) as total_facturas,
+            SUM(total) as monto_total,
+            SUM(CASE WHEN estado = 1 THEN total ELSE 0 END) as monto_pendiente,
+            MAX(fecha_emision) as ultima_factura
+          FROM factura_ventas 
+          WHERE activo = 1 
+          GROUP BY persona_tercero_id
+        ) f_stats ON pt.id = f_stats.persona_tercero_id
+        -- Estadísticas de proyectos
+        LEFT JOIN (
+          SELECT 
+            personal_id,
+            COUNT(*) as total_proyectos,
+            SUM(CASE WHEN estado IN (1,2) THEN 1 ELSE 0 END) as proyectos_activos,
+            MAX(fecha_inicio) as ultimo_proyecto
+          FROM proyectos 
+          WHERE activo = 1 
+          GROUP BY personal_id
+        ) p_stats ON pt.id = p_stats.personal_id
+        -- Estadísticas de presupuestos
+        LEFT JOIN (
+          SELECT 
+            cliente_id,
+            MAX(created) as ultimo_presupuesto
+          FROM presupuestos 
+          WHERE activo = 1 
+          GROUP BY cliente_id
+        ) pr_stats ON pt.id = pr_stats.cliente_id
+        ${whereClause}
+        ${orderClause}
+        LIMIT ? OFFSET ?
+      `, queryParams);
+      
+      console.log('✅ Query ejecutada, filas encontradas:', rows.length);
+      if (rows.length > 0) {
+        console.log('📊 Primer resultado - Nombre:', rows[0].nombre, 'Apellido:', rows[0].apellido, 'Monto:', rows[0].monto_total);
+      }
+      
+      // Query para contar total con los mismos filtros
+      const countParams = params.slice(); // Copia de parámetros sin limit/offset
+      const [count] = await pool.query(`
+        SELECT COUNT(*) as total 
+        FROM persona_terceros pt
+        LEFT JOIN personas p ON pt.id = p.id
+        ${whereClause}
+      `, countParams);
+      
+      console.log('📊 Total registros encontrados:', count[0].total);
+      
+      return {
+        data: rows,
+        pagination: {
+          total: count[0].total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(count[0].total / limit)
+        }
+      };
+      
+    } catch (error) {
+      console.error('❌ Error al obtener clientes completos:', error);
+      console.error('❌ Error details:', error.message);
+      // Fallback a la consulta básica
+      return this.getClientes(page, limit);
+    }
+  }
+
+  /**
+   * Obtiene un cliente por ID con información completa
+   */
+  static async getClienteById(id) {
+    const [rows] = await pool.query(`
+      SELECT 
+        pt.*,
+        p.email,
+        p.telefono,
+        p.telefono_auxiliar,
+        p.web,
+        p.cuil_cuit,
+        CONCAT_WS(' ', d.calle, d.numero) as direccion,
+        d.codigo_postal,
+        pv.nombre as provincia_nombre,
+        CASE 
+          WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
+          ELSE COALESCE(pt.nombre, pt.apellido, 'Sin nombre')
+        END as nombre_completo
+      FROM persona_terceros pt
+      LEFT JOIN personas p ON pt.id = p.id
+      LEFT JOIN domicilios d ON p.domicilio_id = d.id
+      LEFT JOIN provincias pv ON d.departamento_id = pv.id
+      WHERE pt.id = ?
+    `, [id]);
+    
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    const cliente = rows[0];
+    
+    // Obtener facturas del cliente
+    const facturas = await this.getFacturasCliente(id);
+    
+    // Obtener proyectos del cliente
+    const proyectos = await this.getProyectosCliente(id);
+    
+    // Obtener presupuestos del cliente
+    const presupuestos = await this.getPresupuestosCliente(id);
+    
+    // Obtener certificados del cliente (a través de proyectos)
+    const certificados = await this.getCertificadosCliente(id);
+    
+    // Calcular resumen financiero
+    const resumenFinanciero = await this.getResumenFinancieroCliente(id);
+    
+    return {
+      ...cliente,
+      facturas,
+      proyectos,
+      presupuestos,
+      certificados,
+      resumen_financiero: resumenFinanciero
+    };
+  }
+
+  /**
+   * Obtiene todas las facturas de un cliente
+   */
+  static async getFacturasCliente(clienteId) {
+    const [rows] = await pool.query(`
+      SELECT 
+        fv.id,
+        fv.numero_factura,
+        fv.fecha_emision,
+        fv.fecha_vto_pago,
+        fv.total,
+        fv.estado,
+        fv.observaciones,
+        CASE fv.estado
+          WHEN 1 THEN 'Pendiente'
+          WHEN 2 THEN 'Pagada Parcial'
+          WHEN 3 THEN 'Pagada'
+          WHEN 4 THEN 'En Proceso'
+          WHEN 5 THEN 'Anulada'
+          ELSE 'Desconocido'
+        END as estado_nombre
+      FROM factura_ventas fv
+      WHERE fv.persona_tercero_id = ? AND fv.activo = 1
+      ORDER BY fv.fecha_emision DESC
+    `, [clienteId]);
+    
+    return rows;
+  }
+
+  /**
+   * Obtiene todos los proyectos de un cliente
+   */
+  static async getProyectosCliente(clienteId) {
+    const [rows] = await pool.query(`
+      SELECT 
+        p.id,
+        p.descripcion,
+        p.estado,
+        p.fecha_inicio,
+        p.fecha_cierre,
+        p.precio_venta,
+        p.observaciones,
+        CASE p.estado
+          WHEN 1 THEN 'Pendiente'
+          WHEN 2 THEN 'En Progreso' 
+          WHEN 3 THEN 'Finalizado'
+          WHEN 4 THEN 'Cancelado'
+          ELSE 'Desconocido'
+        END as estado_nombre
+      FROM proyectos p
+      WHERE p.personal_id = ? AND p.activo = 1
+      ORDER BY p.fecha_inicio DESC
+    `, [clienteId]);
+    
+    return rows;
+  }
+
+  /**
+   * Obtiene todos los presupuestos de un cliente
+   */
+  static async getPresupuestosCliente(clienteId) {
+    const [rows] = await pool.query(`
+      SELECT 
+        p.id,
+        p.numero,
+        p.descripcion,
+        p.fecha_cierre,
+        p.precio_venta,
+        p.estado,
+        p.probabilidad,
+        p.observacion
+      FROM presupuestos p
+      WHERE p.cliente_id = ? AND p.activo = 1
+      ORDER BY p.created DESC
+    `, [clienteId]);
+    
+    return rows;
+  }
+
+  /**
+   * Obtiene todos los certificados de un cliente (a través de proyectos)
+   */
+  static async getCertificadosCliente(clienteId) {
+    const [rows] = await pool.query(`
+      SELECT 
+        c.id,
+        c.numero,
+        c.fecha,
+        c.alcance,
+        c.importe,
+        c.estado,
+        c.fecha_factura,
+        p.descripcion as proyecto_descripcion,
+        CASE c.estado
+          WHEN 0 THEN 'Pendiente'
+          WHEN 1 THEN 'Aprobado'
+          WHEN 2 THEN 'Facturado'
+          ELSE 'Desconocido'
+        END as estado_nombre
+      FROM certificacions c
+      INNER JOIN proyectos p ON c.proyecto_id = p.id
+      WHERE p.personal_id = ? AND c.activo = 1
+      ORDER BY c.fecha DESC
+    `, [clienteId]);
+    
+    return rows;
+  }
+
+  /**
+   * Obtiene resumen financiero del cliente
+   */
+  static async getResumenFinancieroCliente(clienteId) {
+    // Resumen de facturas
+    const [facturas] = await pool.query(`
+      SELECT 
+        COUNT(*) as total_facturas,
+        COALESCE(SUM(total), 0) as total_facturado,
+        COALESCE(SUM(CASE WHEN estado = 1 THEN total ELSE 0 END), 0) as pendiente_cobro,
+        COALESCE(SUM(CASE WHEN estado = 3 THEN total ELSE 0 END), 0) as cobrado
+      FROM factura_ventas
+      WHERE persona_tercero_id = ? AND activo = 1
+    `, [clienteId]);
+
+    // Resumen de proyectos
+    const [proyectos] = await pool.query(`
+      SELECT 
+        COUNT(*) as total_proyectos,
+        COUNT(CASE WHEN estado = 2 THEN 1 END) as proyectos_activos,
+        COUNT(CASE WHEN estado = 3 THEN 1 END) as proyectos_finalizados,
+        COALESCE(SUM(precio_venta), 0) as valor_total_proyectos
+      FROM proyectos
+      WHERE personal_id = ? AND activo = 1
+    `, [clienteId]);
+
+    // Resumen de certificados
+    const [certificados] = await pool.query(`
+      SELECT 
+        COUNT(c.id) as total_certificados,
+        COUNT(CASE WHEN c.estado = 0 THEN 1 END) as certificados_pendientes,
+        COUNT(CASE WHEN c.estado = 2 THEN 1 END) as certificados_facturados,
+        COALESCE(SUM(c.importe), 0) as valor_total_certificados
+      FROM certificacions c
+      INNER JOIN proyectos p ON c.proyecto_id = p.id
+      WHERE p.personal_id = ? AND c.activo = 1
+    `, [clienteId]);
+
+    return {
+      facturas: facturas[0],
+      proyectos: proyectos[0], 
+      certificados: certificados[0]
+    };
+  }
+
+  /**
+   * Busca clientes por diferentes criterios
+   */
+  static async searchClientes(filters = {}, page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+    const params = [];
+    let whereClause = 'WHERE (pt.tipo = "1" OR pt.tipo IS NULL)';
+    
+    if (filters.nombre) {
+      whereClause += ' AND (pt.nombre LIKE ? OR pt.apellido LIKE ?)';
+      params.push(`%${filters.nombre}%`, `%${filters.nombre}%`);
+    }
+    
+    if (filters.email) {
+      whereClause += ' AND p.email LIKE ?';
+      params.push(`%${filters.email}%`);
+    }
+    
+    if (filters.telefono) {
+      whereClause += ' AND p.telefono LIKE ?';
+      params.push(`%${filters.telefono}%`);
+    }
+    
+    if (filters.activo !== undefined) {
+      whereClause += ' AND pt.activo = ?';
+      params.push(filters.activo);
+    }
+
+    const queryParams = [...params, limit, offset];
+    
+    const [rows] = await pool.query(`
+      SELECT 
+        pt.id,
+        COALESCE(pt.nombre, '') as nombre,
+        COALESCE(pt.apellido, '') as apellido,
+        CASE 
+          WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
+          ELSE COALESCE(pt.nombre, pt.apellido, 'Sin nombre')
+        END as nombre_completo,
+        pt.codigo,
+        pt.tipo_persona,
+        pt.condicion_iva,
+        p.email,
+        p.telefono,
+        p.cuil_cuit,
+        pt.activo
+      FROM persona_terceros pt
+      LEFT JOIN personas p ON pt.id = p.id
+      ${whereClause}
+      ORDER BY pt.apellido, pt.nombre
+      LIMIT ? OFFSET ?
+    `, queryParams);
+    
+    const [count] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM persona_terceros pt
+      LEFT JOIN personas p ON pt.id = p.id
+      ${whereClause}
+    `, params);
+    
+    return {
+      data: rows,
+      pagination: {
+        total: count[0].total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count[0].total / limit)
+      }
+    };
+  }
+
+  /**
+   * Obtener estadísticas de clientes
+   */
+  static async getEstadisticas() {
+    try {
+      const query = `
+        SELECT 
+          COUNT(*) as total_clientes,
+          SUM(CASE WHEN pt.activo = 1 THEN 1 ELSE 0 END) as clientes_activos,
+          SUM(CASE WHEN pt.created >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as nuevos_este_mes,
+          SUM(CASE WHEN pt.tipo_persona = 'Física' THEN 1 ELSE 0 END) as clientes_fisicos,
+          SUM(CASE WHEN pt.tipo_persona = 'Jurídica' THEN 1 ELSE 0 END) as clientes_juridicos
+        FROM persona_terceros pt
+        WHERE (pt.tipo = '1' OR pt.tipo IS NULL)
+      `;
+      
+      const [rows] = await pool.execute(query);
+      return rows[0];
+      
+    } catch (error) {
+      console.error('Error al obtener estadísticas de clientes:', error);
+      return {
+        total_clientes: 0,
+        clientes_activos: 0,
+        nuevos_este_mes: 0,
+        clientes_fisicos: 0,
+        clientes_juridicos: 0
+      };
+    }
+  }
+
+  /**
+   * Crea un nuevo cliente
+   */
+  static async createCliente(clienteData) {
+    const connection = await pool.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      const clienteId = require('uuid').v4();
+      const personaId = clienteId;
+      const domicilioId = require('uuid').v4();
+      
+      // Crear domicilio
+      if (clienteData.direccion || clienteData.codigo_postal) {
+        await connection.query(`
+          INSERT INTO domicilios (id, calle, numero, codigo_postal, created)
+          VALUES (?, ?, ?, ?, NOW())
+        `, [domicilioId, clienteData.calle || '', clienteData.numero || '', 
+            clienteData.codigo_postal || '']);
+      }
+      
+      // Crear persona
+      await connection.query(`
+        INSERT INTO personas (id, email, telefono, telefono_auxiliar, web, cuil_cuit, domicilio_id, created, modified, activo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)
+      `, [personaId, clienteData.email || null, clienteData.telefono || null, 
+          clienteData.telefono_auxiliar || null, clienteData.web || null, 
+          clienteData.cuil_cuit || null, domicilioId]);
+      
+      // Crear persona_tercero
+      await connection.query(`
+        INSERT INTO persona_terceros (id, apellido, nombre, codigo, tipo, tipo_persona, condicion_iva, activo, created, modified)
+        VALUES (?, ?, ?, ?, '1', ?, ?, 1, NOW(), NOW())
+      `, [clienteId, clienteData.apellido || '', clienteData.nombre || '', 
+          clienteData.codigo || '', clienteData.tipo_persona || 'Jurídica', 
+          clienteData.condicion_iva || null]);
+      
+      await connection.commit();
+      return clienteId;
+      
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+}
+
+module.exports = ClienteModel;

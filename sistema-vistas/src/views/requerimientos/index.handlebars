@@ -1,0 +1,561 @@
+{{!-- Requerimientos de Abastecimiento --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-shopping-cart me-2"></i>
+            Requerimientos de Abastecimiento
+          </h4>
+          <div class="btn-group">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoRequerimientoModal">
+              <i class="fas fa-plus me-1"></i>
+              Nuevo Requerimiento
+            </button>
+            <button type="button" class="btn btn-success" onclick="exportarRequerimientos()">
+              <i class="fas fa-file-excel me-1"></i>
+              Exportar Excel
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-filter me-1"></i>
+                Filtros
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('todos')">Todos</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('borrador')">Borradores</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('enviado')">Enviados</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('aprobado')">Aprobados</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('rechazado')">Rechazados</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorUrgencia('alta')">Urgencia Alta</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorUrgencia('media')">Urgencia Media</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {{#if requerimientos}}
+        <div class="table-responsive">
+          <table class="table table-hover" id="requerimientosTable">
+            <thead class="table-light">
+              <tr>
+                <th width="8%">N° Req.</th>
+                <th width="15%">Proyecto</th>
+                <th width="12%">Cliente</th>
+                <th width="10%">Fecha</th>
+                <th width="8%">Materiales</th>
+                <th width="12%">Monto Total</th>
+                <th width="10%">Estado</th>
+                <th width="8%">Prioridad</th>
+                <th width="10%">Fecha Límite</th>
+                <th width="7%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each requerimientos}}
+              <tr class="{{#eq this.prioridad 'alta'}}table-danger{{/eq}}{{#eq this.prioridad 'media'}}table-warning{{/eq}}">
+                <td>
+                  <strong>REQ-{{this.numero}}</strong>
+                </td>
+                <td>
+                  <strong>{{this.proyecto_nombre}}</strong>
+                  {{#if this.proyecto_codigo}}
+                  <br><small class="text-muted">{{this.proyecto_codigo}}</small>
+                  {{/if}}
+                </td>
+                <td>{{this.cliente_nombre}}</td>
+                <td>{{formatDate this.fecha_solicitud}}</td>
+                <td class="text-center">
+                  <span class="badge bg-info">{{this.total_materiales}}</span>
+                </td>
+                <td>
+                  <strong>${{formatNumber this.monto_total}}</strong>
+                </td>
+                <td>
+                  <span class="badge 
+                    {{#eq this.estado 'borrador'}}bg-secondary{{/eq}}
+                    {{#eq this.estado 'enviado'}}bg-primary{{/eq}}
+                    {{#eq this.estado 'aprobado'}}bg-success{{/eq}}
+                    {{#eq this.estado 'rechazado'}}bg-danger{{/eq}}
+                    {{#eq this.estado 'cancelado'}}bg-dark{{/eq}}
+                  ">
+                    {{capitalize this.estado}}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge 
+                    {{#eq this.prioridad 'alta'}}bg-danger{{/eq}}
+                    {{#eq this.prioridad 'media'}}bg-warning{{/eq}}
+                    {{#eq this.prioridad 'baja'}}bg-info{{/eq}}
+                  ">
+                    {{capitalize this.prioridad}}
+                  </span>
+                </td>
+                <td>
+                  {{#if this.fecha_limite}}
+                    <span class="{{#if this.vencido}}text-danger{{/if}}">
+                      {{formatDate this.fecha_limite}}
+                    </span>
+                  {{else}}
+                    <span class="text-muted">Sin límite</span>
+                  {{/if}}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/requerimientos/ver/{{this.id}}" class="btn btn-outline-info" title="Ver Detalle">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    {{#eq this.estado 'borrador'}}
+                    <button class="btn btn-outline-primary" onclick="editarRequerimiento('{{this.id}}')" title="Editar">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-success" onclick="enviarRequerimiento('{{this.id}}')" title="Enviar">
+                      <i class="fas fa-paper-plane"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'enviado'}}
+                    <button class="btn btn-outline-success" onclick="aprobarRequerimiento('{{this.id}}')" title="Aprobar">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="rechazarRequerimiento('{{this.id}}')" title="Rechazar">
+                      <i class="fas fa-times"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'aprobado'}}
+                    <button class="btn btn-outline-warning" onclick="generarCotizaciones('{{this.id}}')" title="Generar Cotizaciones">
+                      <i class="fas fa-dollar-sign"></i>
+                    </button>
+                    {{/eq}}
+                  </div>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        {{else}}
+        <div class="text-center py-4">
+          <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay requerimientos de abastecimiento</h5>
+          <p class="text-muted">Crea requerimientos para solicitar cotizaciones de materiales de proyectos</p>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoRequerimientoModal">
+            <i class="fas fa-plus me-1"></i>
+            Crear Primer Requerimiento
+          </button>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Requerimiento -->
+<div class="modal fade" id="nuevoRequerimientoModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo Requerimiento de Abastecimiento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="nuevoRequerimientoForm">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proyecto *</label>
+                <select class="form-select" id="req_proyecto_id" required onchange="cargarMaterialesProyecto()">
+                  <option value="">Seleccionar proyecto...</option>
+                  {{#each proyectos}}
+                  <option value="{{this.id}}">{{this.descripcion}} - {{this.cliente_nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label">Prioridad</label>
+                <select class="form-select" id="req_prioridad">
+                  <option value="media" selected>Media</option>
+                  <option value="baja">Baja</option>
+                  <option value="alta">Alta</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label">Fecha Límite</label>
+                <input type="date" class="form-control" id="req_fecha_limite">
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Justificación/Observaciones</label>
+            <textarea class="form-control" id="req_observaciones" rows="3" placeholder="Justificación del requerimiento, detalles especiales, etc."></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <h6>Materiales a Solicitar</h6>
+            <div id="materialesProyecto">
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Selecciona un proyecto para ver los materiales disponibles
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Requerimiento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Aprobar/Rechazar -->
+<div class="modal fade" id="aprobarRechazarModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="aprobarRechazarTitle">Aprobar Requerimiento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="aprobarRechazarForm">
+        <div class="modal-body">
+          <input type="hidden" id="ar_requerimiento_id">
+          <input type="hidden" id="ar_accion">
+          
+          <div class="mb-3">
+            <label class="form-label">Comentarios</label>
+            <textarea class="form-control" id="ar_comentarios" rows="4" required></textarea>
+          </div>
+          
+          <div class="mb-3" id="ar_fecha_aprobacion_group" style="display: none;">
+            <label class="form-label">Fecha de Aprobación</label>
+            <input type="date" class="form-control" id="ar_fecha_aprobacion">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn" id="ar_submit_btn">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+let materialesSeleccionados = [];
+let requerimientoSeleccionado = null;
+
+// Cargar materiales del proyecto seleccionado
+function cargarMaterialesProyecto() {
+    const proyectoId = document.getElementById('req_proyecto_id').value;
+    const container = document.getElementById('materialesProyecto');
+    
+    if (!proyectoId) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Selecciona un proyecto para ver los materiales disponibles
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando materiales...</div>';
+    
+    fetch(`/api/proyectos/${proyectoId}/materiales-pendientes`)
+        .then(response => response.json())
+        .then(materiales => {
+            if (materiales.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No hay materiales pendientes en este proyecto
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="5%">
+                                    <input type="checkbox" onchange="seleccionarTodosMateriales(this)">
+                                </th>
+                                <th>Material</th>
+                                <th width="10%">Cant.</th>
+                                <th width="10%">Unidad</th>
+                                <th width="12%">Precio Est.</th>
+                                <th width="10%">Urgencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            materiales.forEach(material => {
+                html += `
+                    <tr>
+                        <td>
+                            <input type="checkbox" value="${material.id}" onchange="seleccionarMaterial(this, ${JSON.stringify(material).replace(/"/g, '&quot;')})">
+                        </td>
+                        <td>
+                            <strong>${material.nombre}</strong>
+                            ${material.descripcion ? '<br><small class="text-muted">' + material.descripcion + '</small>' : ''}
+                        </td>
+                        <td>${material.cantidad}</td>
+                        <td>${material.unidad}</td>
+                        <td>$${material.precio_unitario ? parseFloat(material.precio_unitario).toLocaleString() : '0'}</td>
+                        <td>
+                            <span class="badge 
+                                ${material.urgencia === 'alta' ? 'bg-danger' : material.urgencia === 'media' ? 'bg-warning' : 'bg-info'}
+                            ">
+                                ${material.urgencia.charAt(0).toUpperCase() + material.urgencia.slice(1)}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Error al cargar materiales del proyecto
+                </div>
+            `;
+        });
+}
+
+// Seleccionar todos los materiales
+function seleccionarTodosMateriales(checkbox) {
+    const checkboxes = document.querySelectorAll('#materialesProyecto input[type="checkbox"]:not(:first-child)');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+        cb.dispatchEvent(new Event('change'));
+    });
+}
+
+// Seleccionar material individual
+function seleccionarMaterial(checkbox, material) {
+    if (checkbox.checked) {
+        if (!materialesSeleccionados.find(m => m.id === material.id)) {
+            materialesSeleccionados.push(material);
+        }
+    } else {
+        materialesSeleccionados = materialesSeleccionados.filter(m => m.id !== material.id);
+    }
+}
+
+// Crear requerimiento
+document.getElementById('nuevoRequerimientoForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (materialesSeleccionados.length === 0) {
+        alert('Debe seleccionar al menos un material');
+        return;
+    }
+    
+    const formData = {
+        proyecto_id: document.getElementById('req_proyecto_id').value,
+        prioridad: document.getElementById('req_prioridad').value,
+        fecha_limite: document.getElementById('req_fecha_limite').value,
+        observaciones: document.getElementById('req_observaciones').value,
+        materiales: materialesSeleccionados.map(m => ({
+            material_id: m.id,
+            cantidad_solicitada: m.cantidad
+        }))
+    };
+    
+    fetch('/api/requerimientos/crear', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al crear requerimiento: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear requerimiento');
+    });
+});
+
+// Enviar requerimiento
+function enviarRequerimiento(id) {
+    if (confirm('¿Enviar este requerimiento para aprobación?')) {
+        cambiarEstadoRequerimiento(id, 'enviado');
+    }
+}
+
+// Aprobar requerimiento
+function aprobarRequerimiento(id) {
+    mostrarModalAprobarRechazar(id, 'aprobar');
+}
+
+// Rechazar requerimiento
+function rechazarRequerimiento(id) {
+    mostrarModalAprobarRechazar(id, 'rechazar');
+}
+
+// Mostrar modal aprobar/rechazar
+function mostrarModalAprobarRechazar(id, accion) {
+    requerimientoSeleccionado = id;
+    document.getElementById('ar_requerimiento_id').value = id;
+    document.getElementById('ar_accion').value = accion;
+    
+    const title = document.getElementById('aprobarRechazarTitle');
+    const submitBtn = document.getElementById('ar_submit_btn');
+    const fechaGroup = document.getElementById('ar_fecha_aprobacion_group');
+    
+    if (accion === 'aprobar') {
+        title.textContent = 'Aprobar Requerimiento';
+        submitBtn.textContent = 'Aprobar';
+        submitBtn.className = 'btn btn-success';
+        fechaGroup.style.display = 'block';
+        document.getElementById('ar_fecha_aprobacion').value = new Date().toISOString().split('T')[0];
+    } else {
+        title.textContent = 'Rechazar Requerimiento';
+        submitBtn.textContent = 'Rechazar';
+        submitBtn.className = 'btn btn-danger';
+        fechaGroup.style.display = 'none';
+    }
+    
+    new bootstrap.Modal(document.getElementById('aprobarRechazarModal')).show();
+}
+
+// Procesar aprobación/rechazo
+document.getElementById('aprobarRechazarForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const id = document.getElementById('ar_requerimiento_id').value;
+    const accion = document.getElementById('ar_accion').value;
+    const comentarios = document.getElementById('ar_comentarios').value;
+    const fechaAprobacion = document.getElementById('ar_fecha_aprobacion').value;
+    
+    const data = {
+        comentarios,
+        fecha_aprobacion: accion === 'aprobar' ? fechaAprobacion : null
+    };
+    
+    const estado = accion === 'aprobar' ? 'aprobado' : 'rechazado';
+    
+    fetch(`/api/requerimientos/${id}/${estado}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(`Error al ${accion} requerimiento: ` + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(`Error al ${accion} requerimiento`);
+    });
+});
+
+// Cambiar estado de requerimiento
+function cambiarEstadoRequerimiento(id, nuevoEstado) {
+    fetch(`/api/requerimientos/${id}/estado`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al cambiar estado: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar estado');
+    });
+}
+
+// Generar cotizaciones
+function generarCotizaciones(id) {
+    if (confirm('¿Generar cotizaciones automáticas para este requerimiento?')) {
+        fetch(`/api/requerimientos/${id}/generar-cotizaciones`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Se generaron ${data.cotizaciones} cotizaciones`);
+                window.open('/cotizaciones', '_blank');
+            } else {
+                alert('Error al generar cotizaciones: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al generar cotizaciones');
+        });
+    }
+}
+
+// Exportar requerimientos
+function exportarRequerimientos() {
+    window.open('/requerimientos/export/excel', '_blank');
+}
+
+// Filtros
+function filtrarPorEstado(estado) {
+    console.log('Filtrar por estado:', estado);
+}
+
+function filtrarPorUrgencia(urgencia) {
+    console.log('Filtrar por urgencia:', urgencia);
+}
+
+// Initialize DataTables
+$(document).ready(function() {
+    if ($.fn.DataTable) {
+        $('#requerimientosTable').DataTable({
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
+            },
+            order: [[0, 'desc']],
+            pageLength: 25,
+            responsive: true
+        });
+    }
+});
+</script>
+{{/section}}

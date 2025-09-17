@@ -1,0 +1,209 @@
+<div class="row mb-4 sgi-fade-in">
+  <div class="col-12">
+    <h1 class="display-5 fw-bold text-primary">Sistema de Gestión Integral</h1>
+    <p class="lead text-muted">Panel de control principal</p>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3 mb-3">
+    <div class="card card-stats sgi-hover-lift">
+      <div class="card-body text-center">
+        <i class="bi bi-receipt fs-1 mb-3"></i>
+        <h4 class="card-title fs-2 fw-bold">{{#if stats.facturas_emitidas}}{{stats.facturas_emitidas}}{{else}}0{{/if}}</h4>
+        <p class="card-text opacity-75">Facturas Emitidas</p>
+        <a href="/facturas/emitidas" class="btn btn-light btn-sm">Ver todas</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card sgi-hover-lift" style="background: linear-gradient(135deg, var(--sgi-success) 0%, #059669 100%); color: white; border: none;">
+      <div class="card-body text-center">
+        <i class="bi bi-people fs-1 mb-3"></i>
+        <h4 class="card-title fs-2 fw-bold">{{#if stats.clientes}}{{stats.clientes}}{{else}}0{{/if}}</h4>
+        <p class="card-text opacity-75">Clientes</p>
+        <a href="/clientes" class="btn btn-light btn-sm">Ver todos</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card sgi-hover-lift" style="background: linear-gradient(135deg, var(--sgi-info) 0%, #0284c7 100%); color: white; border: none;">
+      <div class="card-body text-center">
+        <i class="bi bi-folder fs-1 mb-3"></i>
+        <h4 class="card-title fs-2 fw-bold">{{#if stats.proyectos_activos}}{{stats.proyectos_activos}}{{else}}0{{/if}}</h4>
+        <p class="card-text opacity-75">Proyectos Activos</p>
+        <a href="/proyectos" class="btn btn-light btn-sm">Ver todos</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card sgi-hover-lift" style="background: linear-gradient(135deg, var(--sgi-warning) 0%, #d97706 100%); color: white; border: none;">
+      <div class="card-body text-center">
+        <i class="bi bi-person-plus fs-1 mb-3"></i>
+        <h4 class="card-title fs-2 fw-bold">{{#if stats.leads_nuevos}}{{stats.leads_nuevos}}{{else}}0{{/if}}</h4>
+        <p class="card-text opacity-75">Leads Nuevos</p>
+        <a href="/leads" class="btn btn-light btn-sm">Ver todos</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Facturas Recientes</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>N° Factura</th>
+                <th>Cliente</th>
+                <th>Monto</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each facturas_recientes}}
+              <tr>
+                <td>
+                  {{#if this.numero_factura_completo}}
+                    <a href="/facturas/detalle/{{this.id}}" class="text-decoration-none">
+                      {{this.numero_factura_completo}}
+                    </a>
+                  {{else}}
+                    <span class="empty-field">Sin número</span>
+                  {{/if}}
+                </td>
+                <td>{{#if this.cliente_nombre}}{{this.cliente_nombre}}{{else}}<span class="empty-field">Sin cliente</span>{{/if}}</td>
+                <td>{{#if this.total}}{{formatCurrency this.total}}{{else}}<span class="text-muted">$ 0,00</span>{{/if}}</td>
+                <td>
+                  <span class="badge {{#eq this.estado 1}}bg-warning{{/eq}}{{#eq this.estado 3}}bg-success{{/eq}}{{#unless this.estado}}bg-secondary{{/unless}}">
+                    {{#eq this.estado 1}}Pendiente{{/eq}}
+                    {{#eq this.estado 3}}Cobrada{{/eq}}
+                    {{#unless this.estado}}Sin estado{{/unless}}
+                  </span>
+                </td>
+              </tr>
+              {{else}}
+              <tr>
+                <td colspan="4" class="text-center text-muted">No hay facturas recientes</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end">
+          <a href="/facturas/emitidas" class="btn btn-sm btn-outline-primary">Ver todas las facturas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Proyectos en Curso</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Proyecto</th>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th>Avance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each proyectos_activos}}
+              <tr>
+                <td>
+                  {{#if this.nombre}}
+                    <a href="/proyectos/ver/{{this.id}}" class="text-decoration-none">
+                      {{this.nombre}}
+                    </a>
+                  {{else}}
+                    <span class="empty-field">Sin nombre</span>
+                  {{/if}}
+                </td>
+                <td>{{#if this.cliente_nombre}}{{this.cliente_nombre}}{{else}}<span class="empty-field">Sin cliente</span>{{/if}}</td>
+                <td>
+                  <span class="badge bg-info">En Progreso</span>
+                </td>
+                <td>
+                  <div class="progress" style="height: 15px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{#if this.porcentaje_avance}}{{this.porcentaje_avance}}{{else}}0{{/if}}%">
+                      {{#if this.porcentaje_avance}}{{this.porcentaje_avance}}{{else}}0{{/if}}%
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {{else}}
+              <tr>
+                <td colspan="4" class="text-center text-muted">No hay proyectos activos</td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end">
+          <a href="/proyectos" class="btn btn-sm btn-outline-primary">Ver todos los proyectos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Accesos Rápidos</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-2 col-sm-4 mb-3">
+            <a href="/facturas/emitidas" class="btn btn-outline-primary w-100">
+              <i class="bi bi-receipt-cutoff d-block mb-2"></i>
+              Facturas Emitidas
+            </a>
+          </div>
+          <div class="col-md-2 col-sm-4 mb-3">
+            <a href="/facturas/recibidas" class="btn btn-outline-success w-100">
+              <i class="bi bi-receipt d-block mb-2"></i>
+              Facturas Recibidas
+            </a>
+          </div>
+          <div class="col-md-2 col-sm-4 mb-3">
+            <a href="/clientes" class="btn btn-outline-info w-100">
+              <i class="bi bi-people d-block mb-2"></i>
+              Clientes
+            </a>
+          </div>
+          <div class="col-md-2 col-sm-4 mb-3">
+            <a href="/proyectos" class="btn btn-outline-warning w-100">
+              <i class="bi bi-folder d-block mb-2"></i>
+              Proyectos
+            </a>
+          </div>
+          <div class="col-md-2 col-sm-4 mb-3">
+            <a href="/certificados" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-award d-block mb-2"></i>
+              Certificados
+            </a>
+          </div>
+          <div class="col-md-2 col-sm-4 mb-3">
+            <a href="/leads" class="btn btn-outline-dark w-100">
+              <i class="bi bi-person-plus d-block mb-2"></i>
+              Leads
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,159 @@
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h4 class="page-title">{{title}}</h4>
+                <div class="page-options">
+                    <a href="/certificados" class="btn btn-outline-secondary">
+                        <i class="fe fe-arrow-left"></i> Volver al listado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Información del Certificado</h3>
+                </div>
+                <div class="card-body">
+                    <form id="certificadoForm" method="POST" action="/certificados/crear">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="proyecto_id">Proyecto *</label>
+                                    <select name="proyecto_id" id="proyecto_id" class="form-control" required>
+                                        <option value="">Seleccione un proyecto</option>
+                                        {{#each proyectos}}
+                                        <option value="{{id}}">{{nombre}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="numero">Número de Certificado *</label>
+                                    <input type="text" name="numero" id="numero" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="alcance">Descripción/Alcance *</label>
+                                    <textarea name="alcance" id="alcance" class="form-control" rows="3" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="fecha">Fecha de Emisión *</label>
+                                    <input type="date" name="fecha" id="fecha" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cantidad">Cantidad</label>
+                                    <input type="number" name="cantidad" id="cantidad" class="form-control" value="1" min="1">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="precio_unitario">Precio Unitario</label>
+                                    <input type="number" name="precio_unitario" id="precio_unitario" class="form-control" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fecha_factura">Fecha de Facturación</label>
+                                    <input type="date" name="fecha_factura" id="fecha_factura" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="estado">Estado</label>
+                                    <select name="estado" id="estado" class="form-control">
+                                        <option value="0">Borrador</option>
+                                        <option value="1" selected>Pendiente</option>
+                                        <option value="2">Aprobado</option>
+                                        <option value="3">Rechazado</option>
+                                        <option value="4">Facturado</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="observacion">Condiciones/Observaciones</label>
+                                    <textarea name="observacion" id="observacion" class="form-control" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer text-right">
+                            <button type="button" class="btn btn-secondary" onclick="window.location.href='/certificados'">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fe fe-save"></i> Guardar Certificado
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Set today's date as default
+    $('#fecha').val(new Date().toISOString().split('T')[0]);
+    
+    // Calculate total when quantity or unit price changes
+    $('#cantidad, #precio_unitario').on('input', function() {
+        var cantidad = parseFloat($('#cantidad').val()) || 0;
+        var precio = parseFloat($('#precio_unitario').val()) || 0;
+        var total = cantidad * precio;
+        
+        // Update a total field if exists
+        if ($('#importe').length) {
+            $('#importe').val(total.toFixed(2));
+        }
+    });
+
+    // Form submission
+    $('#certificadoForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        
+        $.ajax({
+            url: '/certificados/crear',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    alert('Certificado creado exitosamente');
+                    window.location.href = '/certificados';
+                } else {
+                    alert('Error: ' + (response.message || 'Error desconocido'));
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error al crear certificado: ' + error);
+            }
+        });
+    });
+});
+</script>

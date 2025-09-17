@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { font-size: 12px; }
+            .container { max-width: none; margin: 0; padding: 0; }
+        }
+        .certificate-header {
+            border-bottom: 3px solid #0d6efd;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+        .certificate-content {
+            min-height: 600px;
+        }
+        .signature-section {
+            margin-top: 80px;
+            border-top: 1px solid #dee2e6;
+            padding-top: 30px;
+        }
+        .signature-box {
+            border-top: 1px solid #000;
+            margin-top: 60px;
+            padding-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Print Button -->
+        <div class="no-print mb-3">
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+            <button onclick="window.close()" class="btn btn-secondary ms-2">
+                <i class="bi bi-x"></i> Cerrar
+            </button>
+        </div>
+
+        <!-- Certificate Content -->
+        <div class="certificate-content">
+            <!-- Header -->
+            <div class="certificate-header text-center">
+                <h1 class="display-4 text-primary">CERTIFICADO DE OBRA</h1>
+                <h3>N° {{certificado.numero_certificado}}</h3>
+            </div>
+
+            <!-- Certificate Details -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Información del Certificado</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Número:</strong></td>
+                            <td>{{certificado.numero_certificado}}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha de Emisión:</strong></td>
+                            <td>{{formatDate certificado.fecha_emision}}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Estado:</strong></td>
+                            <td>
+                                {{#eq certificado.estado 1}}Borrador{{/eq}}
+                                {{#eq certificado.estado 2}}Pendiente Aprobación{{/eq}}
+                                {{#eq certificado.estado 3}}Aprobado{{/eq}}
+                                {{#eq certificado.estado 4}}Facturado{{/eq}}
+                                {{#eq certificado.estado 5}}Rechazado{{/eq}}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Información del Proyecto</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Proyecto:</strong></td>
+                            <td>{{certificado.proyecto_nombre}}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cliente:</strong></td>
+                            <td>{{certificado.cliente_nombre}}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Presupuesto:</strong></td>
+                            <td>{{formatCurrency certificado.presupuesto_proyecto}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Work Description -->
+            <div class="mb-4">
+                <h5>Descripción de los Trabajos</h5>
+                <div class="border p-3 bg-light">
+                    <p>{{certificado.descripcion}}</p>
+                </div>
+            </div>
+
+            <!-- Financial Details -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h5>Detalle Financiero</h5>
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Concepto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unitario</th>
+                                <th>Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{certificado.descripcion}}</td>
+                                <td>{{#if certificado.cantidad}}{{certificado.cantidad}}{{else}}1{{/if}}</td>
+                                <td>{{formatCurrency certificado.precio_unitario}}</td>
+                                <td><strong>{{formatCurrency certificado.monto}}</strong></td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end">TOTAL:</th>
+                                <th>{{formatCurrency certificado.monto}}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="signature-section">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="signature-box">
+                            <strong>Firma del Responsable de Obra</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="signature-box">
+                            <strong>Firma del Cliente</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-5 text-muted">
+                <small>
+                    Documento generado el {{formatDate "now"}} por SGI - Sistema de Gestión Integral
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

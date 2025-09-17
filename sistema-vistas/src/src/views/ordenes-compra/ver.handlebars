@@ -1,0 +1,571 @@
+{{!-- Ver Orden de Compra Detalle --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-shopping-bag me-2"></i>
+            Orden de Compra OC-{{orden.numero}}
+          </h4>
+          <div class="btn-group">
+            <a href="/ordenes-compra" class="btn btn-outline-secondary">
+              <i class="fas fa-arrow-left me-1"></i>
+              Volver
+            </a>
+            {{#eq orden.estado 'borrador'}}
+            <button class="btn btn-outline-primary" onclick="editarOrden('{{orden.id}}')">
+              <i class="fas fa-edit me-1"></i>
+              Editar
+            </button>
+            <button class="btn btn-success" onclick="enviarOrden('{{orden.id}}')">
+              <i class="fas fa-paper-plane me-1"></i>
+              Enviar
+            </button>
+            {{/eq}}
+            {{#eq orden.estado 'enviado'}}
+            <button class="btn btn-outline-info" onclick="confirmarOrden('{{orden.id}}')">
+              <i class="fas fa-check me-1"></i>
+              Confirmar
+            </button>
+            {{/eq}}
+            {{#or (eq orden.estado 'confirmado') (eq orden.estado 'parcial')}}
+            <button class="btn btn-outline-warning" onclick="registrarRecepcion('{{orden.id}}')">
+              <i class="fas fa-truck me-1"></i>
+              Registrar Recepción
+            </button>
+            {{/or}}
+            <button class="btn btn-outline-info" onclick="imprimirOrden()">
+              <i class="fas fa-print me-1"></i>
+              Imprimir
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Información General -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Información General
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-6">
+                    <small class="text-muted">N° Orden:</small><br>
+                    <strong>OC-{{orden.numero}}</strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted">Estado:</small><br>
+                    <span class="badge 
+                      {{#eq orden.estado 'borrador'}}bg-secondary{{/eq}}
+                      {{#eq orden.estado 'enviado'}}bg-primary{{/eq}}
+                      {{#eq orden.estado 'confirmado'}}bg-info{{/eq}}
+                      {{#eq orden.estado 'parcial'}}bg-warning{{/eq}}
+                      {{#eq orden.estado 'completado'}}bg-success{{/eq}}
+                      {{#eq orden.estado 'cancelado'}}bg-danger{{/eq}}
+                    ">
+                      {{capitalize orden.estado}}
+                    </span>
+                  </div>
+                </div>
+                <div class="row mt-2">
+                  <div class="col-6">
+                    <small class="text-muted">Fecha Orden:</small><br>
+                    <strong>{{formatDate orden.fecha_orden}}</strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted">Entrega Esperada:</small><br>
+                    <strong>
+                      {{#if orden.fecha_entrega_esperada}}
+                        {{formatDate orden.fecha_entrega_esperada}}
+                      {{else}}
+                        Sin definir
+                      {{/if}}
+                    </strong>
+                  </div>
+                </div>
+                <div class="row mt-2">
+                  <div class="col-6">
+                    <small class="text-muted">Moneda:</small><br>
+                    <strong>{{orden.moneda}}</strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted">Condiciones Pago:</small><br>
+                    <strong>{{orden.condiciones_pago}}</strong>
+                  </div>
+                </div>
+                {{#if orden.lugar_entrega}}
+                <div class="row mt-2">
+                  <div class="col-12">
+                    <small class="text-muted">Lugar de Entrega:</small><br>
+                    <strong>{{orden.lugar_entrega}}</strong>
+                  </div>
+                </div>
+                {{/if}}
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-building me-1"></i>
+                  Información del Proveedor
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-2">
+                  <small class="text-muted">Proveedor:</small><br>
+                  <strong>{{orden.proveedor_nombre}}</strong>
+                </div>
+                {{#if orden.proveedor_contacto}}
+                <div class="mb-2">
+                  <small class="text-muted">Contacto:</small><br>
+                  <strong>{{orden.proveedor_contacto}}</strong>
+                </div>
+                {{/if}}
+                {{#if orden.proveedor_email}}
+                <div class="mb-2">
+                  <small class="text-muted">Email:</small><br>
+                  <a href="mailto:{{orden.proveedor_email}}">{{orden.proveedor_email}}</a>
+                </div>
+                {{/if}}
+                {{#if orden.proveedor_telefono}}
+                <div class="mb-2">
+                  <small class="text-muted">Teléfono:</small><br>
+                  <a href="tel:{{orden.proveedor_telefono}}">{{orden.proveedor_telefono}}</a>
+                </div>
+                {{/if}}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información del Proyecto -->
+        <div class="row mb-4">
+          <div class="col-md-12">
+            <div class="card bg-light">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-project-diagram me-1"></i>
+                  Proyecto y Referencias
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-4">
+                    <small class="text-muted">Proyecto:</small><br>
+                    <strong>{{orden.proyecto_nombre}}</strong>
+                  </div>
+                  <div class="col-md-4">
+                    <small class="text-muted">Cliente:</small><br>
+                    <strong>{{orden.cliente_nombre}}</strong>
+                  </div>
+                  <div class="col-md-4">
+                    <small class="text-muted">Cotización Origen:</small><br>
+                    {{#if orden.cotizacion_numero}}
+                    <a href="/cotizaciones/ver/{{orden.cotizacion_id}}" class="text-decoration-none">
+                      <strong>COT-{{orden.cotizacion_numero}}</strong>
+                    </a>
+                    {{else}}
+                    <span class="text-muted">Orden directa</span>
+                    {{/if}}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progreso de Entrega -->
+        {{#if (gt orden.total_items 0)}}
+        <div class="row mb-4">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-chart-pie me-1"></i>
+                  Progreso de Entrega
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row text-center">
+                  <div class="col-md-3">
+                    <div class="border rounded p-3">
+                      <h4 class="text-primary">{{orden.total_items}}</h4>
+                      <small class="text-muted">Items Totales</small>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="border rounded p-3">
+                      <h4 class="text-success">{{orden.items_recibidos}}</h4>
+                      <small class="text-muted">Items Recibidos</small>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="border rounded p-3">
+                      <h4 class="text-warning">{{math orden.total_items '-' orden.items_recibidos}}</h4>
+                      <small class="text-muted">Items Pendientes</small>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="border rounded p-3">
+                      <h4 class="text-info">{{orden.porcentaje_completado}}%</h4>
+                      <small class="text-muted">Completado</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{orden.porcentaje_completado}}%" 
+                         aria-valuenow="{{orden.porcentaje_completado}}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {{/if}}
+
+        <!-- Items de la Orden -->
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-list me-1"></i>
+              Items de la Orden ({{items.length}})
+            </h6>
+          </div>
+          <div class="card-body">
+            {{#if items}}
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th width="5%">#</th>
+                    <th width="25%">Material/Descripción</th>
+                    <th width="10%">Cantidad</th>
+                    <th width="8%">Unidad</th>
+                    <th width="10%">Precio Unit.</th>
+                    <th width="10%">Total</th>
+                    <th width="10%">Recibido</th>
+                    <th width="10%">Pendiente</th>
+                    <th width="12%">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each items}}
+                  <tr>
+                    <td>{{@index_plus_one}}</td>
+                    <td>
+                      <strong>{{this.nombre}}</strong>
+                      {{#if this.descripcion}}
+                      <br><small class="text-muted">{{this.descripcion}}</small>
+                      {{/if}}
+                    </td>
+                    <td class="text-center">{{this.cantidad}}</td>
+                    <td>{{this.unidad}}</td>
+                    <td class="text-end">{{orden.moneda}} {{formatNumber this.precio_unitario}}</td>
+                    <td class="text-end"><strong>{{orden.moneda}} {{formatNumber this.total}}</strong></td>
+                    <td class="text-center">
+                      <span class="badge bg-success">{{default this.cantidad_recibida 0}}</span>
+                    </td>
+                    <td class="text-center">
+                      {{#if (gt (math this.cantidad '-' (default this.cantidad_recibida 0)) 0)}}
+                      <span class="badge bg-warning">{{math this.cantidad '-' (default this.cantidad_recibida 0)}}</span>
+                      {{else}}
+                      <span class="badge bg-success">0</span>
+                      {{/if}}
+                    </td>
+                    <td>
+                      {{#if (eq this.cantidad (default this.cantidad_recibida 0))}}
+                      <span class="badge bg-success">Completo</span>
+                      {{else if (gt (default this.cantidad_recibida 0) 0)}}
+                      <span class="badge bg-warning">Parcial</span>
+                      {{else}}
+                      <span class="badge bg-secondary">Pendiente</span>
+                      {{/if}}
+                    </td>
+                  </tr>
+                  {{/each}}
+                </tbody>
+                <tfoot class="table-light">
+                  <tr>
+                    <th colspan="5" class="text-end">Subtotal:</th>
+                    <th class="text-end">{{orden.moneda}} {{formatNumber orden.monto_total}}</th>
+                    <th colspan="3"></th>
+                  </tr>
+                  <tr>
+                    <th colspan="5" class="text-end">IVA (21%):</th>
+                    <th class="text-end">{{orden.moneda}} {{formatNumber (multiply orden.monto_total 0.21)}}</th>
+                    <th colspan="3"></th>
+                  </tr>
+                  <tr class="table-warning">
+                    <th colspan="5" class="text-end">TOTAL FINAL:</th>
+                    <th class="text-end"><strong>{{orden.moneda}} {{formatNumber (multiply orden.monto_total 1.21)}}</strong></th>
+                    <th colspan="3"></th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            {{else}}
+            <div class="text-center py-4">
+              <i class="fas fa-list fa-2x text-muted mb-2"></i>
+              <p class="text-muted">No hay items en esta orden</p>
+            </div>
+            {{/if}}
+          </div>
+        </div>
+
+        <!-- Historial de Recepciones -->
+        {{#if recepciones}}
+        <div class="card mt-4">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-truck me-1"></i>
+              Historial de Recepciones ({{recepciones.length}})
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Items Recibidos</th>
+                    <th>Observaciones</th>
+                    <th>Usuario</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each recepciones}}
+                  <tr>
+                    <td>{{formatDateTime this.fecha_recepcion}}</td>
+                    <td>{{this.total_items}} items</td>
+                    <td>{{this.observaciones}}</td>
+                    <td>{{this.usuario}}</td>
+                  </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        {{/if}}
+
+        <!-- Observaciones -->
+        {{#if orden.observaciones}}
+        <div class="card mt-4">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-comment me-1"></i>
+              Observaciones
+            </h6>
+          </div>
+          <div class="card-body">
+            <p class="mb-0">{{orden.observaciones}}</p>
+          </div>
+        </div>
+        {{/if}}
+
+        <!-- Información de Registro -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-history me-1"></i>
+              Información de Registro
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <small class="text-muted">Creado:</small><br>
+                <strong>{{formatDateTime orden.created}}</strong>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">Última Modificación:</small><br>
+                <strong>{{formatDateTime orden.modified}}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registrar Recepción -->
+<div class="modal fade" id="recepcionModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-truck me-2"></i>
+          Registrar Recepción de Materiales
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formRecepcion">
+          <input type="hidden" name="orden_id" value="{{orden.id}}">
+          <div class="mb-3">
+            <label class="form-label">Fecha de Recepción <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" name="fecha_recepcion" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Items Recibidos</label>
+            <div id="itemsRecepcion">
+              {{#each items}}
+              {{#if (gt (math this.cantidad '-' (default this.cantidad_recibida 0)) 0)}}
+              <div class="row mb-2 align-items-center">
+                <div class="col-md-6">
+                  <strong>{{this.nombre}}</strong>
+                  <small class="text-muted d-block">Pendiente: {{math this.cantidad '-' (default this.cantidad_recibida 0)}} {{this.unidad}}</small>
+                </div>
+                <div class="col-md-3">
+                  <input type="number" class="form-control" 
+                         name="item_{{this.id}}_cantidad" 
+                         max="{{math this.cantidad '-' (default this.cantidad_recibida 0)}}" 
+                         min="0" 
+                         placeholder="Cantidad recibida">
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control" 
+                         name="item_{{this.id}}_observaciones" 
+                         placeholder="Observaciones">
+                </div>
+              </div>
+              {{/if}}
+              {{/each}}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Observaciones Generales</label>
+            <textarea class="form-control" name="observaciones_recepcion" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="guardarRecepcion()">
+          <i class="fas fa-check me-1"></i>
+          Registrar Recepción
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+// Configurar fecha por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="fecha_recepcion"]').value = today;
+});
+
+// Enviar orden
+function enviarOrden(id) {
+    if (confirm('¿Enviar esta orden de compra al proveedor?')) {
+        cambiarEstadoOrden(id, 'enviado');
+    }
+}
+
+// Confirmar orden
+function confirmarOrden(id) {
+    if (confirm('¿Confirmar que el proveedor aceptó esta orden?')) {
+        cambiarEstadoOrden(id, 'confirmado');
+    }
+}
+
+// Cambiar estado de orden
+function cambiarEstadoOrden(id, nuevoEstado, observaciones = '') {
+    fetch(`/api/ordenes-compra/${id}/estado`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            estado: nuevoEstado,
+            observaciones: observaciones
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al cambiar estado: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar estado');
+    });
+}
+
+// Registrar recepción
+function registrarRecepcion(id) {
+    $('#recepcionModal').modal('show');
+}
+
+// Guardar recepción
+function guardarRecepcion() {
+    const formData = new FormData(document.getElementById('formRecepcion'));
+    const ordenId = formData.get('orden_id');
+    
+    fetch(`/api/ordenes-compra/${ordenId}/recepcion`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#recepcionModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error al registrar recepción: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar recepción');
+    });
+}
+
+// Imprimir orden
+function imprimirOrden() {
+    window.print();
+}
+
+// Editar orden
+function editarOrden(id) {
+    window.location.href = `/ordenes-compra/editar/${id}`;
+}
+</script>
+
+<style>
+@media print {
+    .btn-group, .card-header .btn-group {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-header {
+        background: white !important;
+        border: none !important;
+    }
+}
+</style>
+{{/section}}

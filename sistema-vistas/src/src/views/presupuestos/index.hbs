@@ -1,0 +1,290 @@
+{{!-- views/presupuestos/index.hbs --}}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">Presupuestos - Sistema Integral</h2>
+    <button class="btn btn-primary" onclick="location.href='/presupuestos/nuevo'">
+      <i class="fas fa-plus"></i> Nuevo Presupuesto
+    </button>
+  </div>
+
+  {{!-- Estadísticas --}}
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <h6 class="card-title">Total</h6>
+          <h2 class="mb-0">{{stats.total}}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-dark text-white">
+        <div class="card-body">
+          <h6 class="card-title">Borrador</h6>
+          <h2 class="mb-0">{{stats.borrador}}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-warning">
+        <div class="card-body">
+          <h6 class="card-title">Enviado</h6>
+          <h2 class="mb-0">{{stats.enviado}}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <h6 class="card-title">Aprobado</h6>
+          <h2 class="mb-0">{{stats.aprobado}}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-danger text-white">
+        <div class="card-body">
+          <h6 class="card-title">Rechazado</h6>
+          <h2 class="mb-0">{{stats.rechazado}}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-info">
+        <div class="card-body">
+          <h6 class="card-title">Valor Promedio</h6>
+          <h2 class="mb-0">{{formatCurrency stats.valor_promedio}}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Filtros --}}
+  <div class="card mb-4">
+    <div class="card-body">
+      <form id="filterForm" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Estado</label>
+          <select class="form-select" name="estado" onchange="this.form.submit()">
+            <option value="">Todos los estados</option>
+            <option value="1" {{#if filters.estado_1}}selected{{/if}}>Borrador</option>
+            <option value="2" {{#if filters.estado_2}}selected{{/if}}>Enviado</option>
+            <option value="3" {{#if filters.estado_3}}selected{{/if}}>Aprobado</option>
+            <option value="4" {{#if filters.estado_4}}selected{{/if}}>Rechazado</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Cliente</label>
+          <select class="form-select" name="cliente_id" onchange="this.form.submit()">
+            <option value="">Todos los clientes</option>
+            {{#each clientes}}
+            <option value="{{this.id}}" {{#if (eq ../filters.cliente_id this.id)}}selected{{/if}}>
+              {{this.nombre}}
+            </option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha</label>
+          <input type="date" class="form-control" name="fecha" value="{{filters.fecha}}" onchange="this.form.submit()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Buscar</label>
+          <div class="input-group">
+            <input type="text" class="form-control" name="q" value="{{filters.q}}" placeholder="Buscar presupuesto...">
+            <button class="btn btn-outline-secondary" type="submit">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {{!-- Tabla --}}
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center">
+            <span class="me-2">Mostrar</span>
+            <select class="form-select form-select-sm" style="width: auto" onchange="changePageSize(this.value)">
+              <option value="10" {{#if (eq pagination.limit 10)}}selected{{/if}}>10</option>
+              <option value="25" {{#if (eq pagination.limit 25)}}selected{{/if}}>25</option>
+              <option value="50" {{#if (eq pagination.limit 50)}}selected{{/if}}>50</option>
+              <option value="100" {{#if (eq pagination.limit 100)}}selected{{/if}}>100</option>
+            </select>
+            <span class="ms-2">registros</span>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline-secondary btn-sm" onclick="exportarExcel()">
+              <i class="fas fa-file-excel"></i> Exportar
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="imprimirLista()">
+              <i class="fas fa-print"></i> Imprimir
+            </button>
+          </div>
+        </div>
+
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Cliente</th>
+              <th>Descripción</th>
+              <th>Fecha</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+              <th class="text-end">Valor Total</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each presupuestos}}
+            <tr>
+              <td>
+                <a href="/presupuestos/{{this.id}}" class="text-primary">
+                  {{this.numero_presupuesto}}
+                </a>
+              </td>
+              <td>{{this.cliente_nombre}}</td>
+              <td>{{this.descripcion}}</td>
+              <td>{{formatDate this.fecha_emision}}</td>
+              <td>{{formatDate this.fecha_validez}}</td>
+              <td>
+                <span class="badge {{estadoBadgeClass this.estado}}">
+                  {{estadoNombre this.estado}}
+                </span>
+              </td>
+              <td class="text-end">{{formatCurrency this.importe_total}}</td>
+              <td class="text-center">
+                <div class="btn-group">
+                  <a href="/presupuestos/{{this.id}}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  {{#if (eq this.estado 1)}}
+                  <a href="/presupuestos/{{this.id}}/editar" class="btn btn-sm btn-outline-secondary" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  {{/if}}
+                  <button class="btn btn-sm btn-outline-danger" onclick="eliminarPresupuesto('{{this.id}}')" 
+                          title="Eliminar" {{#if (not-eq this.estado 1)}}disabled{{/if}}>
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+
+        {{!-- Paginación --}}
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div>
+            Mostrando {{pagination.start}} a {{pagination.end}} de {{pagination.total}} registros
+          </div>
+          <nav>
+            <ul class="pagination mb-0">
+              <li class="page-item {{#unless pagination.prev}}disabled{{/unless}}">
+                <a class="page-link" href="?page={{pagination.prev}}&limit={{pagination.limit}}">Anterior</a>
+              </li>
+              {{#each pagination.pages}}
+              <li class="page-item {{#if this.active}}active{{/if}}">
+                <a class="page-link" href="?page={{this.number}}&limit={{../pagination.limit}}">{{this.number}}</a>
+              </li>
+              {{/each}}
+              <li class="page-item {{#unless pagination.next}}disabled{{/unless}}">
+                <a class="page-link" href="?page={{pagination.next}}&limit={{pagination.limit}}">Siguiente</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- Modal de Confirmación --}}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar Eliminación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro que desea eliminar este presupuesto?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmDelete">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let presupuestoToDelete = null;
+
+  function eliminarPresupuesto(id) {
+    presupuestoToDelete = id;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+  }
+
+  document.getElementById('confirmDelete').addEventListener('click', async () => {
+    try {
+      const response = await fetch(`/api/presupuestos/${presupuestoToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error al eliminar presupuesto');
+      }
+    } catch (error) {
+      alert('Error de conexión');
+    }
+  });
+
+  function changePageSize(size) {
+    const url = new URL(window.location);
+    url.searchParams.set('limit', size);
+    url.searchParams.set('page', 1);
+    window.location = url;
+  }
+
+  function exportarExcel() {
+    const url = new URL('/api/presupuestos/exportar/excel', window.location.origin);
+    // Agregar filtros actuales a la URL
+    const filterForm = document.getElementById('filterForm');
+    const formData = new FormData(filterForm);
+    for (let [key, value] of formData.entries()) {
+      if (value) url.searchParams.append(key, value);
+    }
+    window.location = url;
+  }
+
+  function imprimirLista() {
+    window.print();
+  }
+</script>
+
+<style>
+  @media print {
+    .btn-group, .pagination, .form-select, .btn {
+      display: none !important;
+    }
+    .card {
+      border: none !important;
+    }
+    .badge {
+      border: 1px solid #000 !important;
+    }
+  }
+</style>

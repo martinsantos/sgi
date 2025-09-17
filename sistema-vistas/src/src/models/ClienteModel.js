@@ -1,0 +1,385 @@
+const { pool } = require('../config/database');
+const promisePool = pool.promise();
+
+class ClienteModel {
+  // ... (other methods remain the same)
+
+  /**
+   * Obtiene todos los proyectos de un cliente a través de sus facturas
+   * @param {string} clienteId - ID del cliente (persona_terceros)
+   */
+  static async getProyectosCliente(clienteId) {
+    try {
+      const [proyectos] = await promisePool.query(`
+        SELECT DISTINCT p.*, 
+               (SELECT COUNT(*) FROM factura_ventas fv2 WHERE fv2.proyecto_id = p.id) as total_facturas,
+               (SELECT COUNT(*) FROM certificacions c WHERE c.factura_venta_id IN 
+                  (SELECT id FROM factura_ventas fv3 WHERE fv3.proyecto_id = p.id)
+               ) as total_certificados
+        FROM proyectos p 
+        INNER JOIN factura_ventas fv ON p.id = fv.proyecto_id
+        WHERE fv.persona_tercero_id = ? AND p.activo = 1
+        ORDER BY p.fecha_inicio DESC
+      `, [clienteId]);
+      return proyectos;
+    } catch (error) {
+      console.error('Error en getProyectosCliente:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene todas las facturas de un cliente
+   * @param {string} clienteId - ID del cliente (persona_terceros)
+   */
+  static async getFacturasCliente(clienteId) {
+    try {
+      const [facturas] = await promisePool.query(`
+        SELECT 
+          fv.id,
+          fv.numero_factura,
+          fv.fecha_emision,
+          fv.fecha_vto_pago,
+          fv.total,
+          fv.estado,
+          fv.observaciones,
+          p.descripcion as proyecto_descripcion,
+          CASE 
+            WHEN fv.estado = 1 THEN 'Pendiente'
+            WHEN fv.estado = 2 THEN 'Parcialmente Pagada'
+            WHEN fv.estado = 3 THEN 'Pagada'
+            WHEN fv.estado = 4 THEN 'Anulada'
+            ELSE 'Desconocido'
+          END as estado_nombre
+        FROM factura_ventas fv
+        LEFT JOIN proyectos p ON fv.proyecto_id = p.id
+        WHERE fv.persona_tercero_id = ? AND fv.activo = 1
+        ORDER BY fv.fecha_emision DESC
+      `, [clienteId]);
+      return facturas;
+    } catch (error) {
+      console.error('Error en getFacturasCliente:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene todos los certificados de un cliente (a través de facturas)
+   */
+  static async getCertificadosCliente(clienteId) {
+    try {
+      const [certificados] = await promisePool.query(`
+        SELECT 
+          c.id,
+          c.numero,
+          c.fecha,
+          c.alcance,
+          c.importe as monto,
+          c.estado,
+          p.descripcion as proyecto_descripcion,
+          fv.numero_factura,
+          CASE 
+            WHEN c.estado = 0 THEN 'Pendiente'
+            WHEN c.estado = 1 THEN 'Aprobado'
+            WHEN c.estado = 2 THEN 'Rechazado'
+            WHEN c.estado = 3 THEN 'Facturado'
+            ELSE 'Desconocido'
+          END as estado_nombre
+        FROM certificacions c
+        INNER JOIN factura_ventas fv ON c.factura_venta_id = fv.id
+        LEFT JOIN proyectos p ON fv.proyecto_id = p.id
+        WHERE fv.persona_tercero_id = ? AND c.activo = 1
+        ORDER BY c.fecha DESC
+      `, [clienteId]);
+      return certificados;
+    } catch (error) {
+      console.error('Error en getCertificadosCliente:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene resumen financiero del cliente
+   */
+  static async getResumenFinancieroCliente(clienteId) {
+    try {
+      // Obtener resumen de facturación (que es la relación directa que tenemos)
+      const [facturacionResumen] = await promisePool.query(`
+        SELECT 
+          COUNT(*) as total_facturas,
+          SUM(CASE WHEN estado = 3 THEN 1 ELSE 0 END) as facturas_pagadas,
+          SUM(CASE WHEN estado != 3 AND estado != 5 THEN 1 ELSE 0 END) as facturas_pendientes,
+          COALESCE(SUM(total), 0) as monto_total,
+          COALESCE(SUM(CASE WHEN estado = 3 THEN total ELSE 0 END), 0) as monto_pagado,
+          COALESCE(SUM(CASE WHEN estado != 3 AND estado != 5 THEN total ELSE 0 END), 0) as monto_pendiente
+        FROM factura_ventas
+        WHERE persona_tercero_id = ? AND activo = 1
+      `, [clienteId]);
+
+      // Obtener resumen de proyectos (a través de facturas)
+      const [proyectosResumen] = await promisePool.query(`
+        SELECT 
+          COUNT(DISTINCT fv.proyecto_id) as total_proyectos,
+          COUNT(DISTINCT CASE WHEN p.estado = 1 THEN p.id END) as proyectos_activos,
+          COUNT(DISTINCT CASE WHEN p.estado = 0 THEN p.id END) as proyectos_finalizados,
+          COALESCE(SUM(p.precio_venta), 0) as valor_total_proyectos
+        FROM factura_ventas fv
+        LEFT JOIN proyectos p ON fv.proyecto_id = p.id
+        WHERE fv.persona_tercero_id = ? AND fv.activo = 1
+      `, [clienteId]);
+
+      // Obtener resumen de certificados (a través de facturas)
+      const [certificadosResumen] = await promisePool.query(`
+        SELECT 
+          COUNT(c.id) as total_certificados,
+          COUNT(CASE WHEN c.estado = 'Aprobado' THEN 1 END) as certificados_aprobados,
+          COUNT(CASE WHEN c.estado = 'Pendiente' THEN 1 END) as certificados_pendientes,
+          COALESCE(SUM(c.monto), 0) as monto_total_certificados
+        FROM certificacions c
+        INNER JOIN factura_ventas fv ON c.factura_venta_id = fv.id
+        WHERE fv.persona_tercero_id = ? AND c.activo = 1
+      `, [clienteId]);
+
+      return {
+        proyectos: proyectosResumen[0] || { total_proyectos: 0, proyectos_activos: 0, proyectos_finalizados: 0, valor_total_proyectos: 0 },
+        facturacion: facturacionResumen[0] || { total_facturas: 0, facturas_pagadas: 0, facturas_pendientes: 0, monto_total: 0, monto_pagado: 0, monto_pendiente: 0 },
+        certificados: certificadosResumen[0] || { total_certificados: 0, certificados_aprobados: 0, certificados_pendientes: 0, monto_total_certificados: 0 }
+      };
+    } catch (error) {
+      console.error('Error en getResumenFinancieroCliente:', error);
+      return {
+        proyectos: { total_proyectos: 0, proyectos_activos: 0, proyectos_finalizados: 0, valor_total_proyectos: 0 },
+        facturacion: { total_facturas: 0, facturas_pagadas: 0, facturas_pendientes: 0, monto_total: 0, monto_pagado: 0, monto_pendiente: 0 },
+        certificados: { total_certificados: 0, certificados_aprobados: 0, certificados_pendientes: 0, monto_total_certificados: 0 }
+      };
+    }
+  }
+
+  /**
+   * Obtiene un cliente por ID con información completa
+   */
+  static async getClienteById(id) {
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substr(2, 9);
+    
+    console.log(`[ClienteModel][${requestId}] === INICIO getClienteById ===`);
+    console.log(`[ClienteModel][${requestId}] Buscando cliente con ID: ${id}`);
+    
+    try {
+      // Verificar que el ID tenga un formato válido
+      if (!id || typeof id !== 'string' || id.length < 10) {
+        const errorMsg = `[ClienteModel][${requestId}] ID inválido: ${id}`;
+        console.error(errorMsg);
+        return null;
+      }
+      
+      console.log(`[ClienteModel][${requestId}] Ejecutando consulta SQL para ID: ${id}`);
+      const queryStartTime = Date.now();
+      
+      try {
+        const [rows] = await promisePool.query(`
+          SELECT 
+            pt.*,
+            CASE 
+              WHEN pt.nombre IS NOT NULL AND pt.nombre != '' 
+                THEN CONCAT_WS(' ', pt.nombre, pt.apellido) 
+              ELSE pt.apellido 
+            END as nombre_completo,
+            CASE 
+              WHEN pt.nombre IS NULL OR pt.nombre = '' 
+                THEN pt.apellido 
+              ELSE pt.nombre 
+            END as display_nombre,
+            CASE 
+              WHEN pt.nombre IS NULL OR pt.nombre = '' 
+                THEN '' 
+              ELSE pt.apellido 
+            END as display_apellido,
+            CASE 
+              WHEN pt.tipo = '1' OR pt.tipo = 1 THEN 'Cliente'
+              WHEN pt.tipo = '2' OR pt.tipo = 2 THEN 'Proveedor'
+              WHEN pt.tipo = '3' OR pt.tipo = 3 THEN 'Banco'
+              WHEN pt.tipo = '4' OR pt.tipo = 4 THEN 'Otro'
+              ELSE 'Sin tipo'
+            END as tipo_descripcion
+          FROM persona_terceros pt
+          WHERE pt.id = ? AND (pt.tipo = '1' OR pt.tipo = 1 OR pt.tipo IS NULL)
+        `, [id]);
+        
+        const queryTime = Date.now() - queryStartTime;
+        console.log(`[ClienteModel][${requestId}] Consulta SQL completada en ${queryTime}ms`);
+        
+        console.log(`[ClienteModel][${requestId}] Resultado de la consulta para ID ${id}:`, {
+          rowsFound: rows ? rows.length : 0,
+          firstRow: rows && rows[0] ? {
+            id: rows[0].id,
+            nombre: rows[0].nombre,
+            apellido: rows[0].apellido,
+            nombre_completo: rows[0].nombre_completo,
+            display_nombre: rows[0].display_nombre,
+            display_apellido: rows[0].display_apellido
+          } : 'none',
+          queryTime: `${queryTime}ms`
+        });
+        
+        if (!rows || rows.length === 0) {
+          console.log(`[ClienteModel][${requestId}] No se encontró el cliente con ID: ${id}`);
+          return null;
+        }
+        
+        const cliente = rows[0];
+        
+        // Obtener datos relacionados en paralelo para mejor rendimiento
+        console.log(`[ClienteModel][${requestId}] Obteniendo datos relacionados para el cliente ID: ${id}`);
+        const relatedDataStartTime = Date.now();
+        
+        try {
+          const [
+            facturas,
+            proyectos,
+            presupuestos,
+            certificados,
+            resumenFinanciero
+          ] = await Promise.all([
+            this.getFacturasCliente(id),
+            this.getProyectosCliente(id),
+            this.getPresupuestosCliente(id),
+            this.getCertificadosCliente(id),
+            this.getResumenFinancieroCliente(id)
+          ]);
+          
+          const relatedDataTime = Date.now() - relatedDataStartTime;
+          console.log(`[ClienteModel][${requestId}] Datos relacionados obtenidos en ${relatedDataTime}ms`, {
+            facturas: facturas ? facturas.length : 0,
+            proyectos: proyectos ? proyectos.length : 0,
+            presupuestos: presupuestos ? presupuestos.length : 0,
+            certificados: certificados ? certificados.length : 0,
+            hasResumen: !!resumenFinanciero
+          });
+          
+          // Combinar todos los datos en un solo objeto
+          const result = {
+            ...cliente,
+            facturas: facturas || [],
+            proyectos: proyectos || [],
+            presupuestos: presupuestos || [],
+            certificados: certificados || [],
+            resumen_financiero: resumenFinanciero || {}
+          };
+          
+          const totalTime = Date.now() - startTime;
+          console.log(`[ClienteModel][${requestId}] Cliente obtenido exitosamente en ${totalTime}ms`);
+          
+          return result;
+          
+        } catch (relatedError) {
+          console.error(`[ClienteModel][${requestId}] Error al obtener datos relacionados:`, relatedError);
+          // Si hay un error al obtener los datos relacionados, devolver solo los datos básicos
+          return {
+            ...cliente,
+            facturas: [],
+            proyectos: [],
+            presupuestos: [],
+            certificados: [],
+            resumen_financiero: {},
+            _error: 'Error al cargar datos relacionados'
+          };
+        }
+        
+      } catch (queryError) {
+        const errorTime = Date.now() - startTime;
+        console.error(`[ClienteModel][${requestId}] Error en la consulta SQL:`, {
+          message: queryError.message,
+          code: queryError.code,
+          sqlMessage: queryError.sqlMessage,
+          queryTime: `${errorTime}ms`,
+          stack: queryError.stack
+        });
+        throw queryError; // Relanzar el error para manejarlo en el controlador
+      }
+      
+    } catch (error) {
+      console.error('[ClienteModel] Error al buscar cliente por ID:', {
+        message: error.message,
+        code: error.code,
+        sqlMessage: error.sqlMessage,
+        stack: error.stack
+      });
+      throw error; // Relanzar el error para manejarlo en el controlador
+    }
+  }
+
+  /**
+   * Obtiene todas las facturas de un cliente
+   */
+  static async getFacturasCliente(clienteId) {
+    console.log('📄 Obteniendo facturas para cliente ID:', clienteId);
+    const [rows] = await promisePool.query(`
+      SELECT 
+        fv.id,
+        fv.numero_factura,
+        fv.fecha_emision,
+        fv.fecha_vto_pago,
+        fv.total,
+        fv.estado,
+        fv.observaciones,
+        CASE fv.estado
+          WHEN 1 THEN 'Pendiente'
+          WHEN 2 THEN 'Pagada Parcial'
+          WHEN 3 THEN 'Pagada'
+          WHEN 4 THEN 'En Proceso'
+          WHEN 5 THEN 'Anulada'
+          ELSE 'Desconocido'
+        END as estado_nombre
+      FROM factura_ventas fv
+      WHERE fv.persona_tercero_id = ? AND fv.activo = 1
+      ORDER BY fv.fecha_emision DESC
+    `, [clienteId]);
+    
+    console.log(`✅ Facturas encontradas: ${rows.length}`);
+    if (rows.length > 0) {
+      console.log('📊 Primera factura:', rows[0]);
+    }
+    
+    return rows;
+  }
+
+  /**
+   * Obtiene todos los presupuestos de un cliente
+   */
+  static async getPresupuestosCliente(clienteId) {
+    console.log('📄 Obteniendo presupuestos para cliente ID:', clienteId);
+    const [rows] = await promisePool.query(`
+      SELECT 
+        p.id,
+        p.numero_presupuesto,
+        p.fecha_emision,
+        p.fecha_vencimiento,
+        p.total,
+        p.estado,
+        p.observaciones,
+        CASE p.estado
+          WHEN 1 THEN 'Pendiente'
+          WHEN 2 THEN 'Aprobado'
+          WHEN 3 THEN 'Rechazado'
+          WHEN 4 THEN 'Vencido'
+          WHEN 5 THEN 'Convertido'
+          ELSE 'Desconocido'
+        END as estado_nombre,
+        pv.descripcion as proyecto_descripcion
+      FROM presupuestos p
+      LEFT JOIN proyectos pv ON p.proyecto_id = pv.id
+      WHERE p.persona_tercero_id = ? AND p.activo = 1
+      ORDER BY p.fecha_emision DESC
+    `, [clienteId]);
+    
+    console.log(`✅ Presupuestos encontrados: ${rows.length}`);
+    if (rows.length > 0) {
+      console.log('📊 Primer presupuesto:', rows[0]);
+    }
+    
+    return rows;
+  }
+}
+
+module.exports = ClienteModel;

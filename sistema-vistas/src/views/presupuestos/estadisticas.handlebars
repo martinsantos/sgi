@@ -1,0 +1,507 @@
+{{!-- presupuestos/estadisticas.handlebars - Vista de estadísticas de presupuestos --}}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <h2 class="mb-0 me-3">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Estadísticas de Presupuestos
+                    </h2>
+                </div>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/presupuestos">Presupuestos</a></li>
+                        <li class="breadcrumb-item active">Estadísticas</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">{{estadisticas.total_presupuestos}}</h3>
+                            <p class="mb-0">Total Presupuestos</p>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-file-invoice-dollar fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">{{estadisticas.total_aprobados}}</h3>
+                            <p class="mb-0">Presupuestos Aprobados</p>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                    <small class="opacity-75">
+                        {{#if estadisticas.porcentaje_aprobados}}
+                            ({{estadisticas.porcentaje_aprobados}}% del total)
+                        {{/if}}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">{{estadisticas.importe_total_todos_formatted}}</h3>
+                            <p class="mb-0">Valor Total Presupuestado</p>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">{{estadisticas.importe_promedio_formatted}}</h3>
+                            <p class="mb-0">Valor Promedio</p>
+                        </div>
+                        <div class="text-end">
+                            <i class="fas fa-calculator fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas por Estado -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Distribución por Estado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {{#each estadisticasPorEstado}}
+                        <div class="col-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge 
+                                        {{#eq this.estado '0'}}bg-secondary{{/eq}}
+                                        {{#eq this.estado '1'}}bg-primary{{/eq}}
+                                        {{#eq this.estado '2'}}bg-success{{/eq}}
+                                        {{#eq this.estado '3'}}bg-danger{{/eq}}
+                                        {{#eq this.estado '4'}}bg-warning text-dark{{/eq}} me-2">
+                                        {{#eq this.estado '0'}}Borrador{{/eq}}
+                                        {{#eq this.estado '1'}}Enviado{{/eq}}
+                                        {{#eq this.estado '2'}}Aprobado{{/eq}}
+                                        {{#eq this.estado '3'}}Rechazado{{/eq}}
+                                        {{#eq this.estado '4'}}Vencido{{/eq}}
+                                    </span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold">{{this.cantidad}}</div>
+                                    <small class="text-muted">{{this.importe_total_formatted}}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+
+                    <!-- Gráfico de dona -->
+                    <div class="mt-3">
+                        <canvas id="chartEstados" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Tendencia Mensual
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartMensual" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Adicionales -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        Top Clientes por Valor
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {{#if estadisticas.top_clientes}}
+                        {{#each estadisticas.top_clientes}}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <div class="fw-bold">{{this.cliente_nombre}}</div>
+                                <small class="text-muted">{{this.cantidad_presupuestos}} presupuestos</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold text-success">{{formatCurrency this.importe_total}}</span>
+                            </div>
+                        </div>
+                        {{#unless @last}}<hr class="my-2">{{/unless}}
+                        {{/each}}
+                    {{else}}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                            <p class="mb-0">No hay datos disponibles</p>
+                        </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Presupuestos por Vencimiento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Próximos a vencer (7 días):</span>
+                            <span class="badge bg-warning text-dark">{{estadisticas.proximos_vencer}}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Vencidos:</span>
+                            <span class="badge bg-danger">{{estadisticas.vencidos}}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Vigentes:</span>
+                            <span class="badge bg-success">{{estadisticas.vigentes}}</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">
+                            Tasa de vencimiento: 
+                            <strong>
+                                {{#if estadisticas.tasa_vencimiento}}
+                                    {{estadisticas.tasa_vencimiento}}%
+                                {{else}}
+                                    0%
+                                {{/if}}
+                            </strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-percentage me-2"></i>
+                        Tasas de Conversión
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tasa de Aprobación</label>
+                        <div class="progress mb-1" style="height: 20px;">
+                            <div class="progress-bar bg-success" style="width: {{estadisticas.tasa_aprobacion}}%">
+                                {{estadisticas.tasa_aprobacion}}%
+                            </div>
+                        </div>
+                        <small class="text-muted">{{estadisticas.total_aprobados}} de {{estadisticas.total_enviados}} enviados</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tasa de Rechazo</label>
+                        <div class="progress mb-1" style="height: 20px;">
+                            <div class="progress-bar bg-danger" style="width: {{estadisticas.tasa_rechazo}}%">
+                                {{estadisticas.tasa_rechazo}}%
+                            </div>
+                        </div>
+                        <small class="text-muted">{{estadisticas.total_rechazados}} de {{estadisticas.total_enviados}} enviados</small>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Efectividad Global</label>
+                        <div class="progress mb-1" style="height: 20px;">
+                            <div class="progress-bar bg-primary" style="width: {{estadisticas.efectividad_global}}%">
+                                {{estadisticas.efectividad_global}}%
+                            </div>
+                        </div>
+                        <small class="text-muted">Basado en aprobados vs. total generados</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis Temporal Detallado -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-area me-2"></i>
+                        Análisis Temporal Detallado
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="periodoChart" id="periodo6m" autocomplete="off" checked>
+                        <label class="btn btn-outline-primary btn-sm" for="periodo6m">6 Meses</label>
+
+                        <input type="radio" class="btn-check" name="periodoChart" id="periodo1y" autocomplete="off">
+                        <label class="btn btn-outline-primary btn-sm" for="periodo1y">1 Año</label>
+
+                        <input type="radio" class="btn-check" name="periodoChart" id="periodoTodo" autocomplete="off">
+                        <label class="btn btn-outline-primary btn-sm" for="periodoTodo">Todo</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTemporal" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos para los gráficos
+    const estadisticasPorEstado = {{{json estadisticasPorEstado}}};
+    const estadisticasPorMes = {{{json estadisticasPorMes}}};
+    
+    // Configuración de colores
+    const coloresEstados = {
+        '0': '#6c757d', // Borrador - secondary
+        '1': '#0d6efd', // Enviado - primary
+        '2': '#198754', // Aprobado - success
+        '3': '#dc3545', // Rechazado - danger
+        '4': '#ffc107'  // Vencido - warning
+    };
+    
+    // Gráfico de estados (dona)
+    const ctxEstados = document.getElementById('chartEstados').getContext('2d');
+    new Chart(ctxEstados, {
+        type: 'doughnut',
+        data: {
+            labels: estadisticasPorEstado.map(item => {
+                const estados = {'0': 'Borrador', '1': 'Enviado', '2': 'Aprobado', '3': 'Rechazado', '4': 'Vencido'};
+                return estados[item.estado] || 'Desconocido';
+            }),
+            datasets: [{
+                data: estadisticasPorEstado.map(item => item.cantidad),
+                backgroundColor: estadisticasPorEstado.map(item => coloresEstados[item.estado]),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const item = estadisticasPorEstado[context.dataIndex];
+                            return 'Importe: ' + item.importe_total_formatted;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico mensual (línea)
+    const ctxMensual = document.getElementById('chartMensual').getContext('2d');
+    new Chart(ctxMensual, {
+        type: 'line',
+        data: {
+            labels: estadisticasPorMes.map(item => item.mes_nombre),
+            datasets: [{
+                label: 'Cantidad de Presupuestos',
+                data: estadisticasPorMes.map(item => item.cantidad),
+                borderColor: '#0d6efd',
+                backgroundColor: '#0d6efd20',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Gráfico temporal detallado (área)
+    const ctxTemporal = document.getElementById('chartTemporal').getContext('2d');
+    const chartTemporal = new Chart(ctxTemporal, {
+        type: 'line',
+        data: {
+            labels: estadisticasPorMes.map(item => item.mes_nombre),
+            datasets: [
+                {
+                    label: 'Presupuestos Creados',
+                    data: estadisticasPorMes.map(item => item.cantidad),
+                    borderColor: '#0d6efd',
+                    backgroundColor: '#0d6efd20',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Aprobados',
+                    data: estadisticasPorMes.map(item => item.aprobados || 0),
+                    borderColor: '#198754',
+                    backgroundColor: '#19875420',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Rechazados',
+                    data: estadisticasPorMes.map(item => item.rechazados || 0),
+                    borderColor: '#dc3545',
+                    backgroundColor: '#dc354520',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+    
+    // Controles de período
+    document.querySelectorAll('input[name="periodoChart"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Aquí se podría hacer una llamada AJAX para obtener datos del período seleccionado
+            // Por ahora solo mostramos un mensaje
+            console.log('Período seleccionado:', this.id);
+            
+            // Ejemplo de cómo actualizar el gráfico
+            // chartTemporal.data.datasets[0].data = nuevosdatos;
+            // chartTemporal.update();
+        });
+    });
+});
+
+// Función helper para formatear moneda (si no está disponible globalmente)
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 2
+    }).format(amount);
+}
+</script>
+
+<style>
+.progress {
+    border-radius: 0.5rem;
+}
+
+.progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.card-body canvas {
+    max-height: 300px;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.btn-check:checked + .btn-outline-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+</style>

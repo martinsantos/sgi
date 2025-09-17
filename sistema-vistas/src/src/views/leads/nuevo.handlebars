@@ -1,0 +1,134 @@
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h4 class="page-title">{{title}}</h4>
+                <div class="page-options">
+                    <a href="/leads" class="btn btn-outline-secondary">
+                        <i class="fe fe-arrow-left"></i> Volver al listado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Información del Lead</h3>
+                </div>
+                <div class="card-body">
+                    <form id="leadForm" method="POST" action="/leads/crear">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="nombre_empresa">Nombre de Empresa *</label>
+                                    <input type="text" name="nombre_empresa" id="nombre_empresa" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="nombre_contacto">Nombre de Contacto *</label>
+                                    <input type="text" name="nombre_contacto" id="nombre_contacto" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="telefono">Teléfono</label>
+                                    <input type="tel" name="telefono" id="telefono" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" name="email" id="email" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fuente">Fuente</label>
+                                    <select name="fuente" id="fuente" class="form-control">
+                                        <option value="Web" selected>Web</option>
+                                        <option value="Referido">Referido</option>
+                                        <option value="Redes Sociales">Redes Sociales</option>
+                                        <option value="Email Marketing">Email Marketing</option>
+                                        <option value="Llamada">Llamada</option>
+                                        <option value="Evento">Evento</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="estado">Estado</label>
+                                    <select name="estado" id="estado" class="form-control">
+                                        <option value="Nuevo" selected>Nuevo</option>
+                                        <option value="Contactado">Contactado</option>
+                                        <option value="Interesado">Interesado</option>
+                                        <option value="Propuesta Enviada">Propuesta Enviada</option>
+                                        <option value="Negociando">Negociando</option>
+                                        <option value="Cerrado - Ganado">Cerrado - Ganado</option>
+                                        <option value="Cerrado - Perdido">Cerrado - Perdido</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="notas">Notas</label>
+                                    <textarea name="notas" id="notas" class="form-control" rows="4" placeholder="Información adicional sobre el lead..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer text-right">
+                            <button type="button" class="btn btn-secondary" onclick="window.location.href='/leads'">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fe fe-save"></i> Guardar Lead
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form submission
+    $('#leadForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var formData = $(this).serialize();
+        
+        $.ajax({
+            url: '/leads/crear',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    alert('Lead creado exitosamente');
+                    window.location.href = '/leads';
+                } else {
+                    alert('Error: ' + (response.message || 'Error desconocido'));
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error al crear lead: ' + error);
+            }
+        });
+    });
+});
+</script>

@@ -1,0 +1,591 @@
+{{!-- Cierre de Proyectos --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-flag-checkered me-2"></i>
+            Cierre Formal de Proyectos
+          </h4>
+          <div class="btn-group">
+            <button class="btn btn-outline-success" onclick="exportarReporte()">
+              <i class="fas fa-file-excel me-1"></i>
+              Exportar Reporte
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Filtros -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <select class="form-select" id="filtroEstado">
+              <option value="">Todos los estados</option>
+              <option value="activo">Activo</option>
+              <option value="en_cierre">En Cierre</option>
+              <option value="cerrado">Cerrado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroCliente">
+              <option value="">Todos los clientes</option>
+              {{#each clientes}}
+              <option value="{{this.id}}">{{this.nombre}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <input type="date" class="form-control" id="filtroFechaCierre" placeholder="Fecha de cierre">
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Buscar proyecto..." id="filtroTexto">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card bg-primary text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.total}}</h5>
+                <p class="card-text">Total Proyectos</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.en_cierre}}</h5>
+                <p class="card-text">En Proceso de Cierre</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.cerrados}}</h5>
+                <p class="card-text">Cerrados</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-info">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.rentabilidad_promedio}}%</h5>
+                <p class="card-text">Rentabilidad Promedio</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de Proyectos -->
+        <div class="table-responsive">
+          <table class="table table-hover" id="tablaProyectos">
+            <thead class="table-light">
+              <tr>
+                <th width="20%">Proyecto</th>
+                <th width="15%">Cliente</th>
+                <th width="10%">Estado</th>
+                <th width="10%">Progreso</th>
+                <th width="12%">Valor Facturado</th>
+                <th width="10%">Fecha Inicio</th>
+                <th width="10%">Fecha Cierre</th>
+                <th width="13%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each proyectos}}
+              <tr data-proyecto-id="{{this.id}}">
+                <td>
+                  <strong>{{this.nombre}}</strong>
+                  <br><small class="text-muted">{{this.descripcion}}</small>
+                </td>
+                <td>
+                  <strong>{{this.cliente_nombre}}</strong>
+                  {{#if this.cliente_contacto}}
+                  <br><small class="text-muted">{{this.cliente_contacto}}</small>
+                  {{/if}}
+                </td>
+                <td>
+                  <span class="badge 
+                    {{#eq this.estado_cierre 'activo'}}bg-primary{{/eq}}
+                    {{#eq this.estado_cierre 'en_cierre'}}bg-warning{{/eq}}
+                    {{#eq this.estado_cierre 'cerrado'}}bg-success{{/eq}}
+                    {{#eq this.estado_cierre 'cancelado'}}bg-danger{{/eq}}
+                  ">
+                    {{capitalize this.estado_cierre}}
+                  </span>
+                </td>
+                <td>
+                  <div class="progress" style="height: 6px;">
+                    <div class="progress-bar 
+                      {{#gte this.progreso_total 100}}bg-success{{else}}bg-primary{{/gte}}" 
+                         role="progressbar" 
+                         style="width: {{this.progreso_total}}%" 
+                         aria-valuenow="{{this.progreso_total}}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                  </div>
+                  <small class="text-muted">{{this.progreso_total}}% completado</small>
+                </td>
+                <td class="text-end">
+                  <strong>ARS {{formatNumber this.valor_facturado}}</strong>
+                  {{#if this.valor_presupuestado}}
+                  <br><small class="text-muted">de ARS {{formatNumber this.valor_presupuestado}}</small>
+                  {{/if}}
+                </td>
+                <td>{{formatDate this.fecha_inicio}}</td>
+                <td>
+                  {{#if this.fecha_cierre}}
+                    {{formatDate this.fecha_cierre}}
+                  {{else}}
+                    <span class="text-muted">Pendiente</span>
+                  {{/if}}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" onclick="verDetalleProyecto('{{this.id}}')" title="Ver Detalle">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    {{#eq this.estado_cierre 'activo'}}
+                    <button class="btn btn-outline-warning" onclick="iniciarCierre('{{this.id}}')" title="Iniciar Cierre">
+                      <i class="fas fa-flag"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado_cierre 'en_cierre'}}
+                    <button class="btn btn-outline-success" onclick="completarCierre('{{this.id}}')" title="Completar Cierre">
+                      <i class="fas fa-check-circle"></i>
+                    </button>
+                    {{/eq}}
+                    <div class="btn-group">
+                      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="generarReporteProyecto('{{this.id}}')">
+                          <i class="fas fa-chart-bar me-1"></i> Reporte Completo
+                        </a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportarDatosProyecto('{{this.id}}')">
+                          <i class="fas fa-file-excel me-1"></i> Exportar Datos
+                        </a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="certificadoFinal('{{this.id}}')">
+                          <i class="fas fa-certificate me-1"></i> Certificado Final
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {{#eq this.estado_cierre 'activo'}}
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="cancelarProyecto('{{this.id}}')">
+                          <i class="fas fa-times me-1"></i> Cancelar Proyecto
+                        </a></li>
+                        {{/eq}}
+                      </ul>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        {{#unless proyectos}}
+        <div class="text-center py-5">
+          <i class="fas fa-flag-checkered fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay proyectos para mostrar</h5>
+          <p class="text-muted">Los proyectos aparecerán aquí una vez que estén listos para cierre</p>
+        </div>
+        {{/unless}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalle del Proyecto -->
+<div class="modal fade" id="detalleProyectoModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-project-diagram me-2"></i>
+          Detalle del Proyecto
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="detalleProyectoContent">
+        <!-- Contenido cargado dinámicamente -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Iniciar Cierre -->
+<div class="modal fade" id="iniciarCierreModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-flag me-2"></i>
+          Iniciar Proceso de Cierre
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formIniciarCierre">
+          <input type="hidden" name="proyecto_id" id="cierreProyectoId">
+          
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-1"></i>
+            Al iniciar el cierre se verificarán automáticamente todos los requisitos del proyecto.
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Fecha Estimada de Cierre <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" name="fecha_cierre_estimada" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Motivo del Cierre <span class="text-danger">*</span></label>
+            <select class="form-select" name="motivo_cierre" required>
+              <option value="">Seleccionar motivo...</option>
+              <option value="completado">Proyecto Completado Exitosamente</option>
+              <option value="finalizado_cliente">Finalizado por Cliente</option>
+              <option value="alcance_cumplido">Alcance Original Cumplido</option>
+              <option value="cambio_prioridades">Cambio de Prioridades</option>
+              <option value="otro">Otro Motivo</option>
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Observaciones del Cierre</label>
+            <textarea class="form-control" name="observaciones_cierre" rows="4" 
+                      placeholder="Describa los detalles del cierre, lecciones aprendidas, recomendaciones, etc."></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="verificar_pendientes" id="verificarPendientes" checked>
+              <label class="form-check-label" for="verificarPendientes">
+                Verificar que no existen tareas pendientes
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="verificar_materiales" id="verificarMateriales" checked>
+              <label class="form-check-label" for="verificarMateriales">
+                Verificar que todos los materiales han sido despachados
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="verificar_facturacion" id="verificarFacturacion" checked>
+              <label class="form-check-label" for="verificarFacturacion">
+                Verificar que la facturación está completa
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-warning" onclick="confirmarInicioCierre()">
+          <i class="fas fa-flag me-1"></i>
+          Iniciar Cierre
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Completar Cierre -->
+<div class="modal fade" id="completarCierreModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-check-circle me-2"></i>
+          Completar Cierre de Proyecto
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formCompletarCierre">
+          <input type="hidden" name="proyecto_id" id="completarProyectoId">
+          
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle me-1"></i>
+            Esta acción marcará el proyecto como formalmente cerrado y generará el reporte final.
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha Real de Cierre <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="fecha_cierre_real" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Calificación del Cliente (1-5)</label>
+                <select class="form-select" name="calificacion_cliente">
+                  <option value="">Sin calificación</option>
+                  <option value="5">5 - Excelente</option>
+                  <option value="4">4 - Muy Bueno</option>
+                  <option value="3">3 - Bueno</option>
+                  <option value="2">2 - Regular</option>
+                  <option value="1">1 - Deficiente</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Valor Final Facturado</label>
+                <input type="number" class="form-control" name="valor_final_facturado" step="0.01">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Rentabilidad Final (%)</label>
+                <input type="number" class="form-control" name="rentabilidad_final" step="0.01">
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Resumen Ejecutivo del Proyecto</label>
+            <textarea class="form-control" name="resumen_ejecutivo" rows="4" 
+                      placeholder="Resumen de logros, resultados obtenidos, métricas principales, etc."></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Lecciones Aprendidas</label>
+            <textarea class="form-control" name="lecciones_aprendidas" rows="3" 
+                      placeholder="Aspectos a mejorar, buenas prácticas identificadas, recomendaciones para futuros proyectos..."></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Comentarios del Cliente</label>
+            <textarea class="form-control" name="comentarios_cliente" rows="3" 
+                      placeholder="Feedback recibido del cliente sobre el proyecto..."></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="generar_reporte_final" id="generarReporteFinal" checked>
+              <label class="form-check-label" for="generarReporteFinal">
+                Generar reporte final automáticamente
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="notificar_equipo" id="notificarEquipo" checked>
+              <label class="form-check-label" for="notificarEquipo">
+                Notificar al equipo del proyecto
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="archivar_documentos" id="archivarDocumentos">
+              <label class="form-check-label" for="archivarDocumentos">
+                Archivar documentos del proyecto
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="confirmarCompletarCierre()">
+          <i class="fas fa-check-circle me-1"></i>
+          Completar Cierre
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+$(document).ready(function() {
+    // Inicializar DataTable
+    $('#tablaProyectos').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
+        order: [[6, 'desc']],
+        pageLength: 25
+    });
+
+    // Configurar filtros
+    $('#filtroEstado, #filtroCliente, #filtroFechaCierre').on('change', filtrarProyectos);
+    $('#filtroTexto').on('keyup', filtrarProyectos);
+
+    // Configurar fechas por defecto
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="fecha_cierre_estimada"]').value = today;
+    document.querySelector('input[name="fecha_cierre_real"]').value = today;
+});
+
+// Filtrar proyectos
+function filtrarProyectos() {
+    const estado = $('#filtroEstado').val();
+    const cliente = $('#filtroCliente').val();
+    const fecha = $('#filtroFechaCierre').val();
+    const texto = $('#filtroTexto').val();
+
+    let url = '/proyectos/cierre?';
+    if (estado) url += `estado=${estado}&`;
+    if (cliente) url += `cliente=${cliente}&`;
+    if (fecha) url += `fecha=${fecha}&`;
+    if (texto) url += `search=${texto}&`;
+
+    window.location.href = url.slice(0, -1);
+}
+
+// Ver detalle del proyecto
+function verDetalleProyecto(proyectoId) {
+    fetch(`/api/proyectos/${proyectoId}/detalle-cierre`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('detalleProyectoContent').innerHTML = data.html;
+                $('#detalleProyectoModal').modal('show');
+            } else {
+                alert('Error al cargar el detalle: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar el detalle del proyecto');
+        });
+}
+
+// Iniciar proceso de cierre
+function iniciarCierre(proyectoId) {
+    $('#cierreProyectoId').val(proyectoId);
+    $('#iniciarCierreModal').modal('show');
+}
+
+// Confirmar inicio de cierre
+function confirmarInicioCierre() {
+    const formData = new FormData(document.getElementById('formIniciarCierre'));
+    const proyectoId = $('#cierreProyectoId').val();
+    
+    fetch(`/api/proyectos/${proyectoId}/iniciar-cierre`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#iniciarCierreModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error al iniciar cierre: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al iniciar cierre');
+    });
+}
+
+// Completar cierre
+function completarCierre(proyectoId) {
+    $('#completarProyectoId').val(proyectoId);
+    $('#completarCierreModal').modal('show');
+}
+
+// Confirmar completar cierre
+function confirmarCompletarCierre() {
+    const formData = new FormData(document.getElementById('formCompletarCierre'));
+    const proyectoId = $('#completarProyectoId').val();
+    
+    fetch(`/api/proyectos/${proyectoId}/completar-cierre`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#completarCierreModal').modal('hide');
+            if (data.reporteUrl) {
+                window.open(data.reporteUrl, '_blank');
+            }
+            location.reload();
+        } else {
+            alert('Error al completar cierre: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al completar cierre');
+    });
+}
+
+// Generar reporte de proyecto
+function generarReporteProyecto(proyectoId) {
+    window.open(`/api/proyectos/${proyectoId}/reporte-final`, '_blank');
+}
+
+// Exportar datos del proyecto
+function exportarDatosProyecto(proyectoId) {
+    window.open(`/api/proyectos/${proyectoId}/export-completo`, '_blank');
+}
+
+// Generar certificado final
+function certificadoFinal(proyectoId) {
+    window.open(`/api/proyectos/${proyectoId}/certificado-final`, '_blank');
+}
+
+// Cancelar proyecto
+function cancelarProyecto(proyectoId) {
+    const motivo = prompt('Motivo de cancelación del proyecto:');
+    if (motivo !== null && motivo.trim() !== '') {
+        if (confirm('¿Está seguro de cancelar este proyecto? Esta acción no se puede deshacer.')) {
+            fetch(`/api/proyectos/${proyectoId}/cancelar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    motivo_cancelacion: motivo 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error al cancelar proyecto: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cancelar proyecto');
+            });
+        }
+    }
+}
+
+// Exportar reporte general
+function exportarReporte() {
+    const filtros = {
+        estado: $('#filtroEstado').val(),
+        cliente: $('#filtroCliente').val(),
+        fecha: $('#filtroFechaCierre').val(),
+        search: $('#filtroTexto').val()
+    };
+    
+    const params = new URLSearchParams(filtros).toString();
+    window.open(`/api/proyectos/cierre/export?${params}`, '_blank');
+}
+</script>
+{{/section}}

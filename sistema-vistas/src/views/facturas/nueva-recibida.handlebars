@@ -1,0 +1,55 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Nueva Factura Recibida</h2>
+  <a href="/facturas/recibidas" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Volver al listado
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Datos de la Factura</h5>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i>
+      Esta funcionalidad está en desarrollo. Por favor, use el sistema CakePHP para crear nuevas facturas.
+    </div>
+    
+    <form>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="numero_factura" class="form-label">Número de Factura</label>
+            <input type="text" class="form-control" id="numero_factura" name="numero_factura">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="fecha_emision" class="form-label">Fecha de Emisión</label>
+            <input type="date" class="form-control" id="fecha_emision" name="fecha_emision">
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="proveedor" class="form-label">Proveedor</label>
+            <input type="text" class="form-control" id="proveedor" name="proveedor">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="total" class="form-label">Total</label>
+            <input type="number" step="0.01" class="form-control" id="total" name="total">
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-end gap-2">
+        <a href="/facturas/recibidas" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary" disabled>Guardar (En desarrollo)</button>
+      </div>
+    </form>
+  </div>
+</div>

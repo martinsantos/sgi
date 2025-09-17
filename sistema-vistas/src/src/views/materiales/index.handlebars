@@ -1,0 +1,542 @@
+{{!-- Lista de Materiales para Proyectos --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-boxes me-2"></i>
+            Lista de Materiales por Proyecto
+          </h4>
+          <div class="btn-group">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nuevoMaterialModal">
+              <i class="fas fa-plus me-1"></i>
+              Nuevo Material
+            </button>
+            <button type="button" class="btn btn-primary" onclick="exportarMateriales()">
+              <i class="fas fa-file-excel me-1"></i>
+              Exportar Excel
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-filter me-1"></i>
+                Filtros
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('todos')">Todos los Proyectos</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('planificacion')">En Planificación</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorEstado('ejecucion')">En Ejecución</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorUrgencia('alta')">Urgencia Alta</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarPorUrgencia('media')">Urgencia Media</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {{#if proyectos}}
+        <div class="accordion" id="proyectosAccordion">
+          {{#each proyectos}}
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button {{#unless @first}}collapsed{{/unless}}" type="button" 
+                      data-bs-toggle="collapse" data-bs-target="#materiales{{this.id}}" 
+                      aria-expanded="{{#if @first}}true{{else}}false{{/if}}">
+                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                  <div>
+                    <strong>{{this.descripcion}}</strong>
+                    <small class="text-muted ms-2">
+                      Cliente: {{this.cliente_nombre}}
+                    </small>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge 
+                      {{#eq this.estado 'planificacion'}}bg-warning{{/eq}}
+                      {{#eq this.estado 'ejecucion'}}bg-info{{/eq}}
+                      {{#eq this.estado 'completado'}}bg-success{{/eq}}
+                      {{#eq this.estado 'suspendido'}}bg-danger{{/eq}}
+                    ">
+                      {{capitalize this.estado}}
+                    </span>
+                    <small class="text-muted ms-2">
+                      {{this.total_materiales}} materiales - ${{formatNumber this.costo_total_materiales}}
+                    </small>
+                  </div>
+                </div>
+              </button>
+            </h2>
+            <div id="materiales{{this.id}}" class="accordion-collapse collapse {{#if @first}}show{{/if}}" 
+                 data-bs-parent="#proyectosAccordion">
+              <div class="accordion-body">
+                <!-- Resumen del Proyecto -->
+                <div class="row mb-3">
+                  <div class="col-md-8">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-md-4">
+                            <small class="text-muted">Presupuesto Total:</small><br>
+                            <strong>${{formatNumber this.precio_venta}}</strong>
+                          </div>
+                          <div class="col-md-4">
+                            <small class="text-muted">Costo Materiales:</small><br>
+                            <strong>${{formatNumber this.costo_total_materiales}}</strong>
+                          </div>
+                          <div class="col-md-4">
+                            <small class="text-muted">% del Presupuesto:</small><br>
+                            <strong>{{this.porcentaje_materiales}}%</strong>
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-12">
+                            <small class="text-muted">Progreso de Adquisiciones:</small><br>
+                            <div class="progress" style="height: 20px;">
+                              <div class="progress-bar bg-success" role="progressbar" 
+                                   style="width: {{this.materiales_comprados}}%" 
+                                   aria-valuenow="{{this.materiales_comprados}}" aria-valuemin="0" aria-valuemax="100">
+                                Comprados {{this.materiales_comprados}}%
+                              </div>
+                              <div class="progress-bar bg-warning" role="progressbar" 
+                                   style="width: {{this.materiales_cotizados}}%" 
+                                   aria-valuenow="{{this.materiales_cotizados}}" aria-valuemin="0" aria-valuemax="100">
+                                En Cotización {{this.materiales_cotizados}}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-primary btn-sm" onclick="agregarMaterial('{{this.id}}')">
+                        <i class="fas fa-plus"></i> Agregar Material
+                      </button>
+                      <button class="btn btn-outline-success btn-sm" onclick="generarRequerimiento('{{this.id}}')">
+                        <i class="fas fa-shopping-cart"></i> Generar Requerimiento
+                      </button>
+                      <a href="/proyectos/ver/{{this.id}}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-eye"></i> Ver Proyecto
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Lista de Materiales -->
+                <div class="table-responsive">
+                  <table class="table table-hover table-sm">
+                    <thead class="table-light">
+                      <tr>
+                        <th width="5%">#</th>
+                        <th width="25%">Material/Descripción</th>
+                        <th width="10%">Categoría</th>
+                        <th width="8%">Cantidad</th>
+                        <th width="8%">Unidad</th>
+                        <th width="10%">Precio Unit.</th>
+                        <th width="10%">Total</th>
+                        <th width="10%">Estado</th>
+                        <th width="8%">Urgencia</th>
+                        <th width="6%">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {{#if this.materiales}}
+                        {{#each this.materiales}}
+                        <tr class="{{#eq this.urgencia 'alta'}}table-danger{{/eq}}{{#eq this.urgencia 'media'}}table-warning{{/eq}}">
+                          <td>{{this.item_number}}</td>
+                          <td>
+                            <strong>{{this.nombre}}</strong>
+                            {{#if this.descripcion}}
+                            <br><small class="text-muted">{{this.descripcion}}</small>
+                            {{/if}}
+                            {{#if this.especificaciones}}
+                            <br><small class="text-info">{{this.especificaciones}}</small>
+                            {{/if}}
+                          </td>
+                          <td>
+                            <span class="badge bg-secondary">{{this.categoria}}</span>
+                          </td>
+                          <td class="text-center">{{this.cantidad}}</td>
+                          <td>{{this.unidad}}</td>
+                          <td>${{formatNumber this.precio_unitario}}</td>
+                          <td><strong>${{formatNumber this.total}}</strong></td>
+                          <td>
+                            <span class="badge 
+                              {{#eq this.estado 'pendiente'}}bg-secondary{{/eq}}
+                              {{#eq this.estado 'cotizando'}}bg-warning{{/eq}}
+                              {{#eq this.estado 'cotizado'}}bg-info{{/eq}}
+                              {{#eq this.estado 'comprado'}}bg-success{{/eq}}
+                              {{#eq this.estado 'recibido'}}bg-primary{{/eq}}
+                            ">
+                              {{capitalize this.estado}}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="badge 
+                              {{#eq this.urgencia 'alta'}}bg-danger{{/eq}}
+                              {{#eq this.urgencia 'media'}}bg-warning{{/eq}}
+                              {{#eq this.urgencia 'baja'}}bg-info{{/eq}}
+                            ">
+                              {{capitalize this.urgencia}}
+                            </span>
+                          </td>
+                          <td>
+                            <div class="btn-group btn-group-sm">
+                              <button class="btn btn-outline-primary" onclick="editarMaterial('{{this.id}}')" title="Editar">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                              <button class="btn btn-outline-success" onclick="cambiarEstado('{{this.id}}')" title="Cambiar Estado">
+                                <i class="fas fa-check"></i>
+                              </button>
+                              <button class="btn btn-outline-danger" onclick="eliminarMaterial('{{this.id}}')" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {{/each}}
+                      {{else}}
+                        <tr>
+                          <td colspan="10" class="text-center text-muted py-4">
+                            <i class="fas fa-boxes fa-2x mb-2"></i><br>
+                            No hay materiales definidos para este proyecto
+                            <br>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="agregarMaterial('{{../this.id}}')">
+                              Agregar primer material
+                            </button>
+                          </td>
+                        </tr>
+                      {{/if}}
+                    </tbody>
+                    {{#if this.materiales}}
+                    <tfoot class="table-light">
+                      <tr>
+                        <th colspan="6" class="text-end">Total Proyecto:</th>
+                        <th><strong>${{formatNumber this.costo_total_materiales}}</strong></th>
+                        <th colspan="3"></th>
+                      </tr>
+                    </tfoot>
+                    {{/if}}
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{else}}
+        <div class="text-center py-4">
+          <i class="fas fa-project-diagram fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay proyectos activos</h5>
+          <p class="text-muted">Los proyectos aparecerán aquí una vez que se activen y requieran materiales</p>
+          <a href="/proyectos" class="btn btn-primary">
+            <i class="fas fa-eye me-1"></i>
+            Ver Todos los Proyectos
+          </a>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo/Editar Material -->
+<div class="modal fade" id="nuevoMaterialModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="materialModalTitle">Nuevo Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="materialForm">
+        <div class="modal-body">
+          <input type="hidden" id="material_id">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proyecto *</label>
+                <select class="form-select" id="material_proyecto_id" required>
+                  <option value="">Seleccionar proyecto...</option>
+                  {{#each proyectos}}
+                  <option value="{{this.id}}">{{this.descripcion}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Categoría</label>
+                <select class="form-select" id="material_categoria">
+                  <option value="Estructural">Estructural</option>
+                  <option value="Eléctrico">Eléctrico</option>
+                  <option value="Mecánico">Mecánico</option>
+                  <option value="Instrumentación">Instrumentación</option>
+                  <option value="Consumibles">Consumibles</option>
+                  <option value="Herramientas">Herramientas</option>
+                  <option value="Otros">Otros</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Nombre del Material *</label>
+            <input type="text" class="form-control" id="material_nombre" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-control" id="material_descripcion" rows="2"></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Especificaciones Técnicas</label>
+            <textarea class="form-control" id="material_especificaciones" rows="2"></textarea>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label">Cantidad *</label>
+                <input type="number" class="form-control" id="material_cantidad" required min="0.01" step="0.01">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label">Unidad</label>
+                <select class="form-select" id="material_unidad">
+                  <option value="Unidad">Unidad</option>
+                  <option value="Metro">Metro</option>
+                  <option value="Kilogramo">Kilogramo</option>
+                  <option value="Litro">Litro</option>
+                  <option value="Metro²">Metro²</option>
+                  <option value="Metro³">Metro³</option>
+                  <option value="Caja">Caja</option>
+                  <option value="Rollo">Rollo</option>
+                  <option value="Galón">Galón</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label">Precio Unitario</label>
+                <input type="number" class="form-control" id="material_precio_unitario" min="0" step="0.01">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="mb-3">
+                <label class="form-label">Urgencia</label>
+                <select class="form-select" id="material_urgencia">
+                  <option value="media" selected>Media</option>
+                  <option value="baja">Baja</option>
+                  <option value="alta">Alta</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proveedor Sugerido</label>
+                <input type="text" class="form-control" id="material_proveedor_sugerido">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha Requerida</label>
+                <input type="date" class="form-control" id="material_fecha_requerida">
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-control" id="material_observaciones" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Material</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+let materialSeleccionado = null;
+
+// Agregar material a proyecto específico
+function agregarMaterial(proyectoId) {
+    document.getElementById('materialForm').reset();
+    document.getElementById('material_id').value = '';
+    document.getElementById('material_proyecto_id').value = proyectoId;
+    document.getElementById('materialModalTitle').textContent = 'Nuevo Material';
+    new bootstrap.Modal(document.getElementById('nuevoMaterialModal')).show();
+}
+
+// Editar material
+function editarMaterial(materialId) {
+    // Cargar datos del material
+    fetch(`/api/materiales/${materialId}`)
+        .then(response => response.json())
+        .then(material => {
+            document.getElementById('material_id').value = material.id;
+            document.getElementById('material_proyecto_id').value = material.proyecto_id;
+            document.getElementById('material_categoria').value = material.categoria;
+            document.getElementById('material_nombre').value = material.nombre;
+            document.getElementById('material_descripcion').value = material.descripcion;
+            document.getElementById('material_especificaciones').value = material.especificaciones;
+            document.getElementById('material_cantidad').value = material.cantidad;
+            document.getElementById('material_unidad').value = material.unidad;
+            document.getElementById('material_precio_unitario').value = material.precio_unitario;
+            document.getElementById('material_urgencia').value = material.urgencia;
+            document.getElementById('material_proveedor_sugerido').value = material.proveedor_sugerido;
+            document.getElementById('material_fecha_requerida').value = material.fecha_requerida;
+            document.getElementById('material_observaciones').value = material.observaciones;
+            
+            document.getElementById('materialModalTitle').textContent = 'Editar Material';
+            new bootstrap.Modal(document.getElementById('nuevoMaterialModal')).show();
+        })
+        .catch(console.error);
+}
+
+// Guardar material
+document.getElementById('materialForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const materialId = document.getElementById('material_id').value;
+    const isEdit = materialId !== '';
+    
+    const formData = {
+        proyecto_id: document.getElementById('material_proyecto_id').value,
+        categoria: document.getElementById('material_categoria').value,
+        nombre: document.getElementById('material_nombre').value,
+        descripcion: document.getElementById('material_descripcion').value,
+        especificaciones: document.getElementById('material_especificaciones').value,
+        cantidad: parseFloat(document.getElementById('material_cantidad').value),
+        unidad: document.getElementById('material_unidad').value,
+        precio_unitario: parseFloat(document.getElementById('material_precio_unitario').value) || 0,
+        urgencia: document.getElementById('material_urgencia').value,
+        proveedor_sugerido: document.getElementById('material_proveedor_sugerido').value,
+        fecha_requerida: document.getElementById('material_fecha_requerida').value,
+        observaciones: document.getElementById('material_observaciones').value
+    };
+    
+    const url = isEdit ? `/api/materiales/${materialId}` : '/api/materiales/crear';
+    const method = isEdit ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al guardar material: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar material');
+    });
+});
+
+// Cambiar estado de material
+function cambiarEstado(materialId) {
+    const estados = ['pendiente', 'cotizando', 'cotizado', 'comprado', 'recibido'];
+    const estadoActual = prompt('Estado actual:\n1-Pendiente\n2-Cotizando\n3-Cotizado\n4-Comprado\n5-Recibido\n\nIngrese número del nuevo estado:');
+    
+    if (estadoActual && estadoActual >= 1 && estadoActual <= 5) {
+        const nuevoEstado = estados[estadoActual - 1];
+        
+        fetch(`/api/materiales/${materialId}/estado`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ estado: nuevoEstado })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al cambiar estado: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cambiar estado');
+        });
+    }
+}
+
+// Eliminar material
+function eliminarMaterial(materialId) {
+    if (confirm('¿Está seguro que desea eliminar este material?')) {
+        fetch(`/api/materiales/${materialId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al eliminar material: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar material');
+        });
+    }
+}
+
+// Generar requerimiento de abastecimiento
+function generarRequerimiento(proyectoId) {
+    if (confirm('¿Generar requerimiento de abastecimiento para materiales pendientes?')) {
+        fetch(`/api/proyectos/${proyectoId}/generar-requerimiento`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Requerimiento generado exitosamente');
+                window.open(`/requerimientos/ver/${data.requerimientoId}`, '_blank');
+            } else {
+                alert('Error al generar requerimiento: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al generar requerimiento');
+        });
+    }
+}
+
+// Exportar materiales a Excel
+function exportarMateriales() {
+    window.open('/materiales/export/excel', '_blank');
+}
+
+// Filtros
+function filtrarPorEstado(estado) {
+    console.log('Filtrar por estado:', estado);
+    // Implementar filtrado por estado
+}
+
+function filtrarPorUrgencia(urgencia) {
+    console.log('Filtrar por urgencia:', urgencia);
+    // Implementar filtrado por urgencia
+}
+</script>
+{{/section}}

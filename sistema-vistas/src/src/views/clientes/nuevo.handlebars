@@ -1,0 +1,154 @@
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Nuevo Cliente</h4>
+        </div>
+        <div class="card-body">
+            <form id="clienteForm" method="POST" action="/clientes/nuevo">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="apellido" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="apellido" name="apellido">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="codigo" class="form-label">Código *</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo *</label>
+                            <select class="form-control" id="tipo" name="tipo" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="1">Cliente</option>
+                                <option value="2">Proveedor</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="condicion_iva" class="form-label">Condición IVA</label>
+                            <select class="form-control" id="condicion_iva" name="condicion_iva">
+                                <option value="">Seleccionar...</option>
+                                <option value="1">IVA Responsable Inscripto</option>
+                                <option value="2">IVA Responsable No Inscripto</option>
+                                <option value="3">IVA Exento</option>
+                                <option value="4">No Responsable</option>
+                                <option value="5">Consumidor Final</option>
+                                <option value="6">Responsable Monotributo</option>
+                                <option value="7">Sujeto No Categorizado</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="ejemplo@correo.com">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" placeholder="+54 9 261 123-4567">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="cuil_cuit" class="form-label">CUIL/CUIT</label>
+                            <input type="text" class="form-control" id="cuil_cuit" name="cuil_cuit" placeholder="20-12345678-9">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="tipo_persona" class="form-label">Tipo de Persona</label>
+                            <select class="form-control" id="tipo_persona" name="tipo_persona">
+                                <option value="">Seleccionar...</option>
+                                <option value="Física">Persona Física</option>
+                                <option value="Jurídica" selected>Persona Jurídica</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label for="calle" class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="calle" name="calle" placeholder="Calle y número">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="codigo_postal" class="form-label">Código Postal</label>
+                            <input type="number" class="form-control" id="codigo_postal" name="codigo_postal" placeholder="5500" min="1000" max="9999">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success me-2">
+                            <i class="bi bi-save"></i> Guardar Cliente
+                        </button>
+                        <a href="/clientes" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Listado
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('clienteForm').addEventListener('submit', function(e) {
+    // Validaciones del lado cliente
+    const nombre = document.getElementById('nombre').value.trim();
+    const codigo = document.getElementById('codigo').value.trim();
+    const tipo = document.getElementById('tipo').value;
+    
+    if (!nombre) {
+        alert('El nombre es obligatorio');
+        e.preventDefault();
+        return false;
+    }
+    
+    if (!codigo) {
+        alert('El código es obligatorio');
+        e.preventDefault();
+        return false;
+    }
+    
+    if (!tipo) {
+        alert('Debe seleccionar un tipo de cliente');
+        e.preventDefault();
+        return false;
+    }
+    
+    // Mostrar indicador de carga
+    const submitBtn = document.querySelector('button[type="submit"]');
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+    submitBtn.disabled = true;
+    
+    // Permitir el envío del formulario
+    return true;
+});
+</script>

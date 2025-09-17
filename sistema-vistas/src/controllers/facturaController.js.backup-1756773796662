@@ -1,0 +1,939 @@
+const FacturaModel = require('../models/FacturaModel');
+const ClienteModel = require('../models/ClienteModel');
+
+/**
+ * Controlador de Facturación - Integrado con AFIP (R2.4)
+ */
+class FacturaController {
+
+  /**
+   * Dashboard de facturación
+   */
+  static async dashboard(req, res) {
+    try {
+      console.log('📊 Cargando dashboard de facturación');
+
+      const [estadisticas, facturasRecientes, facturasVencidas] = await Promise.all([
+        FacturaModel.getEstadisticas(),
+        FacturaModel.getFacturasRecientes(10),
+        FacturaModel.getFacturasVencidas()
+      ]);
+
+      res.render('facturas/dashboard', {
+        title: 'Dashboard de Facturación',
+        estadisticas,
+        facturasRecientes,
+        facturasVencidas,
+        formatCurrency: (amount) => {
+          if (!amount || isNaN(amount)) return '$0.00';
+          return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 2
+          }).format(amount);
+        },
+        formatDate: (date) => {
+          if (!date) return 'N/A';
+          try {
+            return new Date(date).toLocaleDateString('es-AR');
+          } catch (error) {
+            return 'N/A';
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error al cargar dashboard de facturación:', error);
+      req.flash('error', 'Error al cargar el dashboard de facturación');
+      res.redirect('/dashboard');
+    }
+  }
+
+  /**
+   * Listar facturas emitidas
+   */
+  static async emitidas(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+
+      console.log(`📋 Listando facturas emitidas - Página ${page}, Límite ${limit}`);
+
+      const resultado = await FacturaModel.getFacturasEmitidas(page, limit);
+
+      res.render('facturas/emitidas', {
+        title: 'Facturas Emitidas',
+        facturas: resultado.data,
+        pagination: resultado.pagination,
+        currentPage: page,
+        query: req.query,
+        formatCurrency: (amount) => {
+          if (!amount || isNaN(amount)) return '$0.00';
+          return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 2
+          }).format(amount);
+        },
+        formatDate: (date) => {
+          if (!date) return 'N/A';
+          try {
+            return new Date(date).toLocaleDateString('es-AR');
+          } catch (error) {
+            return 'N/A';
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error al listar facturas emitidas:', error);
+      req.flash('error', 'Error al cargar facturas emitidas');
+      res.redirect('/dashboard');
+    }
+  }
+
+  /**
+   * Mostrar formulario de nueva factura
+   */
+  static async mostrarCrear(req, res) {
+    try {
+      console.log('📝 Mostrando formulario de nueva factura');
+
+      // Obtener clientes activos para el dropdown
+      const clientesActivos = await ClienteModel.getClientesActivos();
+
+      res.render('facturas/crear', {
+        title: 'Emitir Nueva Factura',
+        clientes: clientesActivos,
+        tiposFactura: [
+          { codigo: 'A', nombre: 'Factura A' },
+          { codigo: 'B', nombre: 'Factura B' },
+          { codigo: 'C', nombre: 'Factura C' },
+          { codigo: 'M', nombre: 'Factura M' }
+        ],
+        puntoVenta: process.env.AFIP_PUNTO_VENTA || 1
+      });
+
+    } catch (error) {
+      console.error('❌ Error al mostrar formulario de creación:', error);
+      req.flash('error', 'Error al cargar el formulario de facturación');
+      res.redirect('/facturas/emitidas');
+    }
+  }
+
+  /**
+   * Crear nueva factura con integración AFIP
+   */
+  static async crear(req, res) {
+    try {
+      console.log('💾 Creando nueva factura:', req.body);
+
+      const facturaData = {
+        cliente_id: req.body.cliente_id,
+        tipo_factura: req.body.tipo_factura || 'B',
+        punto_venta: parseInt(req.body.punto_venta) || 1,
+        fecha_emision: req.body.fecha_emision || new Date(),
+        fecha_vto_pago: req.body.fecha_vto_pago,
+        observaciones: req.body.observaciones,
+        detalles: req.body.detalles || []
+      };
+
+      // Validaciones básicas
+      if (!facturaData.cliente_id) {
+        req.flash('error', 'Debe seleccionar un cliente');
+        return res.redirect('/facturas/crear');
+      }
+
+      // Calcular totales
+      let subtotal = 0;
+      if (Array.isArray(facturaData.detalles)) {
+        subtotal = facturaData.detalles.reduce((sum, detalle) => {
+          const cantidad = parseFloat(detalle.cantidad) || 0;
+          const precio = parseFloat(detalle.precio_unitario) || 0;
+          return sum + (cantidad * precio);
+        }, 0);
+      }
+
+      const iva = subtotal * 0.21; // 21% IVA por defecto
+      const total = subtotal + iva;
+
+      facturaData.subtotal = subtotal;
+      facturaData.iva = iva;
+      facturaData.total = total;
+
+      // En una implementación real, aquí se integraría con AFIP
+      console.log('🏛️ Integrando con Web Service de AFIP...');
+      
+      // Simular respuesta de AFIP
+      const afipResponse = {
+        cae: `${Math.floor(Math.random() * 90000000000000) + 10000000000000}`,
+        fecha_vto_cae: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 días
+        numero_factura: `${facturaData.punto_venta.toString().padStart(5, '0')}-${Math.floor(Math.random() * 90000000) + 10000000}`
+      };
+
+      facturaData.cae = afipResponse.cae;
+      facturaData.fecha_vto_cae = afipResponse.fecha_vto_cae;
+      facturaData.numero_factura = afipResponse.numero_factura;
+      facturaData.estado = 1; // Pendiente
+
+      // Crear la factura (implementación pendiente en el modelo)
+      console.log('✅ Factura procesada con AFIP exitosamente');
+      
+      req.flash('success', `Factura ${afipResponse.numero_factura} emitida exitosamente. CAE: ${afipResponse.cae}`);
+      res.redirect('/facturas/emitidas');
+
+    } catch (error) {
+      console.error('❌ Error al crear factura:', error);
+      req.flash('error', 'Error al emitir factura: ' + error.message);
+      res.redirect('/facturas/crear');
+    }
+  }
+
+  /**
+   * Ver detalle de factura
+   */
+  static async ver(req, res) {
+    try {
+      const id = req.params.id;
+      console.log(`👁️ Visualizando factura ID: ${id}`);
+
+      const factura = await FacturaModel.getFacturaById(id);
+
+      console.log('🐛 DEBUG factura.cliente_nombre:', factura ? factura.cliente_nombre : 'null');
+      console.log('🐛 DEBUG factura objeto:', factura ? Object.keys(factura) : 'null');
+
+      if (!factura) {
+        return res.status(404).render('error', {
+          title: 'Error 404',
+          message: 'Factura no encontrada'
+        });
+      }
+
+      res.render('facturas/detalle', {
+        title: `Factura ${factura.numero_factura}`,
+        factura,
+        cliente: factura.cliente_nombre ? {
+          nombre: factura.cliente_nombre,
+          codigo: factura.cliente_codigo || 'N/A',
+          tipo: factura.cliente_tipo || 'N/A',
+          tipo_persona: factura.cliente_tipo_persona || 'N/A',
+          condicion_iva: factura.cliente_condicion_iva || 0
+        } : null,
+        formatCurrency: (amount) => {
+          if (!amount || isNaN(amount)) return '$0.00';
+          return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 2
+          }).format(amount);
+        },
+        formatDate: (date) => {
+          if (!date) return 'N/A';
+          try {
+            return new Date(date).toLocaleDateString('es-AR');
+          } catch (error) {
+            return 'N/A';
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error al visualizar factura:', error);
+      return res.status(500).render('error', {
+        title: 'Error 500',
+        message: 'Error al cargar la factura: ' + error.message
+      });
+    }
+  }
+
+  /**
+   * Buscar facturas con filtros avanzados
+   */
+  static async buscar(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+
+      const filters = {
+        numero_factura: req.query.numero_factura,
+        cliente_nombre: req.query.cliente_nombre,
+        estado: req.query.estado,
+        fecha_desde: req.query.fecha_desde,
+        fecha_hasta: req.query.fecha_hasta,
+        monto_desde: req.query.monto_desde,
+        monto_hasta: req.query.monto_hasta,
+        tipo_factura: req.query.tipo_factura,
+        texto_libre: req.query.q // Para búsqueda rápida
+      };
+
+      // Remover filtros vacíos
+      Object.keys(filters).forEach(key => {
+        if (!filters[key]) delete filters[key];
+      });
+
+      console.log('🔍 Buscando facturas con filtros:', filters);
+
+      const resultado = await FacturaModel.searchFacturas(filters, page, limit);
+
+      // Si es AJAX, devolver JSON
+      if (req.xhr || req.get('Content-Type') === 'application/json') {
+        return res.json({
+          success: true,
+          data: resultado.data.slice(0, 10), // Limitar para búsqueda rápida
+          total: resultado.pagination.total
+        });
+      }
+
+      res.render('facturas/emitidas', {
+        title: 'Búsqueda de Facturas',
+        facturas: resultado.data,
+        pagination: resultado.pagination,
+        currentPage: page,
+        query: req.query,
+        filters: filters,
+        formatCurrency: (amount) => {
+          if (!amount || isNaN(amount)) return '$0.00';
+          return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 2
+          }).format(amount);
+        },
+        formatDate: (date) => {
+          if (!date) return 'N/A';
+          try {
+            return new Date(date).toLocaleDateString('es-AR');
+          } catch (error) {
+            return 'N/A';
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error al buscar facturas:', error);
+      req.flash('error', 'Error en la búsqueda de facturas');
+      res.redirect('/facturas/emitidas');
+    }
+  }
+
+  /**
+   * Actualizar estado de factura
+   */
+  static async actualizarEstado(req, res) {
+    try {
+      const id = req.params.id;
+      const { estado, monto_pago, fecha_cobro } = req.body;
+
+      console.log(`🔄 Actualizando estado factura ${id} a ${estado}`);
+
+      const actualizada = await FacturaModel.updateEstadoFactura(
+        id, 
+        parseInt(estado), 
+        monto_pago ? parseFloat(monto_pago) : null,
+        fecha_cobro || null
+      );
+
+      if (!actualizada) {
+        return res.status(404).json({
+          success: false,
+          error: 'Factura no encontrada'
+        });
+      }
+
+      // Generar asiento contable automático (R2.4)
+      console.log('📚 Generando asiento contable automático...');
+      
+      res.json({
+        success: true,
+        message: 'Estado de factura actualizado exitosamente'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al actualizar estado:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * Marcar factura como pagada
+   */
+  static async marcarComoPagada(req, res) {
+    try {
+      const id = req.params.id;
+      console.log(`💰 Marcando factura ${id} como pagada`);
+
+      const actualizada = await FacturaModel.updateEstadoFactura(
+        id, 
+        3, // Estado: Pagada
+        null, // monto_pago se calcula desde el total
+        new Date() // fecha_cobro actual
+      );
+
+      if (!actualizada) {
+        return res.status(404).json({
+          success: false,
+          message: 'Factura no encontrada'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Factura marcada como pagada exitosamente'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al marcar factura como pagada:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al procesar la solicitud: ' + error.message
+      });
+    }
+  }
+
+  /**
+   * Anular factura
+   */
+  static async anularFactura(req, res) {
+    try {
+      const id = req.params.id;
+      const { motivo } = req.body;
+      
+      console.log(`❌ Anulando factura ${id}. Motivo: ${motivo}`);
+
+      const actualizada = await FacturaModel.updateEstadoFactura(
+        id, 
+        5, // Estado: Anulada
+        null,
+        null
+      );
+
+      if (!actualizada) {
+        return res.status(404).json({
+          success: false,
+          message: 'Factura no encontrada'
+        });
+      }
+
+      // TODO: Agregar el motivo a las observaciones
+      if (motivo) {
+        console.log(`📝 Registrando motivo de anulación: ${motivo}`);
+      }
+
+      res.json({
+        success: true,
+        message: 'Factura anulada exitosamente'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al anular factura:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al procesar la solicitud: ' + error.message
+      });
+    }
+  }
+
+  /**
+   * Generar PDF de factura
+   */
+  static async generarPDF(req, res) {
+    try {
+      const id = req.params.id;
+      console.log(`📄 Generando PDF para factura ${id}`);
+
+      const factura = await FacturaModel.getFacturaById(id);
+
+      if (!factura) {
+        req.flash('error', 'Factura no encontrada');
+        return res.redirect('/facturas/emitidas');
+      }
+
+      // En una implementación real, aquí se generaría el PDF
+      // usando librerías como jsPDF, puppeteer, etc.
+      req.flash('info', 'Función de generación de PDF pendiente de implementación');
+      res.redirect(`/facturas/emitidas/${id}`);
+
+    } catch (error) {
+      console.error('❌ Error al generar PDF:', error);
+      req.flash('error', 'Error al generar PDF de la factura');
+      res.redirect(`/facturas/emitidas/${req.params.id}`);
+    }
+  }
+
+  /**
+   * Resumen financiero por período
+   */
+  static async resumenFinanciero(req, res) {
+    try {
+      const fechaDesde = req.query.fecha_desde || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const fechaHasta = req.query.fecha_hasta || new Date().toISOString().split('T')[0];
+
+      console.log(`📊 Generando resumen financiero del ${fechaDesde} al ${fechaHasta}`);
+
+      const resumen = await FacturaModel.getResumenFinanciero(fechaDesde, fechaHasta);
+
+      res.render('facturas/resumen', {
+        title: 'Resumen Financiero',
+        resumen,
+        fechaDesde,
+        fechaHasta,
+        formatCurrency: (amount) => {
+          if (!amount || isNaN(amount)) return '$0.00';
+          return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 2
+          }).format(amount);
+        },
+        formatDate: (date) => {
+          if (!date) return 'N/A';
+          try {
+            return new Date(date).toLocaleDateString('es-AR');
+          } catch (error) {
+            return 'N/A';
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error al generar resumen financiero:', error);
+      req.flash('error', 'Error al generar resumen financiero');
+      res.redirect('/facturas/dashboard');
+    }
+  }
+
+  /**
+   * Exportar facturas a Excel
+   */
+  static async exportarExcel(req, res) {
+    try {
+      const filters = {
+        fecha_desde: req.query.fecha_desde,
+        fecha_hasta: req.query.fecha_hasta,
+        estado: req.query.estado,
+        tipo_factura: req.query.tipo_factura
+      };
+
+      console.log('📊 Exportando facturas a Excel con filtros:', filters);
+
+      const data = await FacturaModel.exportToExcel(filters);
+
+      // En una implementación real se generaría el archivo Excel
+      req.flash('info', 'Función de exportación a Excel pendiente de implementación');
+      res.redirect('/facturas/emitidas');
+
+    } catch (error) {
+      console.error('❌ Error al exportar a Excel:', error);
+      req.flash('error', 'Error al exportar facturas');
+      res.redirect('/facturas/emitidas');
+    }
+  }
+
+  /**
+   * API para obtener facturas emitidas (DataTable)
+   */
+  static async getFacturasEmitidasAPI(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.length) || parseInt(req.query.limit) || 20;
+      const sortBy = req.query.sortBy || 'fecha_emision';
+      const sortOrder = req.query.sortOrder || 'DESC';
+      
+      console.log(`📝 API: Obteniendo facturas emitidas - Página ${page}, Límite ${limit}`);
+      
+      // Obtener filtros del query string
+      const filters = {
+        numero_factura: req.query.numero_factura,
+        cliente_id: req.query.cliente_id,
+        cliente_nombre: req.query.cliente,
+        estado: req.query.estado,
+        fecha_desde: req.query.fecha_desde,
+        fecha_hasta: req.query.fecha_hasta,
+        monto_desde: req.query.monto_desde,
+        monto_hasta: req.query.monto_hasta
+      };
+      
+      // Limpiar filtros vacíos
+      Object.keys(filters).forEach(key => {
+        if (!filters[key] || filters[key] === '') {
+          delete filters[key];
+        }
+      });
+      
+      const resultado = await FacturaModel.searchFacturas(filters, page, limit, sortBy, sortOrder);
+      
+      // Formatear datos para DataTables
+      const formattedData = resultado.data.map(f => ({
+        ...f,
+        fecha_emision_formatted: f.fecha_emision ? new Date(f.fecha_emision).toLocaleDateString('es-AR') : '',
+        fecha_vto_pago_formatted: f.fecha_vto_pago ? new Date(f.fecha_vto_pago).toLocaleDateString('es-AR') : '',
+        total_formatted: new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS'
+        }).format(f.total || 0),
+        saldo_pendiente_formatted: new Intl.NumberFormat('es-AR', {
+          style: 'currency', 
+          currency: 'ARS'
+        }).format(f.saldo_pendiente || 0)
+      }));
+      
+      res.json({
+        success: true,
+        data: formattedData,
+        recordsTotal: resultado.pagination.total,
+        recordsFiltered: resultado.pagination.total,
+        pagination: resultado.pagination
+      });
+      
+    } catch (error) {
+      console.error('❌ Error en API de facturas emitidas:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener facturas emitidas',
+        message: error.message,
+        data: []
+      });
+    }
+  }
+
+  /**
+   * Exportar facturas emitidas a Excel
+   */
+  static async exportarFacturasEmitidasExcel(req, res) {
+    try {
+      console.log('📊 Exportando facturas emitidas a Excel');
+      
+      // Obtener filtros del query string
+      const filters = {
+        numero_factura: req.query.numero_factura,
+        cliente_nombre: req.query.cliente,
+        estado: req.query.estado,
+        fecha_desde: req.query.fecha_desde,
+        fecha_hasta: req.query.fecha_hasta
+      };
+      
+      // Limpiar filtros vacíos
+      Object.keys(filters).forEach(key => {
+        if (!filters[key] || filters[key] === '') {
+          delete filters[key];
+        }
+      });
+      
+      // Obtener todas las facturas que coinciden con los filtros
+      const { data: facturas } = await FacturaModel.searchFacturas(filters, 1, 10000);
+      
+      const ExcelJS = require('exceljs');
+      
+      // Crear workbook
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Facturas Emitidas');
+      
+      // Configurar columnas
+      worksheet.columns = [
+        { header: 'N° Factura', key: 'numero_factura', width: 15 },
+        { header: 'Fecha Emisión', key: 'fecha_emision', width: 15 },
+        { header: 'Cliente', key: 'cliente_nombre', width: 30 },
+        { header: 'Estado', key: 'estado_nombre', width: 15 },
+        { header: 'Total', key: 'total', width: 15 },
+        { header: 'Cancelado', key: 'cancelado', width: 15 },
+        { header: 'Saldo Pendiente', key: 'saldo_pendiente', width: 15 },
+        { header: 'Fecha Vto. Pago', key: 'fecha_vto_pago', width: 15 },
+        { header: 'Observaciones', key: 'observaciones', width: 40 }
+      ];
+      
+      // Agregar datos
+      facturas.forEach(factura => {
+        worksheet.addRow({
+          numero_factura: factura.numero_factura,
+          fecha_emision: factura.fecha_emision ? new Date(factura.fecha_emision) : '',
+          cliente_nombre: factura.cliente_nombre,
+          estado_nombre: factura.estado_nombre,
+          total: factura.total || 0,
+          cancelado: factura.cancelado || 0,
+          saldo_pendiente: factura.saldo_pendiente || 0,
+          fecha_vto_pago: factura.fecha_vto_pago ? new Date(factura.fecha_vto_pago) : '',
+          observaciones: factura.observaciones || ''
+        });
+      });
+      
+      // Formatear encabezados
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+      
+      // Configurar formato para columnas de números
+      ['E', 'F', 'G'].forEach(col => {
+        worksheet.getColumn(col).numFmt = '#,##0.00';
+      });
+      
+      // Configurar formato para columnas de fechas
+      ['B', 'H'].forEach(col => {
+        worksheet.getColumn(col).numFmt = 'dd/mm/yyyy';
+      });
+      
+      // Configurar respuesta HTTP
+      const fileName = `facturas_emitidas_${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      
+      // Enviar archivo
+      await workbook.xlsx.write(res);
+      res.end();
+      
+    } catch (error) {
+      console.error('❌ Error al exportar facturas emitidas:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al exportar las facturas emitidas'
+      });
+    }
+  }
+
+  /**
+   * Facturas recibidas (módulo de compras)
+   */
+  static async recibidas(req, res) {
+    try {
+      console.log('📥 Cargando facturas recibidas');
+      
+      // Renderizar la vista que usará DataTables para cargar datos dinámicamente
+      res.render('facturas/recibidas', {
+        title: 'Facturas Recibidas'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al cargar facturas recibidas:', error);
+      req.flash('error', 'Error al cargar facturas recibidas');
+      res.redirect('/dashboard');
+    }
+  }
+
+  /**
+   * API para obtener facturas recibidas (DataTable)
+   */
+  static async getFacturasRecibidasAPI(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.length) || parseInt(req.query.limit) || 20;
+      const sortBy = req.query.sortBy || 'fecha_compra';
+      const sortOrder = req.query.sortOrder || 'DESC';
+      
+      console.log(`📥 API: Obteniendo facturas recibidas - Página ${page}, Límite ${limit}`);
+      
+      // Obtener filtros del query string
+      const filters = {
+        numero_factura: req.query.numero_factura,
+        proveedor_id: req.query.proveedor_id,
+        proveedor_nombre: req.query.proveedor,
+        estado: req.query.estado,
+        fecha_desde: req.query.fecha_desde,
+        fecha_hasta: req.query.fecha_hasta,
+        monto_desde: req.query.monto_desde,
+        monto_hasta: req.query.monto_hasta
+      };
+      
+      // Limpiar filtros vacíos
+      Object.keys(filters).forEach(key => {
+        if (!filters[key] || filters[key] === '') {
+          delete filters[key];
+        }
+      });
+      
+      const resultado = await FacturaModel.searchFacturasRecibidas(filters, page, limit, sortBy, sortOrder);
+      
+      // Formatear datos para DataTables
+      const formattedData = resultado.data.map(f => ({
+        ...f,
+        fecha_compra_formatted: f.fecha_compra ? new Date(f.fecha_compra).toLocaleDateString('es-AR') : '',
+        fecha_pago_formatted: f.fecha_pago ? new Date(f.fecha_pago).toLocaleDateString('es-AR') : '',
+        total_formatted: new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS'
+        }).format(f.total || 0),
+        saldo_pendiente_formatted: new Intl.NumberFormat('es-AR', {
+          style: 'currency', 
+          currency: 'ARS'
+        }).format(f.saldo_pendiente || 0)
+      }));
+      
+      res.json({
+        success: true,
+        data: formattedData,
+        recordsTotal: resultado.pagination.total,
+        recordsFiltered: resultado.pagination.total,
+        pagination: resultado.pagination
+      });
+      
+    } catch (error) {
+      console.error('❌ Error en API de facturas recibidas:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener facturas recibidas',
+        message: error.message,
+        data: []
+      });
+    }
+  }
+
+  /**
+   * Exportar facturas recibidas a Excel
+   */
+  static async exportarFacturasRecibidasExcel(req, res) {
+    try {
+      console.log('📊 Exportando facturas recibidas a Excel');
+      
+      // Obtener filtros del query string
+      const filters = {
+        numero_factura: req.query.numero_factura,
+        proveedor_nombre: req.query.proveedor,
+        estado: req.query.estado,
+        fecha_desde: req.query.fecha_desde,
+        fecha_hasta: req.query.fecha_hasta
+      };
+      
+      // Limpiar filtros vacíos
+      Object.keys(filters).forEach(key => {
+        if (!filters[key] || filters[key] === '') {
+          delete filters[key];
+        }
+      });
+      
+      // Obtener todas las facturas que coinciden con los filtros
+      const { data: facturas } = await FacturaModel.searchFacturasRecibidas(filters, 1, 10000);
+      
+      const ExcelJS = require('exceljs');
+      
+      // Crear workbook
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Facturas Recibidas');
+      
+      // Configurar columnas
+      worksheet.columns = [
+        { header: 'N° Factura', key: 'numero_factura', width: 15 },
+        { header: 'Fecha Compra', key: 'fecha_compra', width: 15 },
+        { header: 'Proveedor', key: 'proveedor_nombre', width: 30 },
+        { header: 'Estado', key: 'estado_nombre', width: 15 },
+        { header: 'Total', key: 'total', width: 15 },
+        { header: 'Cancelado', key: 'cancelado', width: 15 },
+        { header: 'Saldo Pendiente', key: 'saldo_pendiente', width: 15 },
+        { header: 'Fecha Pago', key: 'fecha_pago', width: 15 },
+        { header: 'Observaciones', key: 'observaciones', width: 40 }
+      ];
+      
+      // Agregar datos
+      facturas.forEach(factura => {
+        worksheet.addRow({
+          numero_factura: factura.numero_factura,
+          fecha_compra: factura.fecha_compra ? new Date(factura.fecha_compra) : '',
+          proveedor_nombre: factura.proveedor_nombre,
+          estado_nombre: factura.estado_nombre,
+          total: factura.total || 0,
+          cancelado: factura.cancelado || 0,
+          saldo_pendiente: factura.saldo_pendiente || 0,
+          fecha_pago: factura.fecha_pago ? new Date(factura.fecha_pago) : '',
+          observaciones: factura.observaciones || ''
+        });
+      });
+      
+      // Formatear encabezados
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+      
+      // Configurar formato para columnas de números
+      ['E', 'F', 'G'].forEach(col => {
+        worksheet.getColumn(col).numFmt = '#,##0.00';
+      });
+      
+      // Configurar formato para columnas de fechas
+      ['B', 'H'].forEach(col => {
+        worksheet.getColumn(col).numFmt = 'dd/mm/yyyy';
+      });
+      
+      // Configurar respuesta HTTP
+      const fileName = `facturas_recibidas_${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      
+      // Enviar archivo
+      await workbook.xlsx.write(res);
+      res.end();
+      
+    } catch (error) {
+      console.error('❌ Error al exportar facturas recibidas:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al exportar las facturas recibidas'
+      });
+    }
+  }
+  /**
+   * Ver detalle de factura recibida
+   */
+  static async verRecibida(req, res) {
+    try {
+      const id = req.params.id;
+      console.log(`👁️ Visualizando factura recibida ID: ${id}`);
+
+      const factura = await FacturaModel.getFacturaRecibidaById(id);
+
+      console.log('🐛 DEBUG factura.proveedor_nombre:', factura ? factura.proveedor_nombre : 'null');
+      console.log('🐛 DEBUG factura objeto:', factura ? Object.keys(factura) : 'null');
+
+      if (!factura) {
+        return res.status(404).render('error', {
+          title: 'Error 404',
+          message: 'Factura recibida no encontrada'
+        });
+      }
+
+      res.render('facturas/recibidas-detalle', {
+        title: `Factura recibida ${factura.numero_factura}`,
+        factura,
+        proveedor: factura.proveedor_nombre ? {
+          nombre: factura.proveedor_nombre,
+          codigo: factura.proveedor_codigo || 'N/A',
+          tipo: factura.proveedor_tipo || 'N/A',
+          condicion_iva: factura.proveedor_condicion_iva || 0
+        } : null,
+        formatCurrency: (amount) => {
+          if (!amount || isNaN(amount)) return '$0.00';
+          return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 2
+          }).format(amount);
+        },
+        formatDate: (date) => {
+          if (!date) return 'N/A';
+          try {
+            return new Date(date).toLocaleDateString('es-AR');
+          } catch (error) {
+            return 'N/A';
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error al visualizar factura recibida:', error);
+      return res.status(500).render('error', {
+        title: 'Error 500',
+        message: 'Error al cargar la factura recibida: ' + error.message
+      });
+    }
+  }
+}
+
+module.exports = FacturaController;

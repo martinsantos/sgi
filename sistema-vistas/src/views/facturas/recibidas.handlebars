@@ -1,0 +1,191 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Facturas Recibidas</h2>
+  <div class="btn-group" role="group">
+    <button type="button" class="btn btn-success" onclick="exportarFacturasRecibidas()">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='/facturas/nueva-recibida'">
+      <i class="bi bi-plus"></i> Nueva Factura
+    </button>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Filtros de Búsqueda</h5>
+  </div>
+  <div class="card-body">
+    <form id="formBusqueda" class="row g-3">
+      <div class="col-md-3">
+        <label for="numero_factura" class="form-label">N° Factura</label>
+        <input type="text" class="form-control" id="numero_factura" name="numero_factura" placeholder="N° Factura">
+      </div>
+      <div class="col-md-3">
+        <label for="proveedor" class="form-label">Proveedor</label>
+        <input type="text" class="form-control" id="proveedor" name="proveedor" placeholder="Nombre del proveedor">
+      </div>
+      <div class="col-md-2">
+        <label for="fecha_desde" class="form-label">Desde</label>
+        <input type="date" class="form-control" id="fecha_desde" name="fecha_desde">
+      </div>
+      <div class="col-md-2">
+        <label for="fecha_hasta" class="form-label">Hasta</label>
+        <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover" id="tablaFacturas">
+        <thead>
+          <tr>
+            <th>N° Factura</th>
+            <th>Fecha</th>
+            <th>Proveedor</th>
+            <th class="text-end">Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6" class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-2 mb-0">Cargando facturas recibidas...</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar DataTable
+    const table = $('#tablaFacturas').DataTable({
+      ajax: {
+        url: '/facturas/api/recibidas',
+        dataSrc: 'data'
+      },
+      columns: [
+        { data: 'numero_factura' },
+        { 
+          data: 'fecha_compra',
+          render: function(data) {
+            return data ? new Date(data).toLocaleDateString('es-AR') : '';
+          }
+        },
+        { data: 'proveedor_nombre' },
+        { 
+          data: 'total',
+          className: 'text-end',
+          render: function(data) {
+            return data ? new Intl.NumberFormat('es-AR', { 
+              style: 'currency', 
+              currency: 'ARS' 
+            }).format(data) : '$ 0,00';
+          }
+        },
+        {
+          data: 'estado',
+          render: function(data) {
+            const estados = {
+              1: { text: 'Pendiente', class: 'bg-warning' },
+              2: { text: 'Parcialmente Pagada', class: 'bg-info' },
+              3: { text: 'Pagada', class: 'bg-success' },
+              4: { text: 'Anulada', class: 'bg-secondary' }
+            };
+            const estado = estados[data] || { text: 'Desconocido', class: 'bg-secondary' };
+            return `<span class="badge ${estado.class}">${estado.text}</span>`;
+          }
+        },
+        {
+          data: 'id',
+          orderable: false,
+          render: function(data) {
+            return `
+              <a href="/facturas/recibidas/${data}" class="btn btn-sm btn-primary" title="Ver detalle">
+                <i class="bi bi-eye"></i>
+              </a>
+            `;
+          }
+        }
+      ],
+      order: [[1, 'desc']], // Ordenar por fecha descendente por defecto
+      language: {
+        processing: "Procesando...",
+        search: "Buscar:",
+        lengthMenu: "Mostrar _MENU_ entradas",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+        infoEmpty: "Mostrando 0 a 0 de 0 entradas",
+        infoFiltered: "(filtrado de _MAX_ entradas totales)",
+        infoPostFix: "",
+        loadingRecords: "Cargando...",
+        zeroRecords: "No se encontraron datos",
+        emptyTable: "No hay datos disponibles en la tabla",
+        paginate: {
+          first: "Primero",
+          previous: "Anterior",
+          next: "Siguiente",
+          last: "Último"
+        },
+        aria: {
+          sortAscending: ": activar para ordenar la columna de manera ascendente",
+          sortDescending: ": activar para ordenar la columna de manera descendente"
+        }
+      },
+      responsive: true,
+      processing: true,
+      serverSide: true
+    });
+
+    // Manejar búsqueda
+    $('#formBusqueda').on('submit', function(e) {
+      e.preventDefault();
+      const formData = $(this).serialize();
+      const params = new URLSearchParams(formData);
+      
+      // Actualizar la URL con los parámetros de búsqueda
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.pushState({}, '', newUrl);
+      
+      // Realizar la búsqueda
+      table.ajax.url(`/facturas/api/recibidas?${params.toString()}`).load();
+    });
+
+    // Manejar botón limpiar
+    $('#btnLimpiar').on('click', function() {
+      $('#formBusqueda')[0].reset();
+      window.history.pushState({}, '', window.location.pathname);
+      table.ajax.url('/facturas/api/recibidas').load();
+    });
+
+    // Manejar exportación a Excel
+    $('#btnExportar').on('click', function() {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = `/facturas/api/facturas/recibidas/exportar?${params.toString()}`;
+    });
+
+    // Export function
+    window.exportarFacturasRecibidas = function() {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = `/facturas/api/facturas/recibidas/exportar?${params.toString()}`;
+    };
+  });
+</script>
+{{/section}}

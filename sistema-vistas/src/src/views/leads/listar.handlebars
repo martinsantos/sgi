@@ -1,0 +1,348 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{title}}</h1>
+  <div>
+    <a href="/" class="btn btn-outline-secondary me-2">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <button type="button" class="btn btn-info me-2" onclick="exportarLeads()">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </button>
+    <a href="/leads/nuevo" class="btn btn-success">
+      <i class="bi bi-plus-circle"></i> Nuevo Lead
+    </a>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Filtros de Búsqueda</h5>
+  </div>
+  <div class="card-body">
+    <form id="formBusqueda" class="row g-3">
+      <div class="col-md-3">
+        <label for="nombre_empresa" class="form-label">Empresa</label>
+        <input type="text" class="form-control" id="nombre_empresa" name="nombre_empresa" placeholder="Nombre de la empresa">
+      </div>
+      <div class="col-md-3">
+        <label for="contacto" class="form-label">Contacto</label>
+        <input type="text" class="form-control" id="contacto" name="contacto" placeholder="Nombre del contacto">
+      </div>
+      <div class="col-md-2">
+        <label for="estado" class="form-label">Estado</label>
+        <select class="form-select" id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="1">Nuevo</option>
+          <option value="2">Contactado</option>
+          <option value="3">Calificado</option>
+          <option value="4">Propuesta</option>
+          <option value="5">Cerrado</option>
+          <option value="6">Perdido</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="fuente" class="form-label">Fuente</label>
+        <select class="form-select" id="fuente" name="fuente">
+          <option value="">Todas</option>
+          <option value="web">Sitio Web</option>
+          <option value="referencia">Referencia</option>
+          <option value="publicidad">Publicidad</option>
+          <option value="evento">Evento</option>
+          <option value="llamada">Llamada Fría</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-primary">{{stats.nuevos}}</h5>
+        <p class="card-text">Nuevos</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-info">{{stats.en_proceso}}</h5>
+        <p class="card-text">En Proceso</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-success">{{stats.cerrados}}</h5>
+        <p class="card-text">Cerrados</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title text-warning">{{formatCurrency stats.valor_total}}</h5>
+        <p class="card-text">Valor Pipeline</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover" id="tablaLeads">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Contacto</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th>Fuente</th>
+            <th class="text-end">Valor Est.</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each leads}}
+          <tr>
+            <td>
+              <div>
+                <strong>{{this.nombre_empresa}}</strong>
+                {{#if this.observaciones}}
+                <small class="text-muted d-block">{{this.observaciones}}</small>
+                {{/if}}
+              </div>
+            </td>
+            <td>{{this.nombre_contacto}}</td>
+            <td>
+              {{#if this.email}}
+              <a href="mailto:{{this.email}}">{{this.email}}</a>
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.telefono}}
+              <a href="tel:{{this.telefono}}">{{this.telefono}}</a>
+              {{/if}}
+            </td>
+            <td>
+              <span class="badge {{#eq this.estado 1}}bg-secondary{{/eq}}{{#eq this.estado 2}}bg-info{{/eq}}{{#eq this.estado 3}}bg-primary{{/eq}}{{#eq this.estado 4}}bg-warning{{/eq}}{{#eq this.estado 5}}bg-success{{/eq}}{{#eq this.estado 6}}bg-danger{{/eq}}">
+                {{#eq this.estado 1}}Nuevo{{/eq}}
+                {{#eq this.estado 2}}Contactado{{/eq}}
+                {{#eq this.estado 3}}Calificado{{/eq}}
+                {{#eq this.estado 4}}Propuesta{{/eq}}
+                {{#eq this.estado 5}}Cerrado{{/eq}}
+                {{#eq this.estado 6}}Perdido{{/eq}}
+              </span>
+            </td>
+            <td>
+              <small class="text-muted">{{this.fuente}}</small>
+            </td>
+            <td class="text-end">{{formatCurrency this.valor_estimado}}</td>
+            <td>{{formatDate this.fecha_contacto}}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="/leads/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/leads/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                {{#if (eq this.estado 3)}}
+                <button class="btn btn-outline-success btn-convertir" data-id="{{this.id}}" title="Convertir a Cliente">
+                  <i class="bi bi-arrow-right-circle"></i>
+                </button>
+                {{/if}}
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr>
+            <td colspan="9" class="text-center py-4">
+              <div class="text-muted">No se encontraron leads</div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar DataTable si no hay datos desde el servidor
+    {{#unless leads}}
+    const table = $('#tablaLeads').DataTable({
+      ajax: {
+        url: '/api/leads',
+        dataSrc: 'data'
+      },
+      columns: [
+        { 
+          data: 'nombre_empresa',
+          render: function(data, type, row) {
+            let html = `<div><strong>${data}</strong>`;
+            if (row.observaciones) {
+              html += `<small class="text-muted d-block">${row.observaciones}</small>`;
+            }
+            html += '</div>';
+            return html;
+          }
+        },
+        { data: 'nombre_contacto' },
+        { 
+          data: 'email',
+          render: function(data) {
+            return data ? `<a href="mailto:${data}">${data}</a>` : '';
+          }
+        },
+        { 
+          data: 'telefono',
+          render: function(data) {
+            return data ? `<a href="tel:${data}">${data}</a>` : '';
+          }
+        },
+        {
+          data: 'estado',
+          render: function(data) {
+            const estados = {
+              1: { text: 'Nuevo', class: 'bg-secondary' },
+              2: { text: 'Contactado', class: 'bg-info' },
+              3: { text: 'Calificado', class: 'bg-primary' },
+              4: { text: 'Propuesta', class: 'bg-warning' },
+              5: { text: 'Cerrado', class: 'bg-success' },
+              6: { text: 'Perdido', class: 'bg-danger' }
+            };
+            const estado = estados[data] || { text: 'Desconocido', class: 'bg-secondary' };
+            return `<span class="badge ${estado.class}">${estado.text}</span>`;
+          }
+        },
+        { 
+          data: 'fuente',
+          render: function(data) {
+            return `<small class="text-muted">${data}</small>`;
+          }
+        },
+        { 
+          data: 'valor_estimado',
+          className: 'text-end',
+          render: function(data) {
+            return data ? new Intl.NumberFormat('es-AR', { 
+              style: 'currency', 
+              currency: 'ARS' 
+            }).format(data) : '$ 0,00';
+          }
+        },
+        { 
+          data: 'fecha_contacto',
+          render: function(data) {
+            return data ? new Date(data).toLocaleDateString('es-AR') : '';
+          }
+        },
+        {
+          data: null,
+          orderable: false,
+          render: function(data, type, row) {
+            let html = `
+              <div class="btn-group btn-group-sm">
+                <a href="/leads/ver/${row.id}" class="btn btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/leads/editar/${row.id}" class="btn btn-outline-warning" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>`;
+            if (row.estado === 3) {
+              html += `
+                <button class="btn btn-outline-success btn-convertir" data-id="${row.id}" title="Convertir a Cliente">
+                  <i class="bi bi-arrow-right-circle"></i>
+                </button>`;
+            }
+            html += '</div>';
+            return html;
+          }
+        }
+      ],
+      order: [[7, 'desc']], // Ordenar por fecha de contacto descendente
+      language: {
+        processing: "Procesando...",
+        search: "Buscar:",
+        lengthMenu: "Mostrar _MENU_ entradas",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+        infoEmpty: "Mostrando 0 a 0 de 0 entradas",
+        infoFiltered: "(filtrado de _MAX_ entradas totales)",
+        infoPostFix: "",
+        loadingRecords: "Cargando...",
+        zeroRecords: "No se encontraron datos",
+        emptyTable: "No hay datos disponibles en la tabla",
+        paginate: {
+          first: "Primero",
+          previous: "Anterior",
+          next: "Siguiente",
+          last: "Último"
+        },
+        aria: {
+          sortAscending: ": activar para ordenar la columna de manera ascendente",
+          sortDescending: ": activar para ordenar la columna de manera descendente"
+        }
+      },
+      responsive: true,
+      processing: true
+    });
+    {{/unless}}
+
+    // Manejar conversión a cliente
+    $(document).on('click', '.btn-convertir', function() {
+      const leadId = $(this).data('id');
+      if (confirm('¿Está seguro que desea convertir este lead en cliente?')) {
+        $.ajax({
+          url: `/api/leads/${leadId}/convertir`,
+          method: 'POST',
+          success: function(response) {
+            if (response.success) {
+              alert('Lead convertido exitosamente a cliente');
+              location.reload();
+            } else {
+              alert('Error al convertir el lead: ' + response.message);
+            }
+          },
+          error: function() {
+            alert('Error al convertir el lead');
+          }
+        });
+      }
+    });
+
+    // Manejar búsqueda
+    $('#formBusqueda').on('submit', function(e) {
+      e.preventDefault();
+      const formData = $(this).serialize();
+      window.location.href = `${window.location.pathname}?${formData}`;
+    });
+
+    // Manejar botón limpiar
+    $('#btnLimpiar').on('click', function() {
+      $('#formBusqueda')[0].reset();
+      window.location.href = window.location.pathname;
+    });
+
+    // Export function
+    window.exportarLeads = function() {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = `/api/leads/exportar?${params.toString()}`;
+    };
+  });
+</script>
+{{/section}}

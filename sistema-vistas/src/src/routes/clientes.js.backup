@@ -1,0 +1,74 @@
+const express = require('express');
+const router = express.Router();
+const ClienteController = require('../controllers/clientesController');
+
+// Endpoints API JSON
+router.get('/api/listado', ClienteController.getClientes);
+router.post('/api/crear', ClienteController.createCliente);
+// Route commented out until updateCliente is implemented
+// router.put('/api/update/:id', ClienteController.updateCliente);
+router.get('/api/:id', ClienteController.getClienteDetalle);  // Use getClienteDetalle which is implemented
+
+/**
+ * Rutas de Clientes - CRM
+ */
+
+// Dashboard de clientes - COMENTADO TEMPORALMENTE
+// router.get('/dashboard', ClienteController.dashboard);
+
+// Cartera de clientes por vendedor (GC.1, GC.3) - COMENTADO TEMPORALMENTE
+// router.get('/cartera', ClienteController.carteraPorVendedor);
+
+// Reporte de comisiones (GC.5) - COMENTADO TEMPORALMENTE
+// router.get('/comisiones', ClienteController.reporteComisiones);
+
+// Listado principal
+router.get('/', ClienteController.getClientes);
+
+// Crear cliente - Ruta fallback para compatibilidad
+router.post('/', ClienteController.createCliente);
+
+// Búsqueda con filtros
+router.get('/buscar', ClienteController.buscarClientes);
+
+// API para obtener clientes (JSON)
+router.get('/api', ClienteController.getClientesAPI);
+
+// API para búsqueda JSON
+router.get('/api/search', ClienteController.buscarClientes);
+router.get('/api/search-json', ClienteController.buscarClientesAPI);
+
+// Ruta específica para modal de facturas
+router.get('/modal/search', (req, res) => {
+  const { q, search, nombre } = req.query;
+  const searchTerm = q || search || nombre || '';
+  
+  // Redirigir a la API principal con parámetros correctos
+  req.query.search = searchTerm;
+  req.headers.accept = 'application/json';
+  
+  // Llamar al controlador
+  require('../controllers/clientesController').getClientesAPI(req, res);
+});
+
+// Formularios de creación
+router.get('/crear', ClienteController.nuevoCliente);
+router.get('/nuevo', ClienteController.nuevoCliente); // Alias para crear
+router.post('/crear', ClienteController.createCliente);
+router.post('/nuevo', ClienteController.createCliente); // Alias para crear
+
+// Ver cliente específico
+router.get('/ver/:id', ClienteController.getClienteDetalle);
+router.get('/:id', ClienteController.getClienteDetalle);
+
+// Historial comercial del cliente (GC.2) - COMENTADO TEMPORALMENTE
+// router.get('/:id/historial', ClienteController.historialComercial);
+
+// Formularios de edición - COMENTADO TEMPORALMENTE
+// router.get('/:id/editar', ClienteController.mostrarEditar);
+// router.post('/:id/editar', ClienteController.actualizar);
+
+// Generar lead desde cliente (GC.4) - COMENTADO TEMPORALMENTE
+// router.post('/:id/generar-lead', ClienteController.generarLead);
+
+module.exports = router;

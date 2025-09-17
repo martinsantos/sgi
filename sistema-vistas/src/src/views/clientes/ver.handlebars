@@ -1,0 +1,331 @@
+<div class="container-fluid mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">{{cliente.nombre_completo}}</h1>
+                    <p class="text-muted mb-0">
+                        Cliente desde {{formatDate cliente.created}} 
+                        {{#if cliente.codigo}}
+                        | Código: <span class="badge bg-secondary">{{cliente.codigo}}</span>
+                        {{/if}}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/clientes" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    <a href="/clientes/editar/{{cliente.id}}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Info Cards -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Información del Cliente</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> {{cliente.email}}</p>
+                            <p><strong>Teléfono:</strong> {{cliente.telefono}}</p>
+                            <p><strong>CUIL/CUIT:</strong> {{cliente.cuil_cuit}}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Dirección:</strong> {{cliente.direccion}}</p>
+                            <p><strong>Código Postal:</strong> {{cliente.codigo_postal}}</p>
+                            <p><strong>Tipo:</strong> {{cliente.tipo_persona}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Resumen</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Total Facturado</h6>
+                        <h4 class="text-success">{{formatCurrency resumen.total_facturado}}</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Pendiente de Cobro</h6>
+                        <h5 class="text-warning">{{formatCurrency resumen.pendiente_cobro}}</h5>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h5 class="mb-1">{{resumen.total_facturas}}</h5>
+                                <small class="text-muted">Facturas</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h5 class="mb-1">{{resumen.proyectos_activos}}</h5>
+                                <small class="text-muted">Proyectos Activos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Tab -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#proyectos" type="button">Proyectos ({{proyectos.length}})</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#facturas" type="button">Facturas ({{facturas.length}})</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#presupuestos" type="button">Presupuestos ({{presupuestos.length}})</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#certificados" type="button">Certificados ({{certificados.length}})</button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body">
+                    
+                    <div class="tab-content">
+                        <!-- Projects Tab -->
+                        <div class="tab-pane fade show active" id="proyectos" role="tabpanel">
+                            
+                            {{#if proyectos.length}}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Proyecto</th>
+                                            <th>Fecha Inicio</th>
+                                            <th>Fecha Cierre</th>
+                                            <th>Estado</th>
+                                            <th>Presupuesto</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#each proyectos}}
+                                        <tr>
+                                            <td>{{descripcion}}</td>
+                                            <td>{{formatDate fecha_inicio}}</td>
+                                            <td>{{formatDate fecha_cierre}}</td>
+                                            <td>
+                                                {{#if (eq estado 1)}}
+                                                <span class="badge badge-warning">En Progreso</span>
+                                                {{else if (eq estado 2)}}
+                                                <span class="badge badge-success">Completado</span>
+                                                {{else if (eq estado 3)}}
+                                                <span class="badge badge-danger">Cancelado</span>
+                                                {{else}}
+                                                <span class="badge badge-secondary">Borrador</span>
+                                                {{/if}}
+                                            </td>
+                                            <td>{{formatCurrency presupuesto}}</td>
+                                            <td>
+                                                <a href="/proyectos/ver/{{id}}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                            </td>
+                                        </tr>
+                                        {{/each}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{else}}
+                            <div class="text-center py-4">
+                                <p class="text-muted">No hay proyectos registrados para este cliente.</p>
+                                <a href="/proyectos/nuevo" class="btn btn-primary">Crear Nuevo Proyecto</a>
+                            </div>
+                            {{/if}}
+                        </div>
+
+                        <!-- Invoices Tab -->
+                        <div class="tab-pane fade" id="facturas" role="tabpanel">
+                            
+                            {{#if facturas.length}}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Fecha Emisión</th>
+                                            <th>Tipo</th>
+                                            <th>Total</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#each facturas}}
+                                        <tr>
+                                            <td><strong>{{numero_factura}}</strong></td>
+                                            <td>{{formatDate fecha_emision}}</td>
+                                            <td>Factura Emitida</td>
+                                            <td><strong>{{formatCurrency total}}</strong></td>
+                                            <td>
+                                                {{#if (eq estado 1)}}
+                                                <span class="badge badge-warning">Pendiente</span>
+                                                {{else if (eq estado 2)}}
+                                                <span class="badge badge-info">Pagada Parcial</span>
+                                                {{else if (eq estado 3)}}
+                                                <span class="badge badge-success">Pagada</span>
+                                                {{else if (eq estado 4)}}
+                                                <span class="badge badge-primary">En Proceso</span>
+                                                {{else if (eq estado 5)}}
+                                                <span class="badge badge-danger">Anulada</span>
+                                                {{else}}
+                                                <span class="badge badge-secondary">Borrador</span>
+                                                {{/if}}
+                                            </td>
+                                            <td>
+                                                <a href="/facturas/ver/{{id}}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                            </td>
+                                        </tr>
+                                        {{/each}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{else}}
+                            <div class="text-center py-4">
+                                <p class="text-muted">No hay facturas registradas para este cliente.</p>
+                                <a href="/facturas/nuevo" class="btn btn-primary">Crear Nueva Factura</a>
+                            </div>
+                            {{/if}}
+                        </div>
+
+                        <!-- Presupuestos Tab -->
+                        <div class="tab-pane fade" id="presupuestos" role="tabpanel">
+                            
+                            {{#if presupuestos.length}}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Descripción</th>
+                                            <th>Fecha Cierre</th>
+                                            <th>Precio Venta</th>
+                                            <th>Estado</th>
+                                            <th>Probabilidad</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#each presupuestos}}
+                                        <tr>
+                                            <td><strong>{{numero}}</strong></td>
+                                            <td>{{descripcion}}</td>
+                                            <td>{{formatDate fecha_cierre}}</td>
+                                            <td><strong>{{formatCurrency precio_venta}}</strong></td>
+                                            <td>
+                                                {{#if (eq estado "0")}}
+                                                <span class="badge badge-secondary">Borrador</span>
+                                                {{else if (eq estado "1")}}
+                                                <span class="badge badge-warning">Enviado</span>
+                                                {{else if (eq estado "2")}}
+                                                <span class="badge badge-info">En Revisión</span>
+                                                {{else if (eq estado "3")}}
+                                                <span class="badge badge-success">Aprobado</span>
+                                                {{else if (eq estado "4")}}
+                                                <span class="badge badge-primary">Facturado</span>
+                                                {{else if (eq estado "5")}}
+                                                <span class="badge badge-danger">Rechazado</span>
+                                                {{else}}
+                                                <span class="badge badge-light">Desconocido</span>
+                                                {{/if}}
+                                            </td>
+                                            <td>
+                                                {{#if (eq probabilidad 1)}}
+                                                <span class="badge badge-danger">Baja</span>
+                                                {{else if (eq probabilidad 2)}}
+                                                <span class="badge badge-warning">Media</span>
+                                                {{else if (eq probabilidad 3)}}
+                                                <span class="badge badge-success">Alta</span>
+                                                {{else}}
+                                                <span class="badge badge-secondary">N/D</span>
+                                                {{/if}}
+                                            </td>
+                                            <td>
+                                                <a href="/presupuestos/ver/{{id}}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                            </td>
+                                        </tr>
+                                        {{/each}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{else}}
+                            <div class="text-center py-4">
+                                <p class="text-muted">No hay presupuestos registrados para este cliente.</p>
+                                <a href="/presupuestos/nuevo" class="btn btn-primary">Crear Nuevo Presupuesto</a>
+                            </div>
+                            {{/if}}
+                        </div>
+
+                        <!-- Certificates Tab -->
+                        <div class="tab-pane fade" id="certificados" role="tabpanel">
+                            
+                            {{#if certificados.length}}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Tipo</th>
+                                            <th>Estado</th>
+                                            <th>Monto</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{#each certificados}}
+                                        <tr>
+                                            <td>{{numero_certificado}}</td>
+                                            <td>{{tipo}}</td>
+                                            <td>
+                                                {{#if (eq estado 1)}}
+                                                <span class="badge badge-warning">Pendiente</span>
+                                                {{else if (eq estado 2)}}
+                                                <span class="badge badge-success">Aprobado</span>
+                                                {{else if (eq estado 4)}}
+                                                <span class="badge badge-info">Facturado</span>
+                                                {{else}}
+                                                <span class="badge badge-secondary">Borrador</span>
+                                                {{/if}}
+                                            </td>
+                                            <td>{{formatCurrency monto}}</td>
+                                            <td>
+                                                <a href="/certificados/ver/{{id}}" class="btn btn-sm btn-outline-primary">Ver</a>
+                                            </td>
+                                        </tr>
+                                        {{/each}}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {{else}}
+                            <div class="text-center py-4">
+                                <p class="text-muted">No hay certificados registrados para este cliente.</p>
+                                <a href="/certificados/nuevo" class="btn btn-primary">Crear Nuevo Certificado</a>
+                            </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

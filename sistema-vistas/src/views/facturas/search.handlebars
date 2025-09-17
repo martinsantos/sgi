@@ -1,0 +1,433 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{title}}</h1>
+  <div>
+    <a href="/facturas" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+</div>
+
+<!-- Filtros de Búsqueda -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="bi bi-funnel"></i> Filtros de Búsqueda
+    </h5>
+  </div>
+  <div class="card-body">
+    <form method="GET" action="/facturas/search" id="searchForm">
+      <div class="row">
+        <!-- Filtros Básicos -->
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="numero_factura" class="form-label">Número de Factura</label>
+            <input type="text" class="form-control" id="numero_factura" name="numero_factura" 
+                   value="{{filters.numero_factura}}" placeholder="Ej: 123, F-123">
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="cliente_nombre" class="form-label">Cliente</label>
+            <input type="text" class="form-control" id="cliente_nombre" name="cliente_nombre" 
+                   value="{{filters.cliente_nombre}}" placeholder="Nombre o razón social">
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label for="estado" class="form-label">Estado</label>
+            <select class="form-select" id="estado" name="estado">
+              <option value="">Todos los estados</option>
+              {{#each estados}}
+              <option value="{{this.value}}" {{#if (eq this.value ../filters.estado)}}selected{{/if}}>
+                {{this.name}}
+              </option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label for="tipo_factura" class="form-label">Tipo de Factura</label>
+            <select class="form-select" id="tipo_factura" name="tipo_factura">
+              <option value="">Todos los tipos</option>
+              {{#each tipos_factura}}
+              <option value="{{this.value}}" {{#if (eq this.value ../filters.tipo_factura)}}selected{{/if}}>
+                {{this.name}}
+              </option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label for="punto_venta" class="form-label">Punto de Venta</label>
+            <input type="number" class="form-control" id="punto_venta" name="punto_venta" 
+                   value="{{filters.punto_venta}}" placeholder="Ej: 1, 2, 3">
+          </div>
+        </div>
+        
+        <!-- Filtros de Fecha -->
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="fecha_desde" class="form-label">Fecha Desde</label>
+            <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" 
+                   value="{{filters.fecha_desde}}">
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+            <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" 
+                   value="{{filters.fecha_hasta}}">
+          </div>
+        </div>
+        
+        <!-- Filtros de Monto -->
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="monto_desde" class="form-label">Monto Desde</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control" id="monto_desde" name="monto_desde" 
+                     value="{{filters.monto_desde}}" step="0.01" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="monto_hasta" class="form-label">Monto Hasta</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control" id="monto_hasta" name="monto_hasta" 
+                     value="{{filters.monto_hasta}}" step="0.01" placeholder="999999.99">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Búsqueda por Texto Libre -->
+        <div class="col-12">
+          <div class="mb-3">
+            <label for="texto_libre" class="form-label">Búsqueda Libre</label>
+            <input type="text" class="form-control" id="texto_libre" name="texto_libre" 
+                   value="{{filters.texto_libre}}" 
+                   placeholder="Buscar en observaciones, cliente...">
+          </div>
+        </div>
+        
+        <!-- Ordenamiento -->
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="sortBy" class="form-label">Ordenar por</label>
+            <select class="form-select" id="sortBy" name="sortBy">
+              <option value="fecha_emision" {{#if (eq sortBy 'fecha_emision')}}selected{{/if}}>Fecha de Emisión</option>
+              <option value="numero_factura" {{#if (eq sortBy 'numero_factura')}}selected{{/if}}>Número de Factura</option>
+              <option value="total" {{#if (eq sortBy 'total')}}selected{{/if}}>Monto Total</option>
+              <option value="cliente_nombre" {{#if (eq sortBy 'cliente_nombre')}}selected{{/if}}>Cliente</option>
+              <option value="estado" {{#if (eq sortBy 'estado')}}selected{{/if}}>Estado</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="sortOrder" class="form-label">Orden</label>
+            <select class="form-select" id="sortOrder" name="sortOrder">
+              <option value="DESC" {{#if (eq sortOrder 'DESC')}}selected{{/if}}>Descendente</option>
+              <option value="ASC" {{#if (eq sortOrder 'ASC')}}selected{{/if}}>Ascendente</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Botones de Acción -->
+      <div class="d-flex justify-content-between">
+        <div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+          <a href="/facturas/search" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </a>
+        </div>
+        <div>
+          {{#if facturas}}
+          <a href="/facturas/export/excel?{{serialize filters}}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+          </a>
+          {{/if}}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Resultados -->
+{{#if facturas}}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="bi bi-list-ul"></i> Resultados de Búsqueda
+      <span class="badge bg-primary ms-2">{{pagination.total}} facturas</span>
+    </h5>
+    <div>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" onclick="toggleView('table')">
+          <i class="bi bi-table"></i>
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="toggleView('cards')">
+          <i class="bi bi-grid"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card-body">
+    <!-- Vista de Tabla -->
+    <div id="tableView" class="table-responsive">
+      <table class="table table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>
+              <a href="?{{serialize filters}}&sortBy=numero_factura&sortOrder={{#if (eq sortBy 'numero_factura')}}{{#if (eq sortOrder 'ASC')}}DESC{{else}}ASC{{/if}}{{else}}ASC{{/if}}" class="text-decoration-none">
+                N° Factura {{#if (eq sortBy 'numero_factura')}}{{#if (eq sortOrder 'ASC')}}<i class="bi bi-arrow-up"></i>{{else}}<i class="bi bi-arrow-down"></i>{{/if}}{{/if}}
+              </a>
+            </th>
+            <th>
+              <a href="?{{serialize filters}}&sortBy=fecha_emision&sortOrder={{#if (eq sortBy 'fecha_emision')}}{{#if (eq sortOrder 'ASC')}}DESC{{else}}ASC{{/if}}{{else}}DESC{{/if}}" class="text-decoration-none">
+                Fecha {{#if (eq sortBy 'fecha_emision')}}{{#if (eq sortOrder 'ASC')}}<i class="bi bi-arrow-up"></i>{{else}}<i class="bi bi-arrow-down"></i>{{/if}}{{/if}}
+              </a>
+            </th>
+            <th>
+              <a href="?{{serialize filters}}&sortBy=cliente_nombre&sortOrder={{#if (eq sortBy 'cliente_nombre')}}{{#if (eq sortOrder 'ASC')}}DESC{{else}}ASC{{/if}}{{else}}ASC{{/if}}" class="text-decoration-none">
+                Cliente {{#if (eq sortBy 'cliente_nombre')}}{{#if (eq sortOrder 'ASC')}}<i class="bi bi-arrow-up"></i>{{else}}<i class="bi bi-arrow-down"></i>{{/if}}{{/if}}
+              </a>
+            </th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th class="text-end">
+              <a href="?{{serialize filters}}&sortBy=total&sortOrder={{#if (eq sortBy 'total')}}{{#if (eq sortOrder 'ASC')}}DESC{{else}}ASC{{/if}}{{else}}DESC{{/if}}" class="text-decoration-none">
+                Total {{#if (eq sortBy 'total')}}{{#if (eq sortOrder 'ASC')}}<i class="bi bi-arrow-up"></i>{{else}}<i class="bi bi-arrow-down"></i>{{/if}}{{/if}}
+              </a>
+            </th>
+            <th class="text-end">Saldo</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each facturas}}
+          <tr>
+            <td>
+              <strong>{{this.numero_factura}}</strong>
+              {{#if this.punto_venta}}
+              <small class="text-muted d-block">PV: {{this.punto_venta}}</small>
+              {{/if}}
+            </td>
+            <td>{{this.fecha_emision_formatted}}</td>
+            <td>
+              {{this.cliente_nombre}}
+              {{#if this.cliente_codigo}}
+              <small class="text-muted d-block">{{this.cliente_codigo}}</small>
+              {{/if}}
+            </td>
+            <td>
+              <span class="badge bg-secondary">{{this.tipo_factura_nombre}}</span>
+            </td>
+            <td>
+              {{#if (eq this.estado 1)}}
+              <span class="badge bg-warning">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 2)}}
+              <span class="badge bg-info">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 3)}}
+              <span class="badge bg-success">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 4)}}
+              <span class="badge bg-primary">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 5)}}
+              <span class="badge bg-danger">{{this.estado_nombre}}</span>
+              {{else}}
+              <span class="badge bg-secondary">{{this.estado_nombre}}</span>
+              {{/if}}
+            </td>
+            <td class="text-end">{{this.total_formatted}}</td>
+            <td class="text-end">
+              {{#if (gt this.saldo_pendiente 0)}}
+              <span class="text-danger fw-bold">{{this.saldo_pendiente_formatted}}</span>
+              {{else}}
+              <span class="text-success">$0.00</span>
+              {{/if}}
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="/facturas/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {{#if (eq this.estado 1)}}
+                <button type="button" class="btn btn-outline-success" onclick="updateEstado('{{this.id}}', 3)" title="Marcar como Pagada">
+                  <i class="bi bi-check-circle"></i>
+                </button>
+                {{/if}}
+                <a href="/facturas/imprimir/{{this.id}}" class="btn btn-outline-secondary" title="Imprimir" target="_blank">
+                  <i class="bi bi-printer"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Vista de Tarjetas -->
+    <div id="cardsView" class="row" style="display: none;">
+      {{#each facturas}}
+      <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="card-title mb-0">Fact. {{this.numero_factura}}</h6>
+              {{#if (eq this.estado 1)}}
+              <span class="badge bg-warning">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 2)}}
+              <span class="badge bg-info">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 3)}}
+              <span class="badge bg-success">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 4)}}
+              <span class="badge bg-primary">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 5)}}
+              <span class="badge bg-danger">{{this.estado_nombre}}</span>
+              {{else}}
+              <span class="badge bg-secondary">{{this.estado_nombre}}</span>
+              {{/if}}
+            </div>
+            
+            <p class="card-text">
+              <small class="text-muted">{{this.fecha_emision_formatted}}</small><br>
+              <strong>{{this.cliente_nombre}}</strong><br>
+              <span class="badge bg-secondary">{{this.tipo_factura_nombre}}</span>
+            </p>
+            
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-bold">{{this.total_formatted}}</div>
+                {{#if (gt this.saldo_pendiente 0)}}
+                <small class="text-danger">Saldo: {{this.saldo_pendiente_formatted}}</small>
+                {{else}}
+                <small class="text-success">Pagada</small>
+                {{/if}}
+              </div>
+              <div class="btn-group btn-group-sm">
+                <a href="/facturas/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/facturas/imprimir/{{this.id}}" class="btn btn-outline-secondary" title="Imprimir" target="_blank">
+                  <i class="bi bi-printer"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  
+  <!-- Paginación -->
+  {{#if pagination.pages}}
+  <div class="card-footer">
+    {{> pagination}}
+  </div>
+  {{/if}}
+</div>
+{{else if (not (isEmpty filters))}}
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-search fs-1 text-muted mb-3"></i>
+    <h5>No se encontraron facturas</h5>
+    <p class="text-muted">No hay facturas que coincidan con los criterios de búsqueda</p>
+    <a href="/facturas/search" class="btn btn-outline-primary">
+      <i class="bi bi-arrow-clockwise"></i> Limpiar Filtros
+    </a>
+  </div>
+</div>
+{{else}}
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-funnel fs-1 text-muted mb-3"></i>
+    <h5>Configure los filtros de búsqueda</h5>
+    <p class="text-muted">Use los filtros de arriba para buscar facturas específicas</p>
+  </div>
+</div>
+{{/if}}
+
+<script>
+// Funciones JavaScript para la vista
+function toggleView(viewType) {
+  const tableView = document.getElementById('tableView');
+  const cardsView = document.getElementById('cardsView');
+  
+  if (viewType === 'cards') {
+    tableView.style.display = 'none';
+    cardsView.style.display = 'block';
+  } else {
+    tableView.style.display = 'block';
+    cardsView.style.display = 'none';
+  }
+}
+
+function updateEstado(facturaId, nuevoEstado) {
+  if (confirm('¿Está seguro de que desea cambiar el estado de esta factura?')) {
+    fetch(`/facturas/api/${facturaId}/estado`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        estado: nuevoEstado,
+        fecha_cobro: new Date().toISOString().split('T')[0]
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Error al actualizar el estado: ' + data.message);
+      }
+    })
+    .catch(error => {
+      alert('Error de conexión: ' + error.message);
+    });
+  }
+}
+
+// Auto-completar rangos de fecha comunes
+document.addEventListener('DOMContentLoaded', function() {
+  // Agregar enlaces rápidos para rangos de fecha
+  const fechaDesde = document.getElementById('fecha_desde');
+  const fechaHasta = document.getElementById('fecha_hasta');
+  
+  // Función para establecer rangos rápidos
+  window.setDateRange = function(days) {
+    const today = new Date();
+    const fromDate = new Date();
+    fromDate.setDate(today.getDate() - days);
+    
+    fechaDesde.value = fromDate.toISOString().split('T')[0];
+    fechaHasta.value = today.toISOString().split('T')[0];
+  };
+});
+</script>
+
+<!-- Enlaces rápidos de fecha -->
+<div class="text-center mb-3">
+  <small class="text-muted">Rangos rápidos:</small>
+  <button type="button" class="btn btn-link btn-sm" onclick="setDateRange(7)">Últimos 7 días</button>
+  <button type="button" class="btn btn-link btn-sm" onclick="setDateRange(30)">Último mes</button>
+  <button type="button" class="btn btn-link btn-sm" onclick="setDateRange(90)">Últimos 3 meses</button>
+  <button type="button" class="btn btn-link btn-sm" onclick="setDateRange(365)">Último año</button>
+</div>

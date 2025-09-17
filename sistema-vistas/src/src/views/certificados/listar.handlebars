@@ -1,0 +1,270 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{title}}</h1>
+  <div>
+    <a href="/" class="btn btn-outline-secondary me-2">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <a href="/api/certificados/exportar" class="btn btn-info me-2">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
+    <a href="/certificados/nuevo" class="btn btn-success">
+      <i class="bi bi-plus-circle"></i> Nuevo Certificado
+    </a>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Filtros de Búsqueda</h5>
+  </div>
+  <div class="card-body">
+    <form id="formBusqueda" class="row g-3">
+      <div class="col-md-3">
+        <label for="numero_certificado" class="form-label">N° Certificado</label>
+        <input type="text" class="form-control" id="numero_certificado" name="numero_certificado" placeholder="Número de certificado">
+      </div>
+      <div class="col-md-3">
+        <label for="cliente" class="form-label">Cliente</label>
+        <input type="text" class="form-control" id="cliente" name="cliente" placeholder="Nombre del cliente">
+      </div>
+      <div class="col-md-2">
+        <label for="tipo" class="form-label">Tipo</label>
+        <select class="form-select" id="tipo" name="tipo">
+          <option value="">Todos</option>
+          <option value="obra">Obra</option>
+          <option value="servicio">Servicio</option>
+          <option value="avance">Avance</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="fecha_emision" class="form-label">Fecha Emisión</label>
+        <input type="date" class="form-control" id="fecha_emision" name="fecha_emision">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm" id="tablaCertificados" style="width: 100%; table-layout: fixed;">
+        <thead class="table-dark">
+          <tr>
+            <th style="width: 8%;">N° Cert.</th>
+            <th style="width: 18%;">Cliente/Proyecto</th>
+            <th style="width: 20%;">Descripción</th>
+            <th style="width: 10%;">F. Emisión</th>
+            <th style="width: 10%;">F. Factura</th>
+            <th style="width: 6%;">Cant.</th>
+            <th class="text-end" style="width: 10%;">P. Unit.</th>
+            <th class="text-end" style="width: 10%;">Monto</th>
+            <th style="width: 8%;">Estado</th>
+            <th style="width: 10%;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each certificados}}
+          <tr>
+            <td>
+              <strong>{{this.numero_certificado}}</strong>
+            </td>
+            <td style="word-wrap: break-word; overflow: hidden;">
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <strong title="{{this.cliente_nombre}}">{{this.cliente_nombre}}</strong>
+                {{#if this.proyecto_nombre}}
+                <small class="text-muted d-block" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.proyecto_nombre}}">{{this.proyecto_nombre}}</small>
+                {{/if}}
+              </div>
+            </td>
+            <td style="word-wrap: break-word; overflow: hidden;">
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.descripcion}}">
+                {{#if this.descripcion}}
+                <strong>{{this.descripcion}}</strong>
+                {{/if}}
+                {{#if this.condiciones}}
+                <small class="text-muted d-block" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.condiciones}}">{{this.condiciones}}</small>
+                {{/if}}
+              </div>
+            </td>
+            <td>{{formatDate this.fecha_emision}}</td>
+            <td>{{formatDate this.fecha_factura}}</td>
+            <td>{{this.cantidad}}</td>
+            <td class="text-end">{{formatCurrency this.precio_unitario}}</td>
+            <td class="text-end">{{formatCurrency this.monto}}</td>
+            <td>
+              <span class="badge {{#eq this.estado 0}}bg-secondary{{/eq}}{{#eq this.estado 1}}bg-warning{{/eq}}{{#eq this.estado 2}}bg-success{{/eq}}{{#eq this.estado 3}}bg-info{{/eq}}{{#eq this.estado 4}}bg-danger{{/eq}}">
+                {{#eq this.estado 0}}Borrador{{/eq}}
+                {{#eq this.estado 1}}Pendiente{{/eq}}
+                {{#eq this.estado 2}}Aprobado{{/eq}}
+                {{#eq this.estado 3}}Facturado{{/eq}}
+                {{#eq this.estado 4}}Rechazado{{/eq}}
+              </span>
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="/certificados/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/certificados/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="/certificados/imprimir/{{this.id}}" class="btn btn-outline-secondary" title="Imprimir" target="_blank">
+                  <i class="bi bi-printer"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr>
+            <td colspan="10" class="text-center py-4">
+              <div class="text-muted">No se encontraron certificados</div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar DataTable si no hay datos desde el servidor
+    {{#unless certificados}}
+    const table = $('#tablaCertificados').DataTable({
+      ajax: {
+        url: '/api/certificados',
+        dataSrc: 'data'
+      },
+      columns: [
+        { 
+          data: 'numero_certificado',
+          render: function(data, type, row) {
+            let html = `<strong>${data}</strong>`;
+            if (row.descripcion) {
+              html += `<small class="text-muted d-block">${row.descripcion}</small>`;
+            }
+            return html;
+          }
+        },
+        { data: 'cliente_nombre' },
+        {
+          data: 'tipo',
+          render: function(data) {
+            const tipos = {
+              'obra': { class: 'bg-primary' },
+              'servicio': { class: 'bg-info' },
+              'avance': { class: 'bg-warning' }
+            };
+            const tipo = tipos[data] || { class: 'bg-secondary' };
+            return `<span class="badge ${tipo.class}">${data}</span>`;
+          }
+        },
+        { 
+          data: 'fecha_emision',
+          render: function(data) {
+            return data ? new Date(data).toLocaleDateString('es-AR') : '';
+          }
+        },
+        {
+          data: 'estado',
+          render: function(data) {
+            const estados = {
+              0: { text: 'Borrador', class: 'bg-secondary' },
+              1: { text: 'Pendiente', class: 'bg-warning' },
+              2: { text: 'Aprobado', class: 'bg-success' },
+              3: { text: 'Facturado', class: 'bg-info' },
+              4: { text: 'Rechazado', class: 'bg-danger' }
+            };
+            const estado = estados[data] || { text: 'Desconocido', class: 'bg-secondary' };
+            return `<span class="badge ${estado.class}">${estado.text}</span>`;
+          }
+        },
+        { 
+          data: 'monto',
+          className: 'text-end',
+          render: function(data) {
+            return data ? new Intl.NumberFormat('es-AR', { 
+              style: 'currency', 
+              currency: 'ARS' 
+            }).format(data) : '$ 0,00';
+          }
+        },
+        {
+          data: 'id',
+          orderable: false,
+          render: function(data) {
+            return `
+              <div class="btn-group btn-group-sm">
+                <a href="/certificados/ver/${data}" class="btn btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/certificados/editar/${data}" class="btn btn-outline-warning" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="/certificados/imprimir/${data}" class="btn btn-outline-secondary" title="Imprimir" target="_blank">
+                  <i class="bi bi-printer"></i>
+                </a>
+              </div>
+            `;
+          }
+        }
+      ],
+      order: [[3, 'desc']], // Ordenar por fecha de emisión descendente
+      language: {
+        processing: "Procesando...",
+        search: "Buscar:",
+        lengthMenu: "Mostrar _MENU_ entradas",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+        infoEmpty: "Mostrando 0 a 0 de 0 entradas",
+        infoFiltered: "(filtrado de _MAX_ entradas totales)",
+        infoPostFix: "",
+        loadingRecords: "Cargando...",
+        zeroRecords: "No se encontraron datos",
+        emptyTable: "No hay datos disponibles en la tabla",
+        paginate: {
+          first: "Primero",
+          previous: "Anterior",
+          next: "Siguiente",
+          last: "Último"
+        },
+        aria: {
+          sortAscending: ": activar para ordenar la columna de manera ascendente",
+          sortDescending: ": activar para ordenar la columna de manera descendente"
+        }
+      },
+      responsive: true,
+      processing: true
+    });
+    {{/unless}}
+
+    // Manejar búsqueda
+    $('#formBusqueda').on('submit', function(e) {
+      e.preventDefault();
+      const formData = $(this).serialize();
+      window.location.href = `${window.location.pathname}?${formData}`;
+    });
+
+    // Manejar botón limpiar
+    $('#btnLimpiar').on('click', function() {
+      $('#formBusqueda')[0].reset();
+      window.location.href = window.location.pathname;
+    });
+
+    // Export function
+    window.exportarCertificados = function() {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = `/api/certificados/exportar?${params.toString()}`;
+    };
+  });
+</script>
+{{/section}}

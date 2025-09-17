@@ -1,0 +1,416 @@
+<div class="dashboard-container">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h1 class="h2 mb-3">
+        <i class="bi bi-speedometer2"></i>
+        Dashboard - Sistema de Gestión Integral
+      </h1>
+      <p class="text-muted">Resumen ejecutivo de la actividad del sistema</p>
+    </div>
+  </div>
+
+  {{#if error}}
+    <div class="alert alert-warning" role="alert">
+      <i class="bi bi-exclamation-triangle"></i>
+      {{error}}
+    </div>
+  {{/if}}
+
+  <!-- Estadísticas Principales -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card bg-primary text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Presupuestos</h6>
+              <h2 class="mb-0">{{formatNumber stats.presupuestos.total_presupuestos}}</h2>
+              <small class="opacity-75">Total: {{formatCurrency stats.presupuestos.importe_total_todos}}</small>
+            </div>
+            <i class="bi bi-file-earmark-text fa-2x"></i>
+          </div>
+        </div>
+        <div class="card-footer bg-primary bg-opacity-75">
+          <small>
+            <i class="bi bi-check-circle"></i>
+            Aprobados: {{stats.presupuestos.total_aprobados}} ({{formatPercentage stats.presupuestos.tasa_aprobacion}}%)
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card bg-success text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Clientes</h6>
+              <h2 class="mb-0">{{formatNumber stats.clientes.total_clientes}}</h2>
+              <small class="opacity-75">Activos: {{formatNumber stats.clientes.clientes_activos}}</small>
+            </div>
+            <i class="bi bi-people fa-2x"></i>
+          </div>
+        </div>
+        <div class="card-footer bg-success bg-opacity-75">
+          <small>
+            <i class="bi bi-plus-circle"></i>
+            Nuevos este mes: {{stats.clientes.nuevos_este_mes}}
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card bg-info h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Proyectos</h6>
+              <h2 class="mb-0">{{formatNumber stats.proyectos.total_proyectos}}</h2>
+              <small class="opacity-75">Activos: {{formatNumber stats.proyectos.proyectos_activos}}</small>
+            </div>
+            <i class="bi bi-clipboard-check fa-2x"></i>
+          </div>
+        </div>
+        <div class="card-footer bg-info bg-opacity-75">
+          <small>
+            <i class="bi bi-check-square"></i>
+            Finalizados: {{stats.proyectos.proyectos_finalizados}}
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card bg-warning text-dark h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="card-title mb-0">Facturas</h6>
+              <h2 class="mb-0">{{formatNumber stats.facturas.total_facturas}}</h2>
+              <small>Total: {{formatCurrency stats.facturas.valor_total_facturas}}</small>
+            </div>
+            <i class="bi bi-receipt fa-2x"></i>
+          </div>
+        </div>
+        <div class="card-footer bg-warning bg-opacity-75">
+          <small>
+            <i class="bi bi-clock"></i>
+            Pendientes: {{stats.facturas.facturas_pendientes}}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas Secundarias -->
+  <div class="row mb-4">
+    <div class="col-md-4 mb-3">
+      <div class="card border-primary h-100">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-award"></i>
+            Certificados
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-4">
+              <h4 class="text-primary">{{formatNumber stats.certificados.total_certificados}}</h4>
+              <small class="text-muted">Total</small>
+            </div>
+            <div class="col-4">
+              <h4 class="text-warning">{{formatNumber stats.certificados.certificados_pendientes}}</h4>
+              <small class="text-muted">Pendientes</small>
+            </div>
+            <div class="col-4">
+              <h4 class="text-success">{{formatNumber stats.certificados.certificados_facturados}}</h4>
+              <small class="text-muted">Facturados</small>
+            </div>
+          </div>
+          <hr class="my-3">
+          <div class="text-center">
+            <small class="text-muted">Valor Total:</small><br>
+            <strong class="text-primary">{{formatCurrency stats.certificados.valor_total_certificados}}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <div class="card border-info h-100">
+        <div class="card-header bg-info">
+          <h6 class="mb-0">
+            <i class="bi bi-funnel"></i>
+            Pipeline de Ventas
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <h4 class="text-info">{{formatNumber stats.leads.total_leads}}</h4>
+              <small class="text-muted">Total Leads</small>
+            </div>
+            <div class="col-6">
+              <h4 class="text-success">{{formatNumber stats.leads.leads_cerrados_ganados}}</h4>
+              <small class="text-muted">Convertidos</small>
+            </div>
+          </div>
+          <hr class="my-3">
+          <div class="text-center">
+            <small class="text-muted">Pipeline:</small><br>
+            <strong class="text-info">{{formatCurrency stats.leads.valor_total_pipeline}}</strong><br>
+            <small class="text-success">Conversión: {{formatPercentage stats.leads.tasa_conversion}}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <div class="card border-success h-100">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-graph-up"></i>
+            Resumen Financiero
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <small class="text-muted">Ingresos Potenciales</small><br>
+            <strong class="text-primary">{{formatCurrency resumenGeneral.ingresos_potenciales}}</strong>
+          </div>
+          <div class="mb-3">
+            <small class="text-muted">Ingresos Confirmados</small><br>
+            <strong class="text-success">{{formatCurrency resumenGeneral.ingresos_confirmados}}</strong>
+          </div>
+          <div>
+            <small class="text-muted">Proyectos en Curso</small><br>
+            <strong class="text-info">{{formatNumber resumenGeneral.proyectos_en_curso}}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Métricas de Rendimiento -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-bar-chart"></i>
+            Métricas de Rendimiento
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 text-center mb-3">
+              <div class="border rounded p-3">
+                <h4 class="text-primary">{{formatPercentage metricas.eficiencia_ventas}}</h4>
+                <small class="text-muted">Eficiencia de Ventas</small>
+              </div>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+              <div class="border rounded p-3">
+                <h4 class="text-success">{{formatPercentage metricas.conversion_leads}}</h4>
+                <small class="text-muted">Conversión Leads</small>
+              </div>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+              <div class="border rounded p-3">
+                <h4 class="text-info">{{formatCurrency metricas.valor_promedio_proyecto}}</h4>
+                <small class="text-muted">Valor Promedio/Proyecto</small>
+              </div>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+              <div class="border rounded p-3">
+                <h4 class="text-warning">{{formatCurrency metricas.certificaciones_promedio}}</h4>
+                <small class="text-muted">Certificación Promedio</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actividad Reciente -->
+  <div class="row">
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-clock-history"></i>
+            Presupuestos Recientes
+          </h6>
+        </div>
+        <div class="card-body">
+          {{#if actividadReciente.presupuestos.length}}
+            <div class="list-group list-group-flush">
+              {{#each actividadReciente.presupuestos}}
+                <div class="list-group-item d-flex justify-content-between align-items-start px-0">
+                  <div>
+                    <h6 class="mb-1">{{this.numero}} - {{this.descripcion}}</h6>
+                    <small class="text-muted">Cliente: {{this.cliente_nombre}}</small>
+                  </div>
+                  <div class="text-end">
+                    <small class="text-primary">{{formatCurrency this.importe_total}}</small><br>
+                    <span class="badge bg-{{#if (eq this.estado '2')}}success{{else if (eq this.estado '1')}}warning{{else}}secondary{{/if}}">
+                      {{this.estado_nombre}}
+                    </span>
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+            <div class="text-center mt-3">
+              <a href="/presupuestos" class="btn btn-outline-primary btn-sm">
+                Ver Todos los Presupuestos
+              </a>
+            </div>
+          {{else}}
+            <p class="text-muted text-center">No hay presupuestos recientes</p>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-kanban"></i>
+            Proyectos Activos
+          </h6>
+        </div>
+        <div class="card-body">
+          {{#if actividadReciente.proyectos.length}}
+            <div class="list-group list-group-flush">
+              {{#each actividadReciente.proyectos}}
+                <div class="list-group-item d-flex justify-content-between align-items-start px-0">
+                  <div>
+                    <h6 class="mb-1">{{this.descripcion}}</h6>
+                    <small class="text-muted">Cliente: {{this.cliente_nombre}}</small>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge bg-{{#if (eq this.estado 'En Progreso')}}success{{else if (eq this.estado 'Pendiente')}}warning{{else}}secondary{{/if}}">
+                      {{this.estado_nombre}}
+                    </span>
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+            <div class="text-center mt-3">
+              <a href="/proyectos" class="btn btn-outline-info btn-sm">
+                Ver Todos los Proyectos
+              </a>
+            </div>
+          {{else}}
+            <p class="text-muted text-center">No hay proyectos activos</p>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accesos Rápidos -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-lightning"></i>
+            Accesos Rápidos
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+              <a href="/presupuestos/crear" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center">
+                <i class="bi bi-file-earmark-plus fa-2x mb-2"></i>
+                <small>Nuevo Presupuesto</small>
+              </a>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+              <a href="/proyectos/crear" class="btn btn-outline-info w-100 d-flex flex-column align-items-center">
+                <i class="bi bi-clipboard-plus fa-2x mb-2"></i>
+                <small>Nuevo Proyecto</small>
+              </a>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+              <a href="/clientes/crear" class="btn btn-outline-success w-100 d-flex flex-column align-items-center">
+                <i class="bi bi-person-plus fa-2x mb-2"></i>
+                <small>Nuevo Cliente</small>
+              </a>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+              <a href="/certificados/crear" class="btn btn-outline-warning w-100 d-flex flex-column align-items-center">
+                <i class="bi bi-award fa-2x mb-2"></i>
+                <small>Nuevo Certificado</small>
+              </a>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+              <a href="/leads/crear" class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center">
+                <i class="bi bi-funnel fa-2x mb-2"></i>
+                <small>Nuevo Lead</small>
+              </a>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+              <a href="/facturas" class="btn btn-outline-dark w-100 d-flex flex-column align-items-center">
+                <i class="bi bi-receipt fa-2x mb-2"></i>
+                <small>Ver Facturas</small>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.dashboard-container {
+  background: #f8f9fa;
+  min-height: 80vh;
+  padding: 20px 0;
+}
+
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.list-group-item {
+  border-left: none;
+  border-right: none;
+}
+
+.list-group-item:first-child {
+  border-top: none;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+</style>
+
+<script>
+// Actualizar estadísticas cada 5 minutos
+setInterval(function() {
+  fetch('/dashboard/api/estadisticas')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Aquí se podrían actualizar dinámicamente las estadísticas
+        console.log('Estadísticas actualizadas:', data.timestamp);
+      }
+    })
+    .catch(error => {
+      console.error('Error al actualizar estadísticas:', error);
+    });
+}, 300000); // 5 minutos
+</script>

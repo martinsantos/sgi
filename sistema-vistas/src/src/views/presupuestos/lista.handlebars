@@ -1,0 +1,287 @@
+{{!-- Stats Cards --}}
+<div class="row mb-4">
+  <div class="col-md-2">
+    <div class="card bg-primary text-white h-100">
+      <div class="card-body">
+        <h5 class="card-title">Total</h5>
+        <h2 class="card-text">{{stats.total}}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card bg-dark text-white h-100">
+      <div class="card-body">
+        <h5 class="card-title">Borradores</h5>
+        <h2 class="card-text">{{stats.total_borradores}}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card bg-info h-100">
+      <div class="card-body">
+        <h5 class="card-title">Enviados</h5>
+        <h2 class="card-text">{{stats.total_enviados}}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card bg-success text-white h-100">
+      <div class="card-body">
+        <h5 class="card-title">Aprobados</h5>
+        <h2 class="card-text">{{stats.total_aprobados}}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card bg-danger text-white h-100">
+      <div class="card-body">
+        <h5 class="card-title">Rechazados</h5>
+        <h2 class="card-text">{{stats.total_rechazados}}</h2>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card bg-warning h-100">
+      <div class="card-body">
+        <h5 class="card-title">Vencidos</h5>
+        <h2 class="card-text">{{stats.total_vencidos}}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- Filters --}}
+<div class="card mb-4">
+  <div class="card-body">
+    <form id="filterForm" method="GET" class="row g-3">
+      <div class="col-md-2">
+        <label for="estado" class="form-label">Estado</label>
+        <select name="estado" id="estado" class="form-select">
+          <option value="">Todos</option>
+          <option value="0" {{#eq filters.estado "0"}}selected{{/eq}}>Borrador</option>
+          <option value="1" {{#eq filters.estado "1"}}selected{{/eq}}>Enviado</option>
+          <option value="2" {{#eq filters.estado "2"}}selected{{/eq}}>Aprobado</option>
+          <option value="3" {{#eq filters.estado "3"}}selected{{/eq}}>Rechazado</option>
+          <option value="4" {{#eq filters.estado "4"}}selected{{/eq}}>Vencido</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="cliente_id" class="form-label">Cliente</label>
+        <select name="cliente_id" id="cliente_id" class="form-select">
+          <option value="">Todos</option>
+          {{#each clientes}}
+            <option value="{{id}}" {{#eq ../filters.cliente_id (toString id)}}selected{{/eq}}>
+              {{nombre}}
+            </option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="fecha_desde" class="form-label">Desde</label>
+        <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" value="{{filters.fecha_desde}}">
+      </div>
+      <div class="col-md-2">
+        <label for="fecha_hasta" class="form-label">Hasta</label>
+        <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" value="{{filters.fecha_hasta}}">
+      </div>
+      <div class="col-md-2">
+        <label for="q" class="form-label">Buscar</label>
+        <input type="text" class="form-control" id="q" name="q" value="{{filters.q}}" placeholder="Número, cliente...">
+      </div>
+      <div class="col-md-1 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{!-- Table --}}
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0">Presupuestos</h5>
+    <a href="/presupuestos/nuevo" class="btn btn-primary">
+      <i class="bi bi-plus"></i> Nuevo Presupuesto
+    </a>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Cliente</th>
+            <th>Descripción</th>
+            <th>F. Emisión</th>
+            <th>F. Validez</th>
+            <th>Estado</th>
+            <th class="text-end">Importe</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each presupuestos}}
+            <tr>
+              <td>{{numero_presupuesto}}</td>
+              <td>{{cliente_nombre}}</td>
+              <td>{{descripcion}}</td>
+              <td>{{fecha_emision_formatted}}</td>
+              <td>{{fecha_validez_formatted}}</td>
+              <td>
+                <span class="badge {{estado_badge_class}}">{{estado_nombre}}</span>
+                {{#if dias_hasta_vencimiento}}
+                  {{#if (lt dias_hasta_vencimiento 0)}}
+                    <span class="badge bg-danger ms-1">Vencido</span>
+                  {{else if (lt dias_hasta_vencimiento 7)}}
+                    <span class="badge bg-warning ms-1">Por vencer</span>
+                  {{/if}}
+                {{/if}}
+              </td>
+              <td class="text-end">{{importe_total_formatted}}</td>
+              <td class="text-end">
+                <div class="btn-group">
+                  <a href="/presupuestos/{{id}}" class="btn btn-sm btn-outline-primary" title="Ver">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  {{#eq estado 0}}
+                    <a href="/presupuestos/{{id}}/editar" class="btn btn-sm btn-outline-secondary" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-danger" 
+                            title="Eliminar"
+                            onclick="eliminarPresupuesto({{id}})">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  {{/eq}}
+                  {{#eq estado 1}}
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-success" 
+                            title="Aprobar"
+                            onclick="aprobarPresupuesto({{id}})">
+                      <i class="bi bi-check2"></i>
+                    </button>
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-danger" 
+                            title="Rechazar"
+                            onclick="rechazarPresupuesto({{id}})">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  {{/eq}}
+                </div>
+              </td>
+            </tr>
+          {{else}}
+            <tr>
+              <td colspan="8" class="text-center">No hay presupuestos para mostrar</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+
+    {{!-- Pagination --}}
+    {{#if pagination.hasPages}}
+      <nav aria-label="Navegación de páginas">
+        <ul class="pagination justify-content-end">
+          {{#if (gt pagination.page 1)}}
+            <li class="page-item">
+              <a class="page-link" href="?{{addQueryParam queryString 'page' (subtract pagination.page 1)}}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+          {{/if}}
+
+          {{#each (range 1 pagination.lastPage)}}
+            <li class="page-item {{#eq this ../pagination.page}}active{{/eq}}">
+              <a class="page-link" href="?{{addQueryParam ../queryString 'page' this}}">{{this}}</a>
+            </li>
+          {{/each}}
+
+          {{#if (lt pagination.page pagination.lastPage)}}
+            <li class="page-item">
+              <a class="page-link" href="?{{addQueryParam queryString 'page' (add pagination.page 1)}}" aria-label="Siguiente">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          {{/if}}
+        </ul>
+      </nav>
+    {{/if}}
+  </div>
+</div>
+
+{{!-- Client-side JavaScript --}}
+<script>
+async function aprobarPresupuesto(id) {
+  if (!confirm('¿Está seguro de aprobar este presupuesto?')) return;
+  
+  try {
+    const response = await fetch(`/presupuestos/api/presupuestos/${id}/aprobar`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al aprobar presupuesto');
+    }
+    
+    location.reload();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function rechazarPresupuesto(id) {
+  if (!confirm('¿Está seguro de rechazar este presupuesto?')) return;
+  
+  try {
+    const response = await fetch(`/presupuestos/api/presupuestos/${id}/rechazar`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al rechazar presupuesto');
+    }
+    
+    location.reload();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function eliminarPresupuesto(id) {
+  if (!confirm('¿Está seguro de eliminar este presupuesto? Esta acción no se puede deshacer.')) return;
+  
+  try {
+    const response = await fetch(`/presupuestos/api/presupuestos/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al eliminar presupuesto');
+    }
+    
+    location.reload();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+// Initialize any Bootstrap components if needed
+document.addEventListener('DOMContentLoaded', function() {
+  // Example: Initialize tooltips
+  const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+});
+</script>

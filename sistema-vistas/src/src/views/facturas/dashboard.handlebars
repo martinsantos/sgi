@@ -1,0 +1,347 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{title}}</h1>
+  <div>
+    <a href="/facturas/search" class="btn btn-primary me-2">
+      <i class="bi bi-search"></i> Búsqueda Avanzada
+    </a>
+    <a href="/facturas" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+</div>
+
+<!-- Estadísticas Principales -->
+<div class="row mb-4">
+  <div class="col-lg-3 col-md-6 mb-3">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-receipt fs-1 text-primary mb-3"></i>
+        <h2 class="text-primary">{{estadisticas.total_facturas}}</h2>
+        <p class="text-muted mb-2">Total Facturas</p>
+        <h5 class="text-success">{{estadisticas.valor_total_formatted}}</h5>
+        <small class="text-muted">Valor Total</small>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6 mb-3">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-clock-history fs-1 text-warning mb-3"></i>
+        <h2 class="text-warning">{{estadisticas.pendientes}}</h2>
+        <p class="text-muted mb-2">Pendientes</p>
+        <h5 class="text-danger">{{estadisticas.saldo_pendiente_formatted}}</h5>
+        <small class="text-muted">Por Cobrar</small>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6 mb-3">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-check-circle fs-1 text-success mb-3"></i>
+        <h2 class="text-success">{{estadisticas.pagadas}}</h2>
+        <p class="text-muted mb-2">Pagadas</p>
+        <h5 class="text-info">{{estadisticas.valor_cobrado_formatted}}</h5>
+        <small class="text-muted">Ya Cobrado</small>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6 mb-3">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-graph-up fs-1 text-info mb-3"></i>
+        <h2 class="text-info">{{estadisticas.ticket_promedio_formatted}}</h2>
+        <p class="text-muted mb-2">Ticket Promedio</p>
+        <div class="progress mb-2">
+          <div class="progress-bar bg-info" role="progressbar" 
+               style="width: {{#if estadisticas.valor_total}}{{math estadisticas.valor_cobrado '/' estadisticas.valor_total '*' 100}}{{else}}0{{/if}}%">
+          </div>
+        </div>
+        <small class="text-muted">
+          {{#if estadisticas.valor_total}}
+          {{math estadisticas.valor_cobrado '/' estadisticas.valor_total '*' 100 precision=1}}%
+          {{else}}
+          0%
+          {{/if}} 
+          Cobrado
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Resumen del Último Mes -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-calendar-month"></i> Resumen del Último Mes
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 text-center">
+            <h4 class="text-primary">{{resumenMes.total_facturas}}</h4>
+            <small class="text-muted">Facturas Emitidas</small>
+          </div>
+          <div class="col-md-3 text-center">
+            <h4 class="text-success">{{resumenMes.monto_total_formatted}}</h4>
+            <small class="text-muted">Total Facturado</small>
+          </div>
+          <div class="col-md-3 text-center">
+            <h4 class="text-info">{{resumenMes.monto_cobrado_formatted}}</h4>
+            <small class="text-muted">Total Cobrado</small>
+          </div>
+          <div class="col-md-3 text-center">
+            <h4 class="text-warning">{{resumenMes.saldo_pendiente_formatted}}</h4>
+            <small class="text-muted">Pendiente Cobro</small>
+          </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row">
+          <div class="col-md-6 text-center">
+            <h5 class="text-success">{{resumenMes.facturas_pagadas}}</h5>
+            <small class="text-muted">Facturas Pagadas</small>
+          </div>
+          <div class="col-md-6 text-center">
+            <h5 class="text-warning">{{resumenMes.facturas_pendientes}}</h5>
+            <small class="text-muted">Facturas Pendientes</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Últimas Facturas y Facturas Vencidas -->
+<div class="row mb-4">
+  <!-- Últimas Facturas -->
+  <div class="col-lg-6 mb-3">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-clock"></i> Últimas Facturas
+        </h5>
+        <a href="/facturas/search" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+      </div>
+      <div class="card-body">
+        {{#if ultimasFacturas}}
+        <div class="list-group list-group-flush">
+          {{#each ultimasFacturas}}
+          <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <div>
+              <h6 class="mb-1">Factura {{this.numero_factura}}</h6>
+              <p class="mb-1">{{this.cliente_nombre}}</p>
+              <small class="text-muted">{{this.fecha_emision_formatted}}</small>
+            </div>
+            <div class="text-end">
+              <span class="fw-bold">{{this.total_formatted}}</span><br>
+              {{#if (eq this.estado 1)}}
+              <span class="badge bg-warning">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 2)}}
+              <span class="badge bg-info">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 3)}}
+              <span class="badge bg-success">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 4)}}
+              <span class="badge bg-primary">{{this.estado_nombre}}</span>
+              {{else if (eq this.estado 5)}}
+              <span class="badge bg-danger">{{this.estado_nombre}}</span>
+              {{else}}
+              <span class="badge bg-secondary">{{this.estado_nombre}}</span>
+              {{/if}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{else}}
+        <p class="text-muted text-center py-3">No hay facturas recientes</p>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Facturas Vencidas -->
+  <div class="col-lg-6 mb-3">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-danger">
+          <i class="bi bi-exclamation-triangle"></i> Facturas Vencidas
+        </h5>
+        <span class="badge bg-danger">{{facturasVencidas.length}}</span>
+      </div>
+      <div class="card-body">
+        {{#if facturasVencidas}}
+        <div class="list-group list-group-flush">
+          {{#each facturasVencidas}}
+          <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <div>
+              <h6 class="mb-1 text-danger">Factura {{this.numero_factura}}</h6>
+              <p class="mb-1">{{this.cliente_nombre}}</p>
+              <small class="text-muted">
+                Venc: {{this.fecha_vto_pago_formatted}}
+                <span class="text-danger">({{this.dias_vencidos}} días)</span>
+              </small>
+            </div>
+            <div class="text-end">
+              <span class="fw-bold text-danger">{{this.saldo_pendiente_formatted}}</span><br>
+              <a href="/facturas/ver/{{this.id}}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-eye"></i>
+              </a>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{else}}
+        <div class="text-center py-3">
+          <i class="bi bi-check-circle fs-1 text-success mb-2"></i>
+          <p class="text-success mb-0">¡No hay facturas vencidas!</p>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estados de Facturas (Gráfico Visual) -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-pie-chart"></i> Distribución por Estados
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-8">
+            <!-- Barra de progreso visual para estados -->
+            <div class="mb-3">
+              <label class="form-label">Estado de las Facturas</label>
+              <div class="progress" style="height: 30px;">
+                {{#if estadisticas.total_facturas}}
+                <div class="progress-bar bg-warning" role="progressbar" 
+                     style="width: {{math estadisticas.pendientes '/' estadisticas.total_facturas '*' 100}}%" 
+                     title="Pendientes: {{estadisticas.pendientes}}">
+                  {{#if (gt estadisticas.pendientes 0)}}{{estadisticas.pendientes}}{{/if}}
+                </div>
+                <div class="progress-bar bg-info" role="progressbar" 
+                     style="width: {{math estadisticas.pagadas_parcial '/' estadisticas.total_facturas '*' 100}}%" 
+                     title="Pagadas Parcial: {{estadisticas.pagadas_parcial}}">
+                  {{#if (gt estadisticas.pagadas_parcial 0)}}{{estadisticas.pagadas_parcial}}{{/if}}
+                </div>
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: {{math estadisticas.pagadas '/' estadisticas.total_facturas '*' 100}}%" 
+                     title="Pagadas: {{estadisticas.pagadas}}">
+                  {{#if (gt estadisticas.pagadas 0)}}{{estadisticas.pagadas}}{{/if}}
+                </div>
+                <div class="progress-bar bg-primary" role="progressbar" 
+                     style="width: {{math estadisticas.en_proceso '/' estadisticas.total_facturas '*' 100}}%" 
+                     title="En Proceso: {{estadisticas.en_proceso}}">
+                  {{#if (gt estadisticas.en_proceso 0)}}{{estadisticas.en_proceso}}{{/if}}
+                </div>
+                <div class="progress-bar bg-danger" role="progressbar" 
+                     style="width: {{math estadisticas.anuladas '/' estadisticas.total_facturas '*' 100}}%" 
+                     title="Anuladas: {{estadisticas.anuladas}}">
+                  {{#if (gt estadisticas.anuladas 0)}}{{estadisticas.anuladas}}{{/if}}
+                </div>
+                {{/if}}
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-4">
+            <!-- Leyenda -->
+            <div class="mb-2">
+              <span class="badge bg-warning me-2">{{estadisticas.pendientes}}</span>
+              <small>Pendientes</small>
+            </div>
+            <div class="mb-2">
+              <span class="badge bg-info me-2">{{estadisticas.pagadas_parcial}}</span>
+              <small>Pagadas Parcial</small>
+            </div>
+            <div class="mb-2">
+              <span class="badge bg-success me-2">{{estadisticas.pagadas}}</span>
+              <small>Pagadas</small>
+            </div>
+            <div class="mb-2">
+              <span class="badge bg-primary me-2">{{estadisticas.en_proceso}}</span>
+              <small>En Proceso</small>
+            </div>
+            <div class="mb-2">
+              <span class="badge bg-danger me-2">{{estadisticas.anuladas}}</span>
+              <small>Anuladas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-lightning"></i> Acciones Rápidas
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-2">
+            <a href="/facturas/search?estado=1" class="btn btn-outline-warning w-100">
+              <i class="bi bi-clock-history"></i><br>
+              Ver Pendientes<br>
+              <small>({{estadisticas.pendientes}})</small>
+            </a>
+          </div>
+          <div class="col-md-3 mb-2">
+            <a href="/facturas/search?fecha_desde={{dateRange 7}}" class="btn btn-outline-primary w-100">
+              <i class="bi bi-calendar-week"></i><br>
+              Últimos 7 días<br>
+              <small>Filtrar por fecha</small>
+            </a>
+          </div>
+          <div class="col-md-3 mb-2">
+            <a href="/facturas/export/excel" class="btn btn-outline-success w-100">
+              <i class="bi bi-file-earmark-excel"></i><br>
+              Exportar Todo<br>
+              <small>{{estadisticas.total_facturas}} facturas</small>
+            </a>
+          </div>
+          <div class="col-md-3 mb-2">
+            <a href="/facturas/search?monto_desde=10000" class="btn btn-outline-info w-100">
+              <i class="bi bi-currency-dollar"></i><br>
+              Facturas Grandes<br>
+              <small>Más de $10,000</small>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Función para actualizar automáticamente cada 5 minutos
+function refreshDashboard() {
+  location.reload();
+}
+
+// Auto-refresh cada 5 minutos (300000 ms)
+setTimeout(refreshDashboard, 300000);
+
+// Función para generar rango de fechas
+function getDateRange(days) {
+  const today = new Date();
+  const fromDate = new Date();
+  fromDate.setDate(today.getDate() - days);
+  return fromDate.toISOString().split('T')[0];
+}
+</script>

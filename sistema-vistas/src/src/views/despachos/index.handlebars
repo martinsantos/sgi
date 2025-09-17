@@ -1,0 +1,597 @@
+{{!-- Despachos y Entregas --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-truck me-2"></i>
+            Despachos y Entregas
+          </h4>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoDespachoModal">
+            <i class="fas fa-plus me-1"></i>
+            Nuevo Despacho
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Filtros -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <select class="form-select" id="filtroEstado">
+              <option value="">Todos los estados</option>
+              <option value="programado">Programado</option>
+              <option value="preparacion">En Preparación</option>
+              <option value="listo">Listo para Envío</option>
+              <option value="en_transito">En Tránsito</option>
+              <option value="entregado">Entregado</option>
+              <option value="devuelto">Devuelto</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroProyecto">
+              <option value="">Todos los proyectos</option>
+              {{#each proyectos}}
+              <option value="{{this.id}}">{{this.nombre}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <input type="date" class="form-control" id="filtroFecha" placeholder="Fecha de despacho">
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Buscar..." id="filtroTexto">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+          <div class="col-md-2">
+            <div class="card bg-dark text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.total}}</h5>
+                <p class="card-text">Total</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-warning text-dark">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.programado}}</h5>
+                <p class="card-text">Programados</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-info">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.preparacion}}</h5>
+                <p class="card-text">En Preparación</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-primary text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.en_transito}}</h5>
+                <p class="card-text">En Tránsito</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.entregado}}</h5>
+                <p class="card-text">Entregados</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-danger text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.devuelto}}</h5>
+                <p class="card-text">Devueltos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Despachos -->
+        <div class="table-responsive">
+          <table class="table table-hover" id="tablaDespachos">
+            <thead class="table-light">
+              <tr>
+                <th width="8%">N° Despacho</th>
+                <th width="15%">Proyecto</th>
+                <th width="15%">Destino</th>
+                <th width="10%">Estado</th>
+                <th width="10%">Fecha Programada</th>
+                <th width="10%">Fecha Entrega</th>
+                <th width="10%">Items</th>
+                <th width="12%">Transportista</th>
+                <th width="10%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each despachos}}
+              <tr data-despacho-id="{{this.id}}">
+                <td>
+                  <strong>DSP-{{this.numero}}</strong>
+                  {{#if this.numero_guia}}
+                  <br><small class="text-muted">Guía: {{this.numero_guia}}</small>
+                  {{/if}}
+                </td>
+                <td>
+                  <strong>{{this.proyecto_nombre}}</strong>
+                  <br><small class="text-muted">{{this.cliente_nombre}}</small>
+                </td>
+                <td>
+                  <strong>{{this.direccion_entrega}}</strong>
+                  {{#if this.contacto_recepcion}}
+                  <br><small class="text-muted">Contacto: {{this.contacto_recepcion}}</small>
+                  {{/if}}
+                </td>
+                <td>
+                  <span class="badge 
+                    {{#eq this.estado 'programado'}}bg-secondary{{/eq}}
+                    {{#eq this.estado 'preparacion'}}bg-info{{/eq}}
+                    {{#eq this.estado 'listo'}}bg-warning{{/eq}}
+                    {{#eq this.estado 'en_transito'}}bg-primary{{/eq}}
+                    {{#eq this.estado 'entregado'}}bg-success{{/eq}}
+                    {{#eq this.estado 'devuelto'}}bg-danger{{/eq}}
+                  ">
+                    {{capitalize this.estado}}
+                  </span>
+                </td>
+                <td>{{formatDate this.fecha_programada}}</td>
+                <td>
+                  {{#if this.fecha_entrega_real}}
+                    {{formatDate this.fecha_entrega_real}}
+                  {{else}}
+                    <span class="text-muted">Pendiente</span>
+                  {{/if}}
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-primary">{{this.total_items}} items</span>
+                  {{#if (gt this.peso_total 0)}}
+                  <br><small class="text-muted">{{this.peso_total}} kg</small>
+                  {{/if}}
+                </td>
+                <td>
+                  {{#if this.transportista_nombre}}
+                    <strong>{{this.transportista_nombre}}</strong>
+                    {{#if this.chofer}}
+                    <br><small class="text-muted">{{this.chofer}}</small>
+                    {{/if}}
+                  {{else}}
+                    <span class="text-muted">Sin asignar</span>
+                  {{/if}}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/despachos/ver/{{this.id}}" class="btn btn-outline-info" title="Ver">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    {{#eq this.estado 'programado'}}
+                    <button class="btn btn-outline-primary" onclick="iniciarPreparacion('{{this.id}}')" title="Iniciar Preparación">
+                      <i class="fas fa-play"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'preparacion'}}
+                    <button class="btn btn-outline-warning" onclick="marcarListo('{{this.id}}')" title="Marcar Listo">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'listo'}}
+                    <button class="btn btn-outline-primary" onclick="iniciarEnvio('{{this.id}}')" title="Iniciar Envío">
+                      <i class="fas fa-shipping-fast"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'en_transito'}}
+                    <button class="btn btn-outline-success" onclick="confirmarEntrega('{{this.id}}')" title="Confirmar Entrega">
+                      <i class="fas fa-check-circle"></i>
+                    </button>
+                    {{/eq}}
+                    <div class="btn-group">
+                      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirGuia('{{this.id}}')">
+                          <i class="fas fa-print me-1"></i> Imprimir Guía
+                        </a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="generarEtiquetas('{{this.id}}')">
+                          <i class="fas fa-qrcode me-1"></i> Generar Etiquetas
+                        </a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="seguimientoGPS('{{this.id}}')">
+                          <i class="fas fa-map-marker-alt me-1"></i> Seguimiento GPS
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {{#or (eq this.estado 'programado') (eq this.estado 'preparacion')}}
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="cancelarDespacho('{{this.id}}')">
+                          <i class="fas fa-times me-1"></i> Cancelar
+                        </a></li>
+                        {{/or}}
+                      </ul>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        {{#unless despachos}}
+        <div class="text-center py-5">
+          <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay despachos registrados</h5>
+          <p class="text-muted">Comienza creando un nuevo despacho</p>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoDespachoModal">
+            <i class="fas fa-plus me-1"></i>
+            Crear Primer Despacho
+          </button>
+        </div>
+        {{/unless}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Despacho -->
+<div class="modal fade" id="nuevoDespachoModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo Despacho
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevoDespacho">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proyecto <span class="text-danger">*</span></label>
+                <select class="form-select" name="proyecto_id" required onchange="cargarMaterialesDisponibles()">
+                  <option value="">Seleccionar proyecto...</option>
+                  {{#each proyectos}}
+                  <option value="{{this.id}}">{{this.nombre}} - {{this.cliente_nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha Programada <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="fecha_programada" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="mb-3">
+                <label class="form-label">Dirección de Entrega <span class="text-danger">*</span></label>
+                <textarea class="form-control" name="direccion_entrega" rows="2" required></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Contacto de Recepción</label>
+                <input type="text" class="form-control" name="contacto_recepcion">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Teléfono de Contacto</label>
+                <input type="text" class="form-control" name="telefono_contacto">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Transportista</label>
+                <select class="form-select" name="transportista_id">
+                  <option value="">Seleccionar transportista...</option>
+                  {{#each transportistas}}
+                  <option value="{{this.id}}">{{this.nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Chofer</label>
+                <input type="text" class="form-control" name="chofer">
+              </div>
+            </div>
+          </div>
+
+          <!-- Materiales a Despachar -->
+          <div class="mb-3">
+            <h6>Materiales a Despachar</h6>
+            <div id="materialesDespacho">
+              <p class="text-muted">Seleccione un proyecto para ver los materiales disponibles</p>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-control" name="observaciones" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="crearDespacho()">
+          <i class="fas fa-save me-1"></i>
+          Crear Despacho
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirmar Entrega -->
+<div class="modal fade" id="confirmarEntregaModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-check-circle me-2"></i>
+          Confirmar Entrega
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formConfirmarEntrega">
+          <input type="hidden" name="despacho_id" id="entregaDespachoId">
+          <div class="mb-3">
+            <label class="form-label">Fecha y Hora de Entrega <span class="text-danger">*</span></label>
+            <input type="datetime-local" class="form-control" name="fecha_entrega_real" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Persona que Recibe <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="persona_recibe" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Documento de Identidad</label>
+            <input type="text" class="form-control" name="documento_recibe">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Estado de los Materiales</label>
+            <select class="form-select" name="estado_materiales">
+              <option value="perfecto">Perfecto Estado</option>
+              <option value="bueno">Buen Estado</option>
+              <option value="dañado">Con Daños Menores</option>
+              <option value="muy_dañado">Con Daños Importantes</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Observaciones de Entrega</label>
+            <textarea class="form-control" name="observaciones_entrega" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Foto de Entrega (Opcional)</label>
+            <input type="file" class="form-control" name="foto_entrega" accept="image/*">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="guardarEntrega()">
+          <i class="fas fa-check me-1"></i>
+          Confirmar Entrega
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+$(document).ready(function() {
+    // Inicializar DataTable
+    $('#tablaDespachos').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
+        order: [[0, 'desc']],
+        pageLength: 25
+    });
+
+    // Configurar filtros
+    $('#filtroEstado, #filtroProyecto, #filtroFecha').on('change', filtrarDespachos);
+    $('#filtroTexto').on('keyup', filtrarDespachos);
+
+    // Configurar fecha por defecto
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="fecha_programada"]').value = today;
+});
+
+// Cargar materiales disponibles del proyecto
+function cargarMaterialesDisponibles() {
+    const proyectoId = $('select[name="proyecto_id"]').val();
+    if (proyectoId) {
+        fetch(`/api/proyectos/${proyectoId}/acopios-disponibles`)
+            .then(response => response.json())
+            .then(data => {
+                let html = '';
+                if (data.acopios.length > 0) {
+                    html = '<div class="table-responsive"><table class="table table-sm">';
+                    html += '<thead><tr><th>Material</th><th>Stock Disponible</th><th>Cantidad a Despachar</th><th>Observaciones</th></tr></thead><tbody>';
+                    
+                    data.acopios.forEach(acopio => {
+                        html += `
+                            <tr>
+                                <td>
+                                    <strong>${acopio.material_nombre}</strong>
+                                    <input type="hidden" name="acopio_${acopio.id}_id" value="${acopio.id}">
+                                </td>
+                                <td>${acopio.cantidad_disponible} ${acopio.unidad}</td>
+                                <td>
+                                    <input type="number" class="form-control" name="acopio_${acopio.id}_cantidad" 
+                                           max="${acopio.cantidad_disponible}" min="0" step="0.01">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" name="acopio_${acopio.id}_observaciones">
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    html += '</tbody></table></div>';
+                } else {
+                    html = '<p class="text-muted">No hay materiales disponibles para este proyecto</p>';
+                }
+                
+                $('#materialesDespacho').html(html);
+            });
+    }
+}
+
+// Filtrar despachos
+function filtrarDespachos() {
+    const estado = $('#filtroEstado').val();
+    const proyecto = $('#filtroProyecto').val();
+    const fecha = $('#filtroFecha').val();
+    const texto = $('#filtroTexto').val();
+
+    let url = '/despachos?';
+    if (estado) url += `estado=${estado}&`;
+    if (proyecto) url += `proyecto=${proyecto}&`;
+    if (fecha) url += `fecha=${fecha}&`;
+    if (texto) url += `search=${texto}&`;
+
+    window.location.href = url.slice(0, -1);
+}
+
+// Crear nuevo despacho
+function crearDespacho() {
+    const formData = new FormData(document.getElementById('formNuevoDespacho'));
+    
+    fetch('/api/despachos', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#nuevoDespachoModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error al crear despacho: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear despacho');
+    });
+}
+
+// Cambiar estados de despacho
+function iniciarPreparacion(id) {
+    if (confirm('¿Iniciar la preparación de este despacho?')) {
+        cambiarEstadoDespacho(id, 'preparacion');
+    }
+}
+
+function marcarListo(id) {
+    if (confirm('¿Marcar este despacho como listo para envío?')) {
+        cambiarEstadoDespacho(id, 'listo');
+    }
+}
+
+function iniciarEnvio(id) {
+    const numeroGuia = prompt('Ingrese el número de guía de transporte (opcional):');
+    cambiarEstadoDespacho(id, 'en_transito', { numero_guia: numeroGuia });
+}
+
+function confirmarEntrega(id) {
+    $('#entregaDespachoId').val(id);
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.querySelector('input[name="fecha_entrega_real"]').value = now.toISOString().slice(0, 16);
+    $('#confirmarEntregaModal').modal('show');
+}
+
+// Cambiar estado de despacho
+function cambiarEstadoDespacho(id, nuevoEstado, datos = {}) {
+    fetch(`/api/despachos/${id}/estado`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            estado: nuevoEstado,
+            ...datos
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al cambiar estado: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar estado');
+    });
+}
+
+// Guardar entrega
+function guardarEntrega() {
+    const formData = new FormData(document.getElementById('formConfirmarEntrega'));
+    const despachoId = $('#entregaDespachoId').val();
+    
+    fetch(`/api/despachos/${despachoId}/entrega`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#confirmarEntregaModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error al confirmar entrega: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al confirmar entrega');
+    });
+}
+
+// Funcionalidades adicionales
+function imprimirGuia(id) {
+    window.open(`/despachos/imprimir/${id}`, '_blank');
+}
+
+function generarEtiquetas(id) {
+    window.open(`/api/despachos/${id}/etiquetas`, '_blank');
+}
+
+function seguimientoGPS(id) {
+    window.open(`/despachos/seguimiento/${id}`, '_blank');
+}
+
+function cancelarDespacho(id) {
+    const motivo = prompt('Motivo de cancelación:');
+    if (motivo !== null) {
+        cambiarEstadoDespacho(id, 'cancelado', { motivo_cancelacion: motivo });
+    }
+}
+</script>
+{{/section}}

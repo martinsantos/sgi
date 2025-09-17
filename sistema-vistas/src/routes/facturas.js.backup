@@ -1,0 +1,70 @@
+const express = require('express');
+const router = express.Router();
+const FacturaController = require('../controllers/facturasController');
+
+// Endpoints API JSON
+router.get('/api/emitidas', FacturaController.getFacturasEmitidasAPI);
+router.post('/api/emitidas/generar', FacturaController.generarFactura);
+router.put('/api/emitidas/:id/anular', FacturaController.anularFactura);
+router.get('/api/emitidas/:id', FacturaController.getDetalleFactura);
+
+/**
+ * Rutas de Facturación - Integrado con AFIP
+ */
+
+// Dashboard de facturación
+router.get('/dashboard', FacturaController.dashboard);
+
+// Facturas emitidas
+router.get('/emitidas', FacturaController.getFacturasEmitidas);
+router.get('/emitidas/:id', FacturaController.ver);
+router.get('/emitidas/:id/editar', FacturaController.editarEmitida);
+router.post('/emitidas/:id/editar', FacturaController.actualizarEmitida);
+
+// Facturas recibidas (módulo de compras)
+router.get('/recibidas', FacturaController.recibidas);
+router.get("/nueva-recibida", FacturaController.mostrarCrearRecibida);
+router.post("/nueva-recibida", FacturaController.crearRecibida);
+router.get('/recibidas/:id', FacturaController.verRecibida);
+router.get('/recibidas/editar/:id', FacturaController.editarRecibida);
+router.post('/recibidas/editar/:id', FacturaController.actualizarRecibida);
+
+// API para facturas emitidas (DataTable)
+router.get('/api/emitidas', FacturaController.getFacturasEmitidasAPI);
+router.get('/api/facturas/emitidas', FacturaController.getFacturasEmitidasAPI);
+router.get('/api/facturas/emitidas/exportar', FacturaController.exportarFacturasEmitidasExcel);
+
+// API para facturas recibidas (DataTable)
+router.get('/api/recibidas', FacturaController.getFacturasRecibidasAPI);
+router.get('/api/facturas/recibidas', FacturaController.getFacturasRecibidasAPI);
+router.get('/api/facturas/recibidas/exportar', FacturaController.exportarFacturasRecibidasExcel);
+
+// Ruta principal (redirecciona a emitidas)
+router.get('/', FacturaController.getFacturasEmitidas);
+
+// Búsqueda de facturas
+router.get('/buscar', FacturaController.buscar);
+
+// Formulario de nueva factura
+router.get('/crear', FacturaController.mostrarCrear);
+router.post('/crear', FacturaController.crear);
+
+// Actualizar estado de factura
+router.post('/:id/estado', FacturaController.actualizarEstado);
+
+// Marcar factura como pagada
+router.post('/:id/marcar-pagada', FacturaController.marcarComoPagada);
+
+// Anular factura
+router.post('/:id/anular', FacturaController.anularFactura);
+
+// Generar PDF
+router.get('/:id/pdf', FacturaController.generarPDF);
+
+// Resumen financiero
+router.get('/resumen-financiero', FacturaController.resumenFinanciero);
+
+// Exportar a Excel
+router.get('/exportar', FacturaController.exportarExcel);
+
+module.exports = router;

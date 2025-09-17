@@ -1,0 +1,361 @@
+{{!-- presupuestos/crear.handlebars - Formulario para crear nuevo presupuesto --}}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <h2 class="mb-0 me-3">
+                        <i class="fas fa-plus me-2"></i>
+                        Nuevo Presupuesto
+                    </h2>
+                </div>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/presupuestos">Presupuestos</a></li>
+                        <li class="breadcrumb-item active">Nuevo</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes de error o éxito -->
+    {{> messages}}
+
+    <form action="/presupuestos" method="POST" id="presupuestoForm">
+        <div class="row">
+            <!-- Panel Izquierdo: Información principal -->
+            <div class="col-md-8">
+                <!-- Información General -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Información General
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="numero_presupuesto" class="form-label">Número de Presupuesto</label>
+                                    <input type="text" class="form-control" id="numero_presupuesto" name="numero_presupuesto" 
+                                           placeholder="Se generará automáticamente" readonly>
+                                    <small class="form-text text-muted">Se asignará automáticamente al guardar</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cliente_id" class="form-label">Cliente <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                        <option value="">Seleccionar cliente...</option>
+                                        {{#each clientes}}
+                                        <option value="{{this.id}}" data-cuit="{{this.cuil_cuit}}">
+                                            {{this.nombre}} {{this.apellido}} 
+                                            {{#if this.cuil_cuit}}({{this.cuil_cuit}}){{/if}}
+                                        </option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha_validez" class="form-label">Fecha de Validez</label>
+                                    <input type="date" class="form-control" id="fecha_validez" name="fecha_validez">
+                                    <small class="form-text text-muted">Fecha límite de validez del presupuesto</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dias_vencimiento" class="form-label">Días de Vencimiento</label>
+                                    <input type="number" class="form-control" id="dias_vencimiento" name="dias_vencimiento" 
+                                           value="30" min="1" max="365">
+                                    <small class="form-text text-muted">Días hasta el vencimiento del presupuesto</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="importe_total" class="form-label">Importe Total <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="importe_total" name="importe_total" 
+                                       step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="4"
+                                      placeholder="Observaciones adicionales, condiciones comerciales, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado y Control -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>
+                            Estado y Control
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="estado" class="form-label">Estado Inicial</label>
+                                    <select class="form-select" id="estado" name="estado">
+                                        <option value="0" selected>Borrador</option>
+                                        <option value="1">Enviado</option>
+                                    </select>
+                                    <small class="form-text text-muted">Se iniciará como borrador por defecto</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha de Emisión</label>
+                                    <input type="text" class="form-control" value="{{formatDate today}}" readonly>
+                                    <small class="form-text text-muted">Se asigna automáticamente</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Derecho: Información adicional -->
+            <div class="col-md-4">
+                <!-- Información del Cliente -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user me-2"></i>
+                            Datos del Cliente
+                        </h6>
+                    </div>
+                    <div class="card-body" id="cliente-info">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-user-plus fa-2x mb-2"></i>
+                            <p class="mb-0">Seleccione un cliente para ver sus datos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen Financiero -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Resumen Financiero
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Importe Total:</span>
+                            <span id="resumen-importe" class="fw-bold text-success">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Estado:</span>
+                            <span id="resumen-estado" class="badge bg-secondary">Borrador</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Validez:</span>
+                            <span id="resumen-validez" class="text-muted">Sin definir</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span>Días restantes:</span>
+                            <span id="resumen-dias" class="fw-bold">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Consejos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Consejos
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Complete todos los campos obligatorios</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Verifique el importe total antes de enviar</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Las observaciones ayudan a clarificar el presupuesto</small>
+                            </li>
+                            <li class="mb-0">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Puede guardar como borrador y completar después</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <a href="/presupuestos" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Cancelar
+                    </a>
+                    <div>
+                        <button type="submit" name="save_draft" value="1" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-save me-2"></i>
+                            Guardar Borrador
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>
+                            Crear Presupuesto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clienteSelect = document.getElementById('cliente_id');
+    const importeInput = document.getElementById('importe_total');
+    const fechaValidezInput = document.getElementById('fecha_validez');
+    const estadoSelect = document.getElementById('estado');
+    
+    // Configurar fecha de validez por defecto (30 días desde hoy)
+    const today = new Date();
+    const defaultValidez = new Date(today);
+    defaultValidez.setDate(today.getDate() + 30);
+    fechaValidezInput.value = defaultValidez.toISOString().split('T')[0];
+    
+    // Actualizar resumen al cambiar cliente
+    clienteSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const clienteInfo = document.getElementById('cliente-info');
+        
+        if (this.value) {
+            const clienteNombre = selectedOption.textContent.trim();
+            const clienteCuit = selectedOption.getAttribute('data-cuit');
+            
+            clienteInfo.innerHTML = `
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">${clienteNombre}</div>
+                        ${clienteCuit ? `<small class="text-muted">CUIT: ${clienteCuit}</small>` : ''}
+                    </div>
+                </div>
+                <div class="text-success">
+                    <i class="fas fa-check-circle me-1"></i>
+                    Cliente seleccionado
+                </div>
+            `;
+        } else {
+            clienteInfo.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-user-plus fa-2x mb-2"></i>
+                    <p class="mb-0">Seleccione un cliente para ver sus datos</p>
+                </div>
+            `;
+        }
+    });
+    
+    // Actualizar resumen al cambiar importe
+    importeInput.addEventListener('input', function() {
+        const importe = parseFloat(this.value) || 0;
+        document.getElementById('resumen-importe').textContent = formatCurrency(importe);
+    });
+    
+    // Actualizar resumen al cambiar fecha de validez
+    fechaValidezInput.addEventListener('change', function() {
+        const fechaValidez = new Date(this.value);
+        const today = new Date();
+        const diffTime = fechaValidez - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        document.getElementById('resumen-validez').textContent = formatDate(fechaValidez);
+        
+        if (diffDays > 0) {
+            document.getElementById('resumen-dias').textContent = `${diffDays} días`;
+            document.getElementById('resumen-dias').className = 'fw-bold text-success';
+        } else if (diffDays === 0) {
+            document.getElementById('resumen-dias').textContent = 'Hoy';
+            document.getElementById('resumen-dias').className = 'fw-bold text-warning';
+        } else {
+            document.getElementById('resumen-dias').textContent = 'Vencido';
+            document.getElementById('resumen-dias').className = 'fw-bold text-danger';
+        }
+    });
+    
+    // Actualizar resumen al cambiar estado
+    estadoSelect.addEventListener('change', function() {
+        const estados = {
+            '0': { text: 'Borrador', class: 'bg-secondary' },
+            '1': { text: 'Enviado', class: 'bg-primary' },
+            '2': { text: 'Aprobado', class: 'bg-success' },
+            '3': { text: 'Rechazado', class: 'bg-danger' },
+            '4': { text: 'Vencido', class: 'bg-warning text-dark' }
+        };
+        
+        const estado = estados[this.value] || estados['0'];
+        const badge = document.getElementById('resumen-estado');
+        badge.textContent = estado.text;
+        badge.className = `badge ${estado.class}`;
+    });
+    
+    // Validación del formulario
+    document.getElementById('presupuestoForm').addEventListener('submit', function(e) {
+        const cliente = document.getElementById('cliente_id').value;
+        const importe = parseFloat(document.getElementById('importe_total').value);
+        
+        if (!cliente) {
+            e.preventDefault();
+            alert('Por favor seleccione un cliente');
+            document.getElementById('cliente_id').focus();
+            return false;
+        }
+        
+        if (!importe || importe <= 0) {
+            e.preventDefault();
+            alert('Por favor ingrese un importe total válido');
+            document.getElementById('importe_total').focus();
+            return false;
+        }
+        
+        return true;
+    });
+    
+    // Inicializar fecha de validez
+    fechaValidezInput.dispatchEvent(new Event('change'));
+});
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 2
+    }).format(amount);
+}
+
+function formatDate(date) {
+    return new Intl.DateTimeFormat('es-AR').format(date);
+}
+</script>

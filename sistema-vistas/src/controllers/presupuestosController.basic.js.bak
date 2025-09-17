@@ -1,0 +1,255 @@
+const pool = require('../config/database');
+const { AppError } = require('../utils/errors');
+const { v4: uuidv4 } = require('uuid');
+
+class PresupuestoController {
+  static async getPresupuestosAPI(req, res, next) {
+    try {
+let query = `
+        SELECT 
+          p.*,
+          CONCAT(c.nombre, ' ', COALESCE(c.apellido, '')) as cliente_nombre,
+          COUNT(pd.id) as total_items,
+          COALESCE(SUM(pd.cantidad * pd.precio_unitario), 0) as subtotal,
+          COALESCE(SUM(pd.cantidad * pd.precio_unitario * pd.iva / 100), 0) as iva_total
+        FROM presupuestos p
+        LEFT JOIN persona_terceros c ON c.id = p.cliente_id
+        LEFT JOIN presupuesto_detalles pd ON pd.presupuesto_id = p.id
+        WHERE p.activo = 1
+        GROUP BY p.id
+        ORDER BY p.created DESC
+      `;
+
+      const [presupuestos] = await pool.query(query);
+
+      res.json({
+        success: true,
+        data: presupuestos.map(p => ({
+          ...p,
+          total: p.subtotal + p.iva_total,
+          subtotal_formatted: `$ ${p.subtotal.toLocaleString('es-AR', {minimumFractionDigits: 2})}`,
+          iva_total_formatted: `$ ${p.iva_total.toLocaleString('es-AR', {minimumFractionDigits: 2})}`,
+          total_formatted: `$ ${(p.subtotal + p.iva_total).toLocaleString('es-AR', {minimumFractionDigits: 2})}`,
+          estado_badge: getEstadoBadge(p.estado)
+        }))
+      });
+    } catch (error) {
+      next(new AppError('Error al obtener presupuestos', 500));
+    }
+  }
+
+  static async getPresupuestoAPI(req, res, next) {
+    try {
+      const { id } = req.params;
+
+      // Obtener presupuesto
+const [presupuestos] = await pool.query(`
+        SELECT 
+          p.*,
+          CONCAT(c.nombre, ' ', COALESCE(c.apellido, '')) as cliente_nombre,
+          c.codigo as cliente_codigo,
+          c.tipo_persona as cliente_tipo
+        FROM presupuestos p
+        LEFT JOIN persona_terceros c ON c.id = p.cliente_id
+        WHERE p.id = ? AND p.activo = 1`,
+        [id]
+      );
+
+      if (presupuestos.length === 0) {
+        return next(new AppError('Presupuesto no encontrado', 404));
+      }
+
+      const presupuesto = presupuestos[0];
+
+      // Obtener items
+const [items] = await pool.query(
+        'SELECT * FROM presupuesto_detalles WHERE presupuesto_id = ?',
+        [id]
+      );
+
+      // Calcular totales
+      const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+      const iva_total = items.reduce((sum, item) => sum + (item.subtotal * item.iva / 100), 0);
+      const total = subtotal + iva_total;
+
+      res.json({
+        success: true,
+        data: {
+          ...presupuesto,
+          items,
+          totales: {
+            subtotal,
+            iva_total,
+            total,
+            subtotal_formatted: `$ ${subtotal.toLocaleString('es-AR', {minimumFractionDigits: 2})}`,
+            iva_total_formatted: `$ ${iva_total.toLocaleString('es-AR', {minimumFractionDigits: 2})}`,
+            total_formatted: `$ ${total.toLocaleString('es-AR', {minimumFractionDigits: 2})}`
+          }
+        }
+      });
+    } catch (error) {
+      next(new AppError('Error al obtener presupuesto', 500));
+    }
+  }
+
+  static async createPresupuesto(req, res, next) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const {
+        cliente_id,
+        descripcion,
+        fecha_validez,
+        items
+      } = req.body;
+
+      // Validar cliente
+      const [clientes] = await connection.query(
+        'SELECT id FROM clientes WHERE id = ? AND activo = 1',
+        [cliente_id]
+      );
+
+      if (clientes.length === 0) {
+        throw new AppError('Cliente no encontrado o inactivo', 400);
+      }
+
+      // Crear presupuesto
+      const id = uuidv4();
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      await connection.query(`
+        INSERT INTO presupuestos (
+          id, cliente_id, descripcion, fecha_emision,
+          fecha_validez, estado, created, modified
+        ) VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+        [id, cliente_id, descripcion, now, fecha_validez, now, now]
+      );
+
+      // Insertar items
+      for (const item of items) {
+        const itemId = uuidv4();
+        const subtotal = item.cantidad * item.precio_unitario;
+
+        await connection.query(`
+          INSERT INTO presupuestos_items (
+            id, presupuesto_id, descripcion, cantidad,
+            precio_unitario, iva, subtotal
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [itemId, id, item.descripcion, item.cantidad,
+           item.precio_unitario, item.iva, subtotal]
+        );
+      }
+
+      await connection.commit();
+
+      // Obtener presupuesto creado
+      const [presupuesto] = await connection.query(`
+        SELECT 
+          p.*,
+          c.nombre as cliente_nombre,
+          COUNT(i.id) as total_items,
+          COALESCE(SUM(i.subtotal), 0) as subtotal,
+          COALESCE(SUM(i.subtotal * i.iva / 100), 0) as iva_total
+        FROM presupuestos p
+        LEFT JOIN clientes c ON c.id = p.cliente_id
+        LEFT JOIN presupuestos_items i ON i.presupuesto_id = p.id
+        WHERE p.id = ?
+        GROUP BY p.id`,
+        [id]
+      );
+
+      res.status(201).json({
+        success: true,
+        data: {
+          ...presupuesto[0],
+          total: presupuesto[0].subtotal + presupuesto[0].iva_total,
+          items
+        }
+      });
+
+    } catch (error) {
+      await connection.rollback();
+      next(error instanceof AppError ? error : new AppError('Error al crear presupuesto', 500));
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async updatePresupuestoEstado(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { estado } = req.body;
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      // Verificar presupuesto
+      const [presupuestos] = await pool.query(
+        'SELECT estado FROM presupuestos WHERE id = ?',
+        [id]
+      );
+
+      if (presupuestos.length === 0) {
+        return next(new AppError('Presupuesto no encontrado', 404));
+      }
+
+      // Validar transición de estado
+      const estadoActual = presupuestos[0].estado;
+      if (!esTransicionValida(estadoActual, estado)) {
+        return next(new AppError('Transición de estado no permitida', 400));
+      }
+
+      // Actualizar estado
+      await pool.query(
+        'UPDATE presupuestos SET estado = ?, modified = ? WHERE id = ?',
+        [estado, now, id]
+      );
+
+      // Obtener presupuesto actualizado
+      const [updated] = await pool.query(`
+        SELECT p.*, c.nombre as cliente_nombre
+        FROM presupuestos p
+        LEFT JOIN clientes c ON c.id = p.cliente_id
+        WHERE p.id = ?`,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        data: {
+          ...updated[0],
+          estado_badge: getEstadoBadge(estado)
+        }
+      });
+    } catch (error) {
+      next(new AppError('Error al actualizar estado', 500));
+    }
+  }
+}
+
+// Helpers
+function getEstadoBadge(estado) {
+  const estados = {
+    1: ['Borrador', 'secondary'],
+    2: ['Enviado', 'info'],
+    3: ['Aprobado', 'success'],
+    4: ['Rechazado', 'danger'],
+    5: ['Vencido', 'warning']
+  };
+
+  const [texto, color] = estados[estado] || ['Desconocido', 'light'];
+  return `<span class="badge bg-${color}">${texto}</span>`;
+}
+
+function esTransicionValida(estadoActual, nuevoEstado) {
+  const transicionesPermitidas = {
+    1: [2], // De Borrador a Enviado
+    2: [3, 4], // De Enviado a Aprobado o Rechazado
+    3: [], // Estado final
+    4: [], // Estado final
+    5: [] // Estado final
+  };
+
+  return transicionesPermitidas[estadoActual]?.includes(nuevoEstado) || false;
+}
+
+module.exports = PresupuestoController;

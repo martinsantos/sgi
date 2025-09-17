@@ -1,0 +1,116 @@
+{{#if pagination}}
+{{#gt pagination.totalPages 1}}
+<nav aria-label="Navegación de páginas">
+  <ul class="pagination justify-content-center mb-0">
+    <!-- Primera página -->
+    {{#if (gt pagination.currentPage 1)}}
+    <li class="page-item">
+      <a class="page-link" href="{{baseUrl}}?{{serialize (merge queryParams {page: 1})}}" aria-label="Primera">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link" aria-hidden="true">&laquo;</span>
+    </li>
+    {{/if}}
+
+    <!-- Página anterior -->
+    {{#if pagination.hasPrevious}}
+    <li class="page-item">
+      <a class="page-link" href="{{baseUrl}}?{{serialize (merge queryParams {page: (subtract pagination.currentPage 1)})}}" aria-label="Anterior">
+        <span aria-hidden="true">&lsaquo;</span>
+      </a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link" aria-hidden="true">&lsaquo;</span>
+    </li>
+    {{/if}}
+
+    <!-- Páginas numéricas -->
+    {{#each (range pagination.startPage pagination.endPage)}}
+    {{#eq this ../pagination.currentPage}}
+    <li class="page-item active">
+      <span class="page-link">{{this}}</span>
+    </li>
+    {{else}}
+    <li class="page-item">
+      <a class="page-link" href="{{../baseUrl}}?{{serialize (merge ../queryParams {page: this})}}">{{this}}</a>
+    </li>
+    {{/eq}}
+    {{/each}}
+
+    <!-- Puntos suspensivos si hay más páginas -->
+    {{#if (lt pagination.endPage pagination.totalPages)}}
+    {{#if (gt (subtract pagination.totalPages pagination.endPage) 1)}}
+    <li class="page-item disabled">
+      <span class="page-link">...</span>
+    </li>
+    {{/if}}
+    {{/if}}
+
+    <!-- Página siguiente -->
+    {{#if pagination.hasNext}}
+    <li class="page-item">
+      <a class="page-link" href="{{baseUrl}}?{{serialize (merge queryParams {page: (add pagination.currentPage 1)})}}" aria-label="Siguiente">
+        <span aria-hidden="true">&rsaquo;</span>
+      </a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link" aria-hidden="true">&rsaquo;</span>
+    </li>
+    {{/if}}
+
+    <!-- Última página -->
+    {{#if (lt pagination.currentPage pagination.totalPages)}}
+    <li class="page-item">
+      <a class="page-link" href="{{baseUrl}}?{{serialize (merge queryParams {page: pagination.totalPages})}}" aria-label="Última">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+    {{else}}
+    <li class="page-item disabled">
+      <span class="page-link" aria-hidden="true">&raquo;</span>
+    </li>
+    {{/if}}
+  </ul>
+</nav>
+
+<!-- Información adicional -->
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <div>
+    <small class="text-muted">
+      Página {{pagination.currentPage}} de {{pagination.totalPages}} 
+      ({{pagination.total}} elementos en total)
+    </small>
+  </div>
+  
+  <div class="d-flex align-items-center">
+    <small class="text-muted me-2">Elementos por página:</small>
+    <select class="form-select form-select-sm" style="width: auto;" id="pageSizeSelector">
+      <option value="10" {{#eq pagination.limit 10}}selected{{/eq}}>10</option>
+      <option value="25" {{#eq pagination.limit 25}}selected{{/eq}}>25</option>
+      <option value="50" {{#eq pagination.limit 50}}selected{{/eq}}>50</option>
+      <option value="100" {{#eq pagination.limit 100}}selected{{/eq}}>100</option>
+    </select>
+  </div>
+</div>
+{{/gt}}
+{{/if}}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Cambiar tamaño de página
+  const pageSizeSelector = document.getElementById('pageSizeSelector');
+  if (pageSizeSelector) {
+    pageSizeSelector.addEventListener('change', function() {
+      const currentUrl = new URL(window.location);
+      currentUrl.searchParams.set('limit', this.value);
+      currentUrl.searchParams.set('page', '1'); // Reset a primera página
+      window.location.href = currentUrl.toString();
+    });
+  }
+});
+</script>

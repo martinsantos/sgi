@@ -1,0 +1,112 @@
+const mysql = require('mysql2/promise');
+require('dotenv').config();
+
+// Configuración optimizada del pool de conexiones
+// Configuración específica para entorno de test
+const testConfig = {
+  host: process.env.TEST_DB_HOST || 'localhost',
+  user: process.env.TEST_DB_USER || 'root',
+  password: process.env.TEST_DB_PASS || '',
+  database: process.env.TEST_DB_NAME || 'test_sgi',
+  port: parseInt(process.env.TEST_DB_PORT) || 3306,
+  socketPath: process.env.TEST_DB_SOCKET || '/tmp/mysql.sock',
+  waitForConnections: true,
+  connectionLimit: 5,
+  queueLimit: 0,
+  multipleStatements: true
+};
+
+// Configuración para desarrollo y producción
+const prodConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASS || '',
+  database: process.env.DB_NAME || 'ultimami_sgi',
+  port: parseInt(process.env.DB_PORT) || 3306,
+  socketPath: process.env.DB_SOCKET,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  multipleStatements: false,
+  charset: 'utf8mb4',
+  timezone: '-03:00'
+};
+
+// Usar configuración según el entorno
+const dbConfig = process.env.NODE_ENV === 'test' ? testConfig : prodConfig;
+
+// Crear el pool de conexiones
+const pool = mysql.createPool(dbConfig);
+
+// Manejador de eventos para el pool
+// Connection logging disabled for production
+pool.on('acquire', (connection) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Conexión %d adquirida', connection.threadId);
+  }
+});
+
+pool.on('release', (connection) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Conexión %d liberada', connection.threadId);
+  }
+});
+
+// Probar la conexión
+async function testConnection() {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    console.log('✅ Conexión exitosa a la base de datos');
+    
+    // Obtener información de la versión de MySQL
+    const [rows] = await connection.query('SELECT VERSION() as version');
+    console.log(`📊 Versión de MySQL: ${rows[0].version}`);
+    
+    // Verificar tablas principales
+    const [tables] = await connection.query(
+      `SELECT COUNT(*) as count FROM information_schema.tables 
+       WHERE table_schema = ?`, 
+      [dbConfig.database]
+    );
+    
+    console.log(`🗄️  Tablas en la base de datos: ${tables[0].count}`);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error al conectar a la base de datos:', error.message);
+    console.error('🔧 Configuración de conexión:', {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      database: dbConfig.database,
+      user: dbConfig.user,
+      password: dbConfig.password ? '*****' : '(no password)'
+    });
+    
+    if (error.code === 'ECONNREFUSED') {
+      console.error('🔌 No se pudo conectar al servidor MySQL. Verifica que el servidor esté en ejecución.');
+    } else if (error.code === 'ER_BAD_DB_ERROR') {
+      console.error(`📂 La base de datos "${dbConfig.database}" no existe.`);
+    } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error('🔑 Error de autenticación. Verifica el usuario y la contraseña.');
+    }
+    
+    return false;
+  } finally {
+    if (connection) await connection.release();
+  }
+}
+
+// Probar la conexión al iniciar
+if (process.env.NODE_ENV !== 'test') {
+  testConnection().then(success => {
+    if (!success) {
+      console.error('⚠️  La aplicación puede no funcionar correctamente debido a problemas de conexión a la base de datos.');
+    }
+  });
+}
+
+module.exports = pool;
+
+// Exportar también las funciones útiles
+module.exports.testConnection = testConnection;

@@ -1,0 +1,275 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Certificado N° {{certificado.numero_certificado}}</h1>
+  <div>
+    <a href="/certificados" class="btn btn-outline-secondary me-2">
+      <i class="bi bi-arrow-left"></i> Volver a Lista
+    </a>
+    <a href="/certificados/editar/{{certificado.id}}" class="btn btn-warning me-2">
+      <i class="bi bi-pencil"></i> Editar
+    </a>
+    <a href="/certificados/imprimir/{{certificado.id}}" class="btn btn-primary" target="_blank">
+      <i class="bi bi-printer"></i> Imprimir
+    </a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">Información del Certificado</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <strong>Número:</strong><br>
+            <span class="fs-4">{{certificado.numero_certificado}}</span>
+          </div>
+          <div class="col-md-6">
+            <strong>Estado:</strong><br>
+            <span class="badge {{#eq certificado.estado 1}}bg-secondary{{/eq}}{{#eq certificado.estado 2}}bg-warning{{/eq}}{{#eq certificado.estado 3}}bg-success{{/eq}}{{#eq certificado.estado 4}}bg-info{{/eq}}{{#eq certificado.estado 5}}bg-danger{{/eq}} fs-6">
+              {{#eq certificado.estado 1}}BORRADOR{{/eq}}
+              {{#eq certificado.estado 2}}PENDIENTE{{/eq}}
+              {{#eq certificado.estado 3}}APROBADO{{/eq}}
+              {{#eq certificado.estado 4}}FACTURADO{{/eq}}
+              {{#eq certificado.estado 5}}RECHAZADO{{/eq}}
+            </span>
+          </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <strong>Descripción/Alcance:</strong><br>
+            <p>{{certificado.descripcion}}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>Condiciones:</strong><br>
+            <p>{{#if certificado.condiciones}}{{certificado.condiciones}}{{else}}<em>No especificadas</em>{{/if}}</p>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <strong>Fecha de Emisión:</strong><br>
+            {{formatDate certificado.fecha_emision}}
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>Fecha de Factura:</strong><br>
+            {{#if certificado.fecha_factura}}{{formatDate certificado.fecha_factura}}{{else}}<em>No facturado</em>{{/if}}
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <strong>Cantidad:</strong><br>
+            {{#if certificado.cantidad}}{{certificado.cantidad}}{{else}}1{{/if}}
+          </div>
+          <div class="col-md-4 mb-3">
+            <strong>Precio Unitario:</strong><br>
+            {{formatCurrency certificado.precio_unitario}}
+          </div>
+          <div class="col-md-4 mb-3">
+            <strong>Importe Total:</strong><br>
+            <span class="fs-5 fw-bold text-success">{{formatCurrency certificado.monto}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    {{#if proyecto}}
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Proyecto Asociado</h5>
+      </div>
+      <div class="card-body">
+        <h6><a href="/proyectos/ver/{{proyecto.id}}">{{proyecto.nombre}}</a></h6>
+        <div class="row">
+          <div class="col-md-6">
+            <strong>Presupuesto:</strong> {{formatCurrency proyecto.presupuesto}}
+          </div>
+          <div class="col-md-6">
+            <strong>Estado:</strong>
+            <span class="badge {{#eq proyecto.estado 1}}bg-info{{/eq}}{{#eq proyecto.estado 2}}bg-warning{{/eq}}{{#eq proyecto.estado 3}}bg-success{{/eq}} ms-2">
+              {{#eq proyecto.estado 1}}Planificado{{/eq}}
+              {{#eq proyecto.estado 2}}En Progreso{{/eq}}
+              {{#eq proyecto.estado 3}}Completado{{/eq}}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Acciones</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          {{#eq certificado.estado 1}}
+          <button type="button" class="btn btn-info" onclick="cambiarEstado(2)">
+            <i class="bi bi-check-circle"></i> Enviar para Aprobación
+          </button>
+          {{/eq}}
+          
+          {{#eq certificado.estado 2}}
+          <button type="button" class="btn btn-success" onclick="cambiarEstado(3)">
+            <i class="bi bi-check2-circle"></i> Aprobar Certificado
+          </button>
+          <button type="button" class="btn btn-danger" onclick="cambiarEstado(5)">
+            <i class="bi bi-x-circle"></i> Rechazar Certificado
+          </button>
+          {{/eq}}
+          
+          {{#eq certificado.estado 3}}
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#facturarModal">
+            <i class="bi bi-receipt"></i> Facturar Certificado
+          </button>
+          {{/eq}}
+          
+          {{#if (ne certificado.estado 4)}}
+          <a href="/certificados/editar/{{certificado.id}}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar Certificado
+          </a>
+          {{/if}}
+          
+          <a href="/certificados/imprimir/{{certificado.id}}" class="btn btn-outline-primary" target="_blank">
+            <i class="bi bi-printer"></i> Imprimir/PDF
+          </a>
+          
+          {{#if proyecto}}
+          <a href="/proyectos/ver/{{proyecto.id}}" class="btn btn-outline-info">
+            <i class="bi bi-folder"></i> Ver Proyecto
+          </a>
+          {{/if}}
+          
+          <hr>
+          <a href="/certificados" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> Todos los Certificados
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Facturar Certificado -->
+<div class="modal fade" id="facturarModal" tabindex="-1" aria-labelledby="facturarModalLabel" aria-hidden="true" style="z-index: 1055;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="facturarModalLabel">Facturar Certificado N° {{certificado.numero_certificado}}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="facturarForm">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <label for="tipo_factura" class="form-label">Tipo de Factura</label>
+              <select class="form-select" id="tipo_factura" name="tipo_factura" required>
+                <option value="">Seleccionar tipo</option>
+                <option value="A">Factura A</option>
+                <option value="B">Factura B</option>
+                <option value="C">Factura C</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="punto_venta" class="form-label">Punto de Venta</label>
+              <input type="number" class="form-control" id="punto_venta" name="punto_venta" value="1" required>
+            </div>
+          </div>
+          
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="alert alert-info">
+                <strong>Resumen:</strong> Importe: {{formatCurrency certificado.monto}} | 
+                IVA (21%): {{formatCurrency (multiply certificado.monto 0.21)}} | 
+                Total: {{formatCurrency (multiply certificado.monto 1.21)}}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Generar Factura</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function cambiarEstado(nuevoEstado) {
+  const estadoTexto = {
+    1: 'Borrador',
+    2: 'Pendiente de Aprobación', 
+    3: 'Aprobado',
+    4: 'Facturado',
+    5: 'Rechazado'
+  };
+  
+  if (confirm(`¿Está seguro de cambiar el estado del certificado a "${estadoTexto[nuevoEstado]}"?`)) {
+    // Show loading state
+    const buttons = document.querySelectorAll('button[onclick*="cambiarEstado"]');
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
+    });
+    
+    fetch(`/api/certificados/{{certificado.id}}/estado`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: nuevoEstado })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert(data.message || 'Estado actualizado correctamente');
+        location.reload();
+      } else {
+        alert('Error: ' + (data.message || 'Error desconocido'));
+        // Re-enable buttons
+        buttons.forEach(btn => {
+          btn.disabled = false;
+          btn.innerHTML = btn.getAttribute('data-original-text');
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error de conexión al actualizar el estado');
+      // Re-enable buttons
+      buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.innerHTML = btn.getAttribute('data-original-text');
+      });
+    });
+  }
+}
+
+document.getElementById('facturarForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const data = Object.fromEntries(formData.entries());
+  data.certificado_id = '{{certificado.id}}';
+  
+  fetch('/api/facturas/generar-desde-certificado', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Factura generada exitosamente');
+      window.location.href = `/facturas/ver/${data.factura_id}`;
+    } else {
+      alert('Error: ' + data.message);
+    }
+  });
+});
+</script>

@@ -1,0 +1,557 @@
+{{!-- presupuestos/editar.handlebars - Formulario para editar presupuesto --}}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <h2 class="mb-0 me-3">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Presupuesto {{presupuesto.numero_presupuesto}}
+                    </h2>
+                    <span class="badge {{#eq presupuesto.estado '0'}}bg-secondary{{/eq}}{{#eq presupuesto.estado '1'}}bg-primary{{/eq}}{{#eq presupuesto.estado '2'}}bg-success{{/eq}}{{#eq presupuesto.estado '3'}}bg-danger{{/eq}}{{#eq presupuesto.estado '4'}}bg-warning text-dark{{/eq}}">
+                        {{#eq presupuesto.estado '0'}}Borrador{{/eq}}
+                        {{#eq presupuesto.estado '1'}}Enviado{{/eq}}
+                        {{#eq presupuesto.estado '2'}}Aprobado{{/eq}}
+                        {{#eq presupuesto.estado '3'}}Rechazado{{/eq}}
+                        {{#eq presupuesto.estado '4'}}Vencido{{/eq}}
+                    </span>
+                </div>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/presupuestos">Presupuestos</a></li>
+                        <li class="breadcrumb-item"><a href="/presupuestos/{{presupuesto.id}}">{{presupuesto.numero_presupuesto}}</a></li>
+                        <li class="breadcrumb-item active">Editar</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes de error o éxito -->
+    {{> messages}}
+
+    <form action="/presupuestos/{{presupuesto.id}}" method="POST" id="presupuestoForm">
+        <input type="hidden" name="_method" value="PUT">
+        
+        <div class="row">
+            <!-- Panel Izquierdo: Información principal -->
+            <div class="col-md-8">
+                <!-- Información General -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Información General
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="numero_presupuesto" class="form-label">Número de Presupuesto</label>
+                                    <input type="text" class="form-control" id="numero_presupuesto" name="numero_presupuesto" 
+                                           value="{{presupuesto.numero_presupuesto}}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cliente_id" class="form-label">Cliente <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                        <option value="">Seleccionar cliente...</option>
+                                        {{#each clientes}}
+                                        <option value="{{this.id}}" data-cuit="{{this.cuil_cuit}}" 
+                                                {{#eq this.id ../presupuesto.cliente_id}}selected{{/eq}}>
+                                            {{this.nombre}} {{this.apellido}} 
+                                            {{#if this.cuil_cuit}}({{this.cuil_cuit}}){{/if}}
+                                        </option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha_validez" class="form-label">Fecha de Validez</label>
+                                    <input type="date" class="form-control" id="fecha_validez" name="fecha_validez" 
+                                           value="{{formatDateISO presupuesto.fecha_validez}}">
+                                    <small class="form-text text-muted">Fecha límite de validez del presupuesto</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dias_vencimiento" class="form-label">Días de Vencimiento</label>
+                                    <input type="number" class="form-control" id="dias_vencimiento" name="dias_vencimiento" 
+                                           value="{{presupuesto.dias_vencimiento}}" min="1" max="365">
+                                    <small class="form-text text-muted">Días hasta el vencimiento del presupuesto</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="importe_total" class="form-label">Importe Total <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="importe_total" name="importe_total" 
+                                       step="0.01" min="0" value="{{presupuesto.importe_total}}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="4"
+                                      placeholder="Observaciones adicionales, condiciones comerciales, etc.">{{presupuesto.observaciones}}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado y Control -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>
+                            Estado y Control
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="estado" class="form-label">Estado</label>
+                                    <select class="form-select" id="estado" name="estado">
+                                        <option value="0" {{#eq presupuesto.estado '0'}}selected{{/eq}}>Borrador</option>
+                                        <option value="1" {{#eq presupuesto.estado '1'}}selected{{/eq}}>Enviado</option>
+                                        <option value="2" {{#eq presupuesto.estado '2'}}selected{{/eq}}>Aprobado</option>
+                                        <option value="3" {{#eq presupuesto.estado '3'}}selected{{/eq}}>Rechazado</option>
+                                        <option value="4" {{#eq presupuesto.estado '4'}}selected{{/eq}}>Vencido</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha de Emisión</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{formatDate presupuesto.fecha_emision}}" readonly>
+                                    <small class="form-text text-muted">No se puede modificar</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha de Creación</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{formatDate presupuesto.created}}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Última Modificación</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{formatDate presupuesto.updated}}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Derecho: Información adicional -->
+            <div class="col-md-4">
+                <!-- Información del Cliente -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user me-2"></i>
+                            Datos del Cliente
+                        </h6>
+                    </div>
+                    <div class="card-body" id="cliente-info">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{presupuesto.cliente_nombre}}</div>
+                                {{#if presupuesto.cliente_cuit}}
+                                    <small class="text-muted">CUIT: {{presupuesto.cliente_cuit}}</small>
+                                {{/if}}
+                            </div>
+                        </div>
+                        <div class="text-success">
+                            <i class="fas fa-check-circle me-1"></i>
+                            Cliente asignado
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen Financiero -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Resumen Financiero
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Importe Total:</span>
+                            <span id="resumen-importe" class="fw-bold text-success">{{formatCurrency presupuesto.importe_total}}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Estado:</span>
+                            <span id="resumen-estado" class="badge {{#eq presupuesto.estado '0'}}bg-secondary{{/eq}}{{#eq presupuesto.estado '1'}}bg-primary{{/eq}}{{#eq presupuesto.estado '2'}}bg-success{{/eq}}{{#eq presupuesto.estado '3'}}bg-danger{{/eq}}{{#eq presupuesto.estado '4'}}bg-warning text-dark{{/eq}}">
+                                {{#eq presupuesto.estado '0'}}Borrador{{/eq}}
+                                {{#eq presupuesto.estado '1'}}Enviado{{/eq}}
+                                {{#eq presupuesto.estado '2'}}Aprobado{{/eq}}
+                                {{#eq presupuesto.estado '3'}}Rechazado{{/eq}}
+                                {{#eq presupuesto.estado '4'}}Vencido{{/eq}}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Validez:</span>
+                            <span id="resumen-validez">{{formatDate presupuesto.fecha_validez}}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span>Días restantes:</span>
+                            <span id="resumen-dias" class="fw-bold">
+                                {{#if presupuesto.dias_hasta_vencimiento}}
+                                    {{#if (gt presupuesto.dias_hasta_vencimiento 0)}}
+                                        <span class="text-success">{{presupuesto.dias_hasta_vencimiento}} días</span>
+                                    {{else if (eq presupuesto.dias_hasta_vencimiento 0)}}
+                                        <span class="text-warning">Hoy</span>
+                                    {{else}}
+                                        <span class="text-danger">Vencido</span>
+                                    {{/if}}
+                                {{else}}
+                                    --
+                                {{/if}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Cambios -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Historial de Cambios
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Creado</h6>
+                                    <p class="timeline-description">{{formatDate presupuesto.created}}</p>
+                                </div>
+                            </div>
+                            {{#if presupuesto.updated}}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Última modificación</h6>
+                                    <p class="timeline-description">{{formatDate presupuesto.updated}}</p>
+                                </div>
+                            </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones Rápidas -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>
+                            Acciones Rápidas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="/presupuestos/{{presupuesto.id}}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-2"></i>
+                                Ver Presupuesto
+                            </a>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="duplicarPresupuesto('{{presupuesto.id}}')">
+                                <i class="fas fa-copy me-2"></i>
+                                Duplicar Presupuesto
+                            </button>
+                            <a href="/presupuestos/{{presupuesto.id}}/pdf" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Generar PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <a href="/presupuestos/{{presupuesto.id}}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Cancelar
+                    </a>
+                    <div>
+                        <button type="button" class="btn btn-outline-danger me-2" onclick="confirmarEliminacion('{{presupuesto.id}}')">
+                            <i class="fas fa-trash me-2"></i>
+                            Eliminar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i>
+                            Actualizar Presupuesto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="confirmarEliminacionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 text-center">
+                <div class="w-100">
+                    <i class="fas fa-exclamation-triangle text-warning fa-3x mb-2"></i>
+                    <h4 class="modal-title">¿Eliminar presupuesto?</h4>
+                </div>
+            </div>
+            <div class="modal-body text-center">
+                <p class="mb-0">Esta acción no se puede deshacer.<br>
+                ¿Está seguro de que desea eliminar este presupuesto?</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminar">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clienteSelect = document.getElementById('cliente_id');
+    const importeInput = document.getElementById('importe_total');
+    const fechaValidezInput = document.getElementById('fecha_validez');
+    const estadoSelect = document.getElementById('estado');
+    
+    // Actualizar resumen al cambiar cliente
+    clienteSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const clienteInfo = document.getElementById('cliente-info');
+        
+        if (this.value) {
+            const clienteNombre = selectedOption.textContent.trim();
+            const clienteCuit = selectedOption.getAttribute('data-cuit');
+            
+            clienteInfo.innerHTML = `
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">${clienteNombre}</div>
+                        ${clienteCuit ? `<small class="text-muted">CUIT: ${clienteCuit}</small>` : ''}
+                    </div>
+                </div>
+                <div class="text-success">
+                    <i class="fas fa-check-circle me-1"></i>
+                    Cliente seleccionado
+                </div>
+            `;
+        }
+    });
+    
+    // Actualizar resumen al cambiar importe
+    importeInput.addEventListener('input', function() {
+        const importe = parseFloat(this.value) || 0;
+        document.getElementById('resumen-importe').textContent = formatCurrency(importe);
+    });
+    
+    // Actualizar resumen al cambiar fecha de validez
+    fechaValidezInput.addEventListener('change', function() {
+        const fechaValidez = new Date(this.value);
+        const today = new Date();
+        const diffTime = fechaValidez - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        document.getElementById('resumen-validez').textContent = formatDate(fechaValidez);
+        
+        const diasElement = document.getElementById('resumen-dias');
+        if (diffDays > 0) {
+            diasElement.innerHTML = `<span class="text-success">${diffDays} días</span>`;
+        } else if (diffDays === 0) {
+            diasElement.innerHTML = `<span class="text-warning">Hoy</span>`;
+        } else {
+            diasElement.innerHTML = `<span class="text-danger">Vencido</span>`;
+        }
+    });
+    
+    // Actualizar resumen al cambiar estado
+    estadoSelect.addEventListener('change', function() {
+        const estados = {
+            '0': { text: 'Borrador', class: 'bg-secondary' },
+            '1': { text: 'Enviado', class: 'bg-primary' },
+            '2': { text: 'Aprobado', class: 'bg-success' },
+            '3': { text: 'Rechazado', class: 'bg-danger' },
+            '4': { text: 'Vencido', class: 'bg-warning text-dark' }
+        };
+        
+        const estado = estados[this.value] || estados['0'];
+        const badge = document.getElementById('resumen-estado');
+        badge.textContent = estado.text;
+        badge.className = `badge ${estado.class}`;
+    });
+    
+    // Validación del formulario
+    document.getElementById('presupuestoForm').addEventListener('submit', function(e) {
+        const cliente = document.getElementById('cliente_id').value;
+        const importe = parseFloat(document.getElementById('importe_total').value);
+        
+        if (!cliente) {
+            e.preventDefault();
+            alert('Por favor seleccione un cliente');
+            document.getElementById('cliente_id').focus();
+            return false;
+        }
+        
+        if (!importe || importe <= 0) {
+            e.preventDefault();
+            alert('Por favor ingrese un importe total válido');
+            document.getElementById('importe_total').focus();
+            return false;
+        }
+        
+        return true;
+    });
+});
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        minimumFractionDigits: 2
+    }).format(amount);
+}
+
+function formatDate(date) {
+    return new Intl.DateTimeFormat('es-AR').format(date);
+}
+
+function duplicarPresupuesto(id) {
+    if (confirm('¿Desea duplicar este presupuesto?')) {
+        fetch(`/api/presupuestos/${id}/duplicate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Presupuesto duplicado exitosamente');
+                window.location.href = `/presupuestos/${data.nuevo_id}/editar`;
+            } else {
+                alert('Error al duplicar presupuesto: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al duplicar presupuesto');
+        });
+    }
+}
+
+function confirmarEliminacion(id) {
+    const modal = new bootstrap.Modal(document.getElementById('confirmarEliminacionModal'));
+    modal.show();
+    
+    document.getElementById('confirmarEliminar').onclick = function() {
+        fetch(`/api/presupuestos/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Presupuesto eliminado exitosamente');
+                window.location.href = '/presupuestos';
+            } else {
+                alert('Error al eliminar presupuesto: ' + data.message);
+            }
+            modal.hide();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar presupuesto');
+            modal.hide();
+        });
+    };
+}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 1rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 1.5rem;
+    height: calc(100% - 1rem);
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    margin-left: 1.5rem;
+}
+
+.timeline-title {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.timeline-description {
+    margin-bottom: 0;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+</style>

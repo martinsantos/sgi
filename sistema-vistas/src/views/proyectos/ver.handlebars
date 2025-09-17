@@ -1,0 +1,327 @@
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2">{{proyecto.nombre}}</h1>
+        <p class="text-muted mb-0">Proyecto #{{proyecto.id}}</p>
+    </div>
+    <div>
+        <a href="/proyectos" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Volver al Listado
+        </a>
+        <a href="/proyectos/editar/{{proyecto.id}}" class="btn btn-warning me-2">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="bi bi-printer"></i> Imprimir
+        </button>
+    </div>
+</div>
+
+<!-- Status and Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="card-title mb-1">Estado</h5>
+                <span class="badge {{proyecto.estado_badge_class}} fs-6">
+                    {{#eq proyecto.estado 1}}Pendiente{{/eq}}
+                    {{#eq proyecto.estado 2}}En Progreso{{/eq}}
+                    {{#eq proyecto.estado 3}}Finalizado{{/eq}}
+                    {{#eq proyecto.estado 4}}Cancelado{{/eq}}
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="card-title mb-1">Presupuesto</h5>
+                <h4 class="text-success mb-0">${{proyecto.presupuesto}}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="card-title mb-1">Certificados</h5>
+                <h4 class="text-info mb-0">{{certificados.length}}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="card-title mb-1">Duración</h5>
+                <h4 class="text-primary mb-0">
+                    {{#if proyecto.fecha_cierre}}
+                        -- días días
+                    {{else}}
+                        -- días días
+                    {{/if}}
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Project Details -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Proyecto</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted">Descripción:</label>
+                        <p class="mb-0">{{proyecto.descripcion}}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted">Cliente:</label>
+                        <p class="mb-0">
+                            {{#if proyecto.cliente_id}}
+                                <a href="/clientes/ver/{{proyecto.cliente_id}}" class="text-decoration-none">
+                                    {{proyecto.cliente_nombre}}
+                                </a>
+                            {{else}}
+                                {{proyecto.cliente_nombre}}
+                            {{/if}}
+                        </p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted">Fecha de Inicio:</label>
+                        <p class="mb-0">{{proyecto.fecha_inicio}}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted">Fecha de Cierre:</label>
+                        <p class="mb-0">
+                            {{#if proyecto.fecha_cierre}}
+                                {{formatDate proyecto.fecha_cierre}}
+                            {{else}}
+                                <em class="text-muted">En progreso</em>
+                            {{/if}}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-award"></i> Certificados del Proyecto</h5>
+                <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-sm btn-success">
+                    <i class="bi bi-plus"></i> Nuevo Certificado
+                </a>
+            </div>
+            <div class="card-body">
+                {{#if certificados}}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Certificado</th>
+                                <th>Descripción</th>
+                                <th>Fecha</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each certificados}}
+                            <tr>
+                                <td>
+                                    <strong>#{{this.numero}}</strong>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{this.descripcion}}</div>
+                                    {{#if this.condiciones}}
+                                        <small class="text-muted">{{this.condiciones}}</small>
+                                    {{/if}}
+                                </td>
+                                <td>
+                                    <div>{{formatDate this.fecha}}</div>
+                                    {{#if this.fecha_factura}}
+                                        <small class="text-muted">Fact: {{formatDate this.fecha_factura}}</small>
+                                    {{/if}}
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">{{formatCurrency this.monto}}</span>
+                                </td>
+                                <td>
+                                    <span class="badge {{#eq this.estado 0}}bg-secondary{{/eq}}{{#eq this.estado 1}}bg-warning{{/eq}}{{#eq this.estado 2}}bg-success{{/eq}}{{#eq this.estado 3}}bg-info{{/eq}}{{#eq this.estado 4}}bg-danger{{/eq}}">
+                                        {{#eq this.estado 0}}Borrador{{/eq}}
+                                        {{#eq this.estado 1}}Pendiente{{/eq}}
+                                        {{#eq this.estado 2}}Aprobado{{/eq}}
+                                        {{#eq this.estado 3}}Facturado{{/eq}}
+                                        {{#eq this.estado 4}}Rechazado{{/eq}}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/certificados/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="/certificados/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Certificates Summary -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total Certificados</h6>
+                                <h4 class="mb-0">{{certificados.length}}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Monto Total</h6>
+                                <h4 class="mb-0 text-success">{{formatCurrency totalCertificados}}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {{else}}
+                <div class="text-center py-4">
+                    <i class="bi bi-award" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <p class="text-muted mt-2 mb-3">No hay certificados asociados a este proyecto</p>
+                    <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Crear Primer Certificado
+                    </a>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Project Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones del Proyecto</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/proyectos/editar/{{proyecto.id}}" class="btn btn-warning">
+                        <i class="bi bi-pencil"></i> Editar Proyecto
+                    </a>
+                    <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-success">
+                        <i class="bi bi-award"></i> Nuevo Certificado
+                    </a>
+                    {{#if proyecto.cliente_id}}
+                    <a href="/clientes/ver/{{proyecto.cliente_id}}" class="btn btn-outline-info">
+                        <i class="bi bi-person"></i> Ver Cliente
+                    </a>
+                    {{/if}}
+                    <hr>
+                    <button class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimir Proyecto
+                    </button>
+                    <a href="/proyectos/reporte/{{proyecto.id}}" class="btn btn-outline-secondary">
+                        <i class="bi bi-file-earmark-pdf"></i> Generar Reporte
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Proyecto Creado</h6>
+                            <small class="text-muted">{{proyecto.fecha_inicio}}</small>
+                        </div>
+                    </div>
+                    
+                    {{#if certificados}}
+                    {{#each certificados}}
+                    <div class="timeline-item">
+                        <div class="timeline-marker {{#eq this.estado 2}}bg-success{{else}}bg-warning{{/eq}}"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Certificado #{{this.numero}}</h6>
+                            <small class="text-muted">{{formatDate this.fecha}}</small>
+                            <div class="mt-1">
+                                <span class="badge badge-sm {{#eq this.estado 2}}bg-success{{else}}bg-warning{{/eq}}">
+                                    {{#eq this.estado 2}}Aprobado{{else}}Pendiente{{/eq}}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {{/each}}
+                    {{/if}}
+                    
+                    {{#if proyecto.fecha_cierre}}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Proyecto Finalizado</h6>
+                            <small class="text-muted">{{formatDate proyecto.fecha_cierre}}</small>
+                        </div>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 0;
+    bottom: -1.5rem;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.75rem;
+    top: 0.25rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content {
+    padding-left: 0.5rem;
+}
+</style>

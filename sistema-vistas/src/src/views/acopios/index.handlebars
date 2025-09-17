@@ -1,0 +1,594 @@
+{{!-- Acopios y Stock --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-warehouse me-2"></i>
+            Acopios y Gestión de Stock
+          </h4>
+          <div class="btn-group">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoMovimientoModal">
+              <i class="fas fa-plus me-1"></i>
+              Nuevo Movimiento
+            </button>
+            <button class="btn btn-outline-success" onclick="exportarInventario()">
+              <i class="fas fa-file-excel me-1"></i>
+              Exportar Inventario
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Filtros y Búsqueda -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <select class="form-select" id="filtroDeposito">
+              <option value="">Todos los depósitos</option>
+              {{#each depositos}}
+              <option value="{{this.id}}">{{this.nombre}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroProyecto">
+              <option value="">Todos los proyectos</option>
+              {{#each proyectos}}
+              <option value="{{this.id}}">{{this.nombre}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroEstado">
+              <option value="">Todos los estados</option>
+              <option value="disponible">Disponible</option>
+              <option value="reservado">Reservado</option>
+              <option value="despachado">Despachado</option>
+              <option value="agotado">Agotado</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Buscar material..." id="filtroTexto">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen de Stock -->
+        <div class="row mb-4">
+          <div class="col-md-2">
+            <div class="card bg-primary text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.total_items}}</h5>
+                <p class="card-text">Items Totales</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.disponibles}}</h5>
+                <p class="card-text">Disponibles</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-warning text-dark">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.reservados}}</h5>
+                <p class="card-text">Reservados</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-info">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.despachados}}</h5>
+                <p class="card-text">Despachados</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-danger text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.agotados}}</h5>
+                <p class="card-text">Agotados</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-dark text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">${{formatNumber stats.valor_total}}</h5>
+                <p class="card-text">Valor Total</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventario por Depósito -->
+        {{#each inventario_por_deposito}}
+        <div class="card mb-3">
+          <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h6 class="mb-0">
+                <i class="fas fa-building me-1"></i>
+                {{this.deposito_nombre}}
+                <span class="badge bg-secondary ms-2">{{this.total_items}} items</span>
+              </h6>
+              <small class="text-muted">Capacidad: {{this.capacidad_utilizada}}/{{this.capacidad_total}}</small>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th width="25%">Material</th>
+                    <th width="15%">Proyecto</th>
+                    <th width="10%">Stock Actual</th>
+                    <th width="10%">Reservado</th>
+                    <th width="10%">Disponible</th>
+                    <th width="10%">Estado</th>
+                    <th width="10%">Valor Unit.</th>
+                    <th width="10%">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each this.items}}
+                  <tr data-acopio-id="{{this.id}}">
+                    <td>
+                      <strong>{{this.material_nombre}}</strong>
+                      {{#if this.lote}}
+                      <br><small class="text-muted">Lote: {{this.lote}}</small>
+                      {{/if}}
+                      {{#if this.fecha_vencimiento}}
+                      <br><small class="text-muted">Vence: {{formatDate this.fecha_vencimiento}}</small>
+                      {{/if}}
+                    </td>
+                    <td>
+                      <strong>{{this.proyecto_nombre}}</strong>
+                      <br><small class="text-muted">{{this.cliente_nombre}}</small>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-primary">{{this.cantidad_actual}} {{this.unidad}}</span>
+                    </td>
+                    <td class="text-center">
+                      {{#if (gt this.cantidad_reservada 0)}}
+                      <span class="badge bg-warning">{{this.cantidad_reservada}} {{this.unidad}}</span>
+                      {{else}}
+                      <span class="text-muted">--</span>
+                      {{/if}}
+                    </td>
+                    <td class="text-center">
+                      <span class="badge 
+                        {{#if (gt this.cantidad_disponible 0)}}bg-success{{else}}bg-secondary{{/if}}
+                      ">
+                        {{this.cantidad_disponible}} {{this.unidad}}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge 
+                        {{#eq this.estado 'disponible'}}bg-success{{/eq}}
+                        {{#eq this.estado 'reservado'}}bg-warning{{/eq}}
+                        {{#eq this.estado 'despachado'}}bg-info{{/eq}}
+                        {{#eq this.estado 'agotado'}}bg-danger{{/eq}}
+                      ">
+                        {{capitalize this.estado}}
+                      </span>
+                    </td>
+                    <td class="text-end">
+                      <strong>ARS {{formatNumber this.valor_unitario}}</strong>
+                    </td>
+                    <td>
+                      <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-info" onclick="verMovimientos('{{this.id}}')" title="Ver Movimientos">
+                          <i class="fas fa-history"></i>
+                        </button>
+                        {{#if (gt this.cantidad_disponible 0)}}
+                        <button class="btn btn-outline-warning" onclick="reservarMaterial('{{this.id}}')" title="Reservar">
+                          <i class="fas fa-bookmark"></i>
+                        </button>
+                        <button class="btn btn-outline-success" onclick="despacharMaterial('{{this.id}}')" title="Despachar">
+                          <i class="fas fa-truck"></i>
+                        </button>
+                        {{/if}}
+                        <div class="btn-group">
+                          <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                          </button>
+                          <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="ajustarStock('{{this.id}}')">
+                              <i class="fas fa-edit me-1"></i> Ajustar Stock
+                            </a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="transferirMaterial('{{this.id}}')">
+                              <i class="fas fa-exchange-alt me-1"></i> Transferir
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="generarEtiqueta('{{this.id}}')">
+                              <i class="fas fa-qrcode me-1"></i> Generar Etiqueta
+                            </a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        {{/each}}
+
+        {{#unless inventario_por_deposito}}
+        <div class="text-center py-5">
+          <i class="fas fa-warehouse fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay stock registrado</h5>
+          <p class="text-muted">Los materiales se agregarán automáticamente al recibir órdenes de compra</p>
+        </div>
+        {{/unless}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Movimiento -->
+<div class="modal fade" id="nuevoMovimientoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-plus me-2"></i>
+          Nuevo Movimiento de Stock
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevoMovimiento">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Tipo de Movimiento <span class="text-danger">*</span></label>
+                <select class="form-select" name="tipo_movimiento" required onchange="cambiarTipoMovimiento(this.value)">
+                  <option value="">Seleccionar...</option>
+                  <option value="entrada">Entrada (Ingreso Manual)</option>
+                  <option value="salida">Salida (Egreso Manual)</option>
+                  <option value="ajuste">Ajuste de Inventario</option>
+                  <option value="transferencia">Transferencia entre Depósitos</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Depósito Origen <span class="text-danger">*</span></label>
+                <select class="form-select" name="deposito_origen_id" required>
+                  <option value="">Seleccionar depósito...</option>
+                  {{#each depositos}}
+                  <option value="{{this.id}}">{{this.nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="depositoDestinoRow" style="display: none;">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Depósito Destino <span class="text-danger">*</span></label>
+                <select class="form-select" name="deposito_destino_id">
+                  <option value="">Seleccionar depósito...</option>
+                  {{#each depositos}}
+                  <option value="{{this.id}}">{{this.nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proyecto <span class="text-danger">*</span></label>
+                <select class="form-select" name="proyecto_id" required>
+                  <option value="">Seleccionar proyecto...</option>
+                  {{#each proyectos}}
+                  <option value="{{this.id}}">{{this.nombre}} - {{this.cliente_nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Material <span class="text-danger">*</span></label>
+                <select class="form-select" name="material_id" required>
+                  <option value="">Seleccionar material...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" name="cantidad" required min="0" step="0.01">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Valor Unitario</label>
+                <input type="number" class="form-control" name="valor_unitario" min="0" step="0.01">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Lote (Opcional)</label>
+                <input type="text" class="form-control" name="lote">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha de Vencimiento (Opcional)</label>
+                <input type="date" class="form-control" name="fecha_vencimiento">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Orden de Compra Origen (Opcional)</label>
+                <select class="form-select" name="orden_compra_id">
+                  <option value="">Sin orden de compra...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-control" name="observaciones" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="crearMovimiento()">
+          <i class="fas fa-save me-1"></i>
+          Registrar Movimiento
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reservar Material -->
+<div class="modal fade" id="reservarModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-bookmark me-2"></i>
+          Reservar Material
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formReservar">
+          <input type="hidden" name="acopio_id" id="reservarAcopioId">
+          <div class="mb-3">
+            <label class="form-label">Cantidad a Reservar <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" name="cantidad_reservar" required min="1" step="0.01">
+            <small class="form-text text-muted">Disponible: <span id="cantidadDisponible"></span></small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Motivo de Reserva</label>
+            <textarea class="form-control" name="motivo_reserva" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Límite de Reserva</label>
+            <input type="date" class="form-control" name="fecha_limite_reserva">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-warning" onclick="confirmarReserva()">
+          <i class="fas fa-bookmark me-1"></i>
+          Reservar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+$(document).ready(function() {
+    // Configurar filtros
+    $('#filtroDeposito, #filtroProyecto, #filtroEstado').on('change', filtrarInventario);
+    $('#filtroTexto').on('keyup', filtrarInventario);
+
+    // Cargar materiales cuando cambie el proyecto
+    $('select[name="proyecto_id"]').on('change', cargarMateriales);
+    $('select[name="deposito_origen_id"]').on('change', cargarOrdenesCompra);
+});
+
+// Cambiar tipo de movimiento
+function cambiarTipoMovimiento(tipo) {
+    const depositoDestinoRow = document.getElementById('depositoDestinoRow');
+    if (tipo === 'transferencia') {
+        depositoDestinoRow.style.display = 'block';
+        $('select[name="deposito_destino_id"]').prop('required', true);
+    } else {
+        depositoDestinoRow.style.display = 'none';
+        $('select[name="deposito_destino_id"]').prop('required', false);
+    }
+}
+
+// Cargar materiales del proyecto
+function cargarMateriales() {
+    const proyectoId = $('select[name="proyecto_id"]').val();
+    if (proyectoId) {
+        fetch(`/api/proyectos/${proyectoId}/materiales`)
+            .then(response => response.json())
+            .then(data => {
+                const select = $('select[name="material_id"]');
+                select.empty().append('<option value="">Seleccionar material...</option>');
+                data.materiales.forEach(material => {
+                    select.append(`<option value="${material.id}">${material.nombre} - ${material.unidad}</option>`);
+                });
+            });
+    }
+}
+
+// Cargar órdenes de compra del depósito
+function cargarOrdenesCompra() {
+    const depositoId = $('select[name="deposito_origen_id"]').val();
+    if (depositoId) {
+        fetch(`/api/depositos/${depositoId}/ordenes-compra`)
+            .then(response => response.json())
+            .then(data => {
+                const select = $('select[name="orden_compra_id"]');
+                select.empty().append('<option value="">Sin orden de compra...</option>');
+                data.ordenes.forEach(orden => {
+                    select.append(`<option value="${orden.id}">OC-${orden.numero} - ${orden.proveedor_nombre}</option>`);
+                });
+            });
+    }
+}
+
+// Filtrar inventario
+function filtrarInventario() {
+    const deposito = $('#filtroDeposito').val();
+    const proyecto = $('#filtroProyecto').val();
+    const estado = $('#filtroEstado').val();
+    const texto = $('#filtroTexto').val();
+
+    let url = '/acopios?';
+    if (deposito) url += `deposito=${deposito}&`;
+    if (proyecto) url += `proyecto=${proyecto}&`;
+    if (estado) url += `estado=${estado}&`;
+    if (texto) url += `search=${texto}&`;
+
+    window.location.href = url.slice(0, -1);
+}
+
+// Crear movimiento
+function crearMovimiento() {
+    const formData = new FormData(document.getElementById('formNuevoMovimiento'));
+    
+    fetch('/api/acopios/movimientos', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#nuevoMovimientoModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error al registrar movimiento: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar movimiento');
+    });
+}
+
+// Ver movimientos de un material
+function verMovimientos(acopioId) {
+    window.open(`/acopios/movimientos/${acopioId}`, '_blank');
+}
+
+// Reservar material
+function reservarMaterial(acopioId) {
+    // Cargar datos del acopio
+    fetch(`/api/acopios/${acopioId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                $('#reservarAcopioId').val(acopioId);
+                $('#cantidadDisponible').text(`${data.acopio.cantidad_disponible} ${data.acopio.unidad}`);
+                $('input[name="cantidad_reservar"]').attr('max', data.acopio.cantidad_disponible);
+                $('#reservarModal').modal('show');
+            }
+        });
+}
+
+// Confirmar reserva
+function confirmarReserva() {
+    const formData = new FormData(document.getElementById('formReservar'));
+    const acopioId = $('#reservarAcopioId').val();
+    
+    fetch(`/api/acopios/${acopioId}/reservar`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#reservarModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error al reservar material: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al reservar material');
+    });
+}
+
+// Despachar material
+function despacharMaterial(acopioId) {
+    if (confirm('¿Confirmar despacho de este material?')) {
+        window.location.href = `/despachos/nuevo?acopio=${acopioId}`;
+    }
+}
+
+// Ajustar stock
+function ajustarStock(acopioId) {
+    const nuevaCantidad = prompt('Ingrese la nueva cantidad en stock:');
+    if (nuevaCantidad !== null && !isNaN(nuevaCantidad)) {
+        const motivo = prompt('Motivo del ajuste:') || 'Ajuste manual';
+        
+        fetch(`/api/acopios/${acopioId}/ajustar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nueva_cantidad: parseFloat(nuevaCantidad),
+                motivo: motivo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al ajustar stock: ' + data.message);
+            }
+        });
+    }
+}
+
+// Transferir material
+function transferirMaterial(acopioId) {
+    // Implementar modal de transferencia
+    alert('Funcionalidad de transferencia en desarrollo');
+}
+
+// Generar etiqueta
+function generarEtiqueta(acopioId) {
+    window.open(`/api/acopios/${acopioId}/etiqueta`, '_blank');
+}
+
+// Exportar inventario
+function exportarInventario() {
+    window.open('/api/acopios/export', '_blank');
+}
+</script>
+{{/section}}

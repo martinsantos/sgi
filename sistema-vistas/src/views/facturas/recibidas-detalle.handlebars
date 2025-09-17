@@ -1,0 +1,350 @@
+{{#> main}}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">{{factura.numero_factura}}</h1>
+        <p class="text-muted mb-0">Detalle de Factura Recibida</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+        <a href="/facturas/recibidas" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+{{#if factura}}
+<div class="row">
+    <!-- Información de la Factura -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-invoice-dollar text-primary"></i>
+                    Información de la Factura
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted fw-medium">Número:</td>
+                                <td class="fw-bold">{{factura.numero_factura}}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted fw-medium">Fecha Compra:</td>
+                                <td>{{formatDate factura.fecha_compra}}</td>
+                            </tr>
+                            {{#if factura.fecha_vencimiento}}
+                            <tr>
+                                <td class="text-muted fw-medium">Vencimiento:</td>
+                                <td>{{formatDate factura.fecha_vencimiento}}</td>
+                            </tr>
+                            {{/if}}
+                            <tr>
+                                <td class="text-muted fw-medium">Estado:</td>
+                                <td>
+                                    <span class="badge {{#eq factura.estado 1}}bg-warning{{/eq}}{{#eq factura.estado 2}}bg-info{{/eq}}{{#eq factura.estado 3}}bg-success{{/eq}}{{#eq factura.estado 4}}bg-danger{{/eq}}">
+                                        {{#eq factura.estado 1}}Pendiente{{/eq}}
+                                        {{#eq factura.estado 2}}Pagada Parcialmente{{/eq}}
+                                        {{#eq factura.estado 3}}Pagada{{/eq}}
+                                        {{#eq factura.estado 4}}Anulada{{/eq}}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            {{#if factura.total}}
+                            <tr>
+                                <td class="text-muted fw-medium">Total:</td>
+                                <td class="fw-bold text-primary fs-5">{{formatCurrency factura.total}}</td>
+                            </tr>
+                            {{/if}}
+                            {{#if factura.created}}
+                            <tr>
+                                <td class="text-muted fw-medium">Registrada:</td>
+                                <td>{{formatDate factura.created}}</td>
+                            </tr>
+                            {{/if}}
+                            {{#if factura.modified}}
+                            <tr>
+                                <td class="text-muted fw-medium">Modificada:</td>
+                                <td>{{formatDate factura.modified}}</td>
+                            </tr>
+                            {{/if}}
+                        </table>
+                    </div>
+                </div>
+
+                {{#if factura.observaciones}}
+                <div class="mt-3">
+                    <h6 class="text-muted">Observaciones</h6>
+                    <div class="bg-light p-3 rounded">
+                        <small>{{factura.observaciones}}</small>
+                    </div>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Proveedor -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-building text-info"></i>
+                    Proveedor
+                </h5>
+            </div>
+            <div class="card-body">
+                {{#if factura.proveedor_nombre}}
+                <div class="mb-3">
+                    <h6 class="fw-bold">{{factura.proveedor_nombre}}</h6>
+                    {{#if factura.proveedor_cuit}}
+                    <small class="text-muted">CUIT: {{factura.proveedor_cuit}}</small>
+                    {{/if}}
+                </div>
+                {{else}}
+                <div class="text-muted">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    No hay información del proveedor
+                </div>
+                {{/if}}
+
+                {{#if factura.proveedor_condicion_iva}}
+                <div class="mb-2">
+                    <small class="text-muted">Condición IVA:</small><br>
+                    <small>{{factura.proveedor_condicion_iva}}</small>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- Resumen Financiero -->
+        {{#if factura.total}}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calculator text-success"></i>
+                    Resumen Financiero
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Total Facturado:</span>
+                    <span class="fw-bold">{{formatCurrency factura.total}}</span>
+                </div>
+                
+                <hr class="my-2">
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Total a Pagar:</span>
+                    <span class="fw-bold text-primary fs-5">{{formatCurrency factura.total}}</span>
+                </div>
+
+                {{#unless (eq factura.estado 3)}}
+                <div class="mt-3">
+                    <div class="alert alert-warning alert-sm">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Pendiente de pago</strong>
+                    </div>
+                </div>
+                {{/unless}}
+            </div>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools text-warning"></i>
+                    Acciones
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {{#unless (eq factura.estado 3)}}
+                    <button class="btn btn-success" onclick="marcarComoPagada()">
+                        <i class="fas fa-check"></i> Marcar como Pagada
+                    </button>
+                    {{/unless}}
+                    
+                    <button class="btn btn-outline-primary" onclick="editarFactura()">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    
+                    <button class="btn btn-outline-info" onclick="duplicarFactura()">
+                        <i class="fas fa-copy"></i> Duplicar
+                    </button>
+                    
+                    {{#unless (eq factura.estado 4)}}
+                    <button class="btn btn-outline-danger" onclick="anularFactura()">
+                        <i class="fas fa-ban"></i> Anular
+                    </button>
+                    {{/unless}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{else}}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    No se encontraron datos de la factura
+</div>
+{{/if}}
+
+<!-- Modal para Marcar como Pagada -->
+<div class="modal fade" id="modalPagarFactura" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Pago</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Confirma que esta factura ha sido pagada?</p>
+                <div class="mb-3">
+                    <label class="form-label">Fecha de Pago</label>
+                    <input type="date" class="form-control" id="fechaPago" value="{{formatDate 'today' 'YYYY-MM-DD'}}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Observaciones del Pago</label>
+                    <textarea class="form-control" id="observacionesPago" rows="3" placeholder="Información adicional sobre el pago..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="confirmarPago()">Confirmar Pago</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .card-header .btn, .d-flex .btn {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-body {
+        padding: 0 !important;
+    }
+}
+
+.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.table-borderless td {
+    border: none !important;
+    padding: 0.25rem 0.5rem;
+}
+</style>
+
+<script>
+function marcarComoPagada() {
+    const modal = new bootstrap.Modal(document.getElementById('modalPagarFactura'));
+    modal.show();
+}
+
+function confirmarPago() {
+    const fechaPago = document.getElementById('fechaPago').value;
+    const observaciones = document.getElementById('observacionesPago').value;
+    
+    if (!fechaPago) {
+        alert('Por favor, ingrese la fecha de pago');
+        return;
+    }
+    
+    // Aquí iría la llamada AJAX para actualizar el estado
+    fetch(`/api/facturas/recibidas/{{factura.id}}/pagar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            fecha_pago: fechaPago,
+            observaciones: observaciones
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al procesar el pago: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+    });
+}
+
+function editarFactura() {
+    window.location.href = `/facturas/recibidas/editar/{{factura.id}}`;
+}
+
+function duplicarFactura() {
+    if (confirm('¿Desea crear una nueva factura basada en esta?')) {
+        window.location.href = `/facturas/nueva-recibida?duplicar={{factura.id}}`;
+    }
+}
+
+function anularFactura() {
+    const motivo = prompt('Ingrese el motivo de anulación:');
+    if (motivo && motivo.trim()) {
+        fetch(`/api/facturas/recibidas/{{factura.id}}/anular`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                motivo: motivo.trim()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al anular la factura: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+
+// Set today's date as default
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaPago = document.getElementById('fechaPago');
+    if (fechaPago) {
+        const today = new Date().toISOString().split('T')[0];
+        fechaPago.value = today;
+    }
+});
+</script>
+
+{{/main}}

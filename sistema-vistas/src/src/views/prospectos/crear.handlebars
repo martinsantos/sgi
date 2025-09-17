@@ -1,0 +1,250 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0 text-gray-800">➕ Nuevo Prospecto</h1>
+      <p class="text-muted mb-0">Registrar nueva oportunidad comercial</p>
+    </div>
+    <div>
+      <a href="/prospectos" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header">
+          <h6 class="m-0 font-weight-bold text-primary">Información del Prospecto</h6>
+        </div>
+        <div class="card-body">
+          <form id="formCrearProspecto">
+            <div class="row">
+              <!-- Información Personal -->
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="nombre" name="nombre" required>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="apellido" class="form-label">Apellido</label>
+                  <input type="text" class="form-control" id="apellido" name="apellido">
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="empresa" class="form-label">Empresa</label>
+                  <input type="text" class="form-control" id="empresa" name="empresa">
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="email" name="email">
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="telefono" class="form-label">Teléfono</label>
+                  <input type="text" class="form-control" id="telefono" name="telefono">
+                </div>
+              </div>
+
+              <!-- Información Comercial -->
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="origen" class="form-label">Origen del Prospecto</label>
+                  <select class="form-control" id="origen" name="origen">
+                    <option value="">Seleccionar origen...</option>
+                    {{#each origenes}}
+                      <option value="{{this}}">{{this}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="estado" class="form-label">Estado Inicial</label>
+                  <select class="form-control" id="estado" name="estado">
+                    <option value="0" selected>Nuevo</option>
+                    <option value="1">Contactado</option>
+                    <option value="2">Calificado</option>
+                    <option value="3">Propuesta</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="fecha_contacto" class="form-label">Fecha de Contacto</label>
+                  <input type="datetime-local" class="form-control" id="fecha_contacto" name="fecha_contacto">
+                </div>
+              </div>
+
+              <!-- Información Comercial Adicional -->
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="valor_estimado" class="form-label">Valor Estimado ($)</label>
+                  <input type="number" class="form-control" id="valor_estimado" name="valor_estimado" step="0.01" min="0">
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="probabilidad" class="form-label">Probabilidad (%)</label>
+                  <input type="number" class="form-control" id="probabilidad" name="probabilidad" min="0" max="100">
+                  <small class="form-text text-muted">Probabilidad de cierre (0-100%)</small>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="fecha_seguimiento" class="form-label">Próximo Seguimiento</label>
+                  <input type="datetime-local" class="form-control" id="fecha_seguimiento" name="fecha_seguimiento">
+                </div>
+              </div>
+
+              <!-- Observaciones -->
+              <div class="col-12">
+                <div class="mb-3">
+                  <label for="observaciones" class="form-label">Observaciones</label>
+                  <textarea class="form-control" id="observaciones" name="observaciones" rows="4" placeholder="Notas adicionales, necesidades específicas, conversaciones previas..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-end">
+              <button type="button" class="btn btn-secondary me-2" onclick="window.history.back();">
+                <i class="fas fa-times"></i> Cancelar
+              </button>
+              <button type="submit" class="btn btn-success" id="btnGuardar">
+                <i class="fas fa-save"></i> Guardar Prospecto
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast para notificaciones -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <strong class="me-auto">Sistema SGI</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body" id="toast-message">
+    </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function() {
+  // Configurar fecha actual por defecto
+  const now = new Date();
+  const nowString = now.toISOString().slice(0, 16);
+  $('#fecha_contacto').val(nowString);
+
+  // Configurar fecha de seguimiento por defecto (7 días)
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const nextWeekString = nextWeek.toISOString().slice(0, 16);
+  $('#fecha_seguimiento').val(nextWeekString);
+
+  // Manejar envío del formulario
+  $('#formCrearProspecto').on('submit', function(e) {
+    e.preventDefault();
+    
+    const $btnGuardar = $('#btnGuardar');
+    const originalText = $btnGuardar.html();
+    
+    // Deshabilitar botón y mostrar loading
+    $btnGuardar.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Guardando...');
+    
+    // Obtener datos del formulario
+    const formData = new FormData(this);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+      data[key] = value;
+    }
+    
+    // Enviar datos
+    $.ajax({
+      url: '/prospectos',
+      method: 'POST',
+      data: data,
+      success: function(response) {
+        if (response.success) {
+          showToast('Prospecto creado exitosamente', 'success');
+          
+          // Redirigir después de 1.5 segundos
+          setTimeout(function() {
+            window.location.href = '/prospectos/ver/' + response.id;
+          }, 1500);
+        } else {
+          showToast(response.message || 'Error al crear el prospecto', 'error');
+          $btnGuardar.prop('disabled', false).html(originalText);
+        }
+      },
+      error: function(xhr) {
+        const response = xhr.responseJSON;
+        showToast(response?.message || 'Error al crear el prospecto', 'error');
+        $btnGuardar.prop('disabled', false).html(originalText);
+      }
+    });
+  });
+
+  // Función para mostrar toasts
+  function showToast(message, type = 'info') {
+    const $toast = $('#toast');
+    const $toastBody = $('#toast-message');
+    
+    $toastBody.text(message);
+    
+    // Cambiar estilo según el tipo
+    $toast.removeClass('bg-success bg-danger bg-warning bg-info');
+    if (type === 'success') {
+      $toast.addClass('bg-success text-white');
+    } else if (type === 'error') {
+      $toast.addClass('bg-danger text-white');
+    } else if (type === 'warning') {
+      $toast.addClass('bg-warning');
+    } else {
+      $toast.addClass('bg-info');
+    }
+    
+    const toast = new bootstrap.Toast($toast[0]);
+    toast.show();
+  }
+
+  // Validación en tiempo real de email
+  $('#email').on('blur', function() {
+    const email = $(this).val();
+    if (email && !email.includes('@')) {
+      $(this).addClass('is-invalid');
+    } else {
+      $(this).removeClass('is-invalid');
+    }
+  });
+
+  // Validación de probabilidad
+  $('#probabilidad').on('input', function() {
+    let value = parseInt($(this).val());
+    if (value < 0) $(this).val(0);
+    if (value > 100) $(this).val(100);
+  });
+});
+</script>

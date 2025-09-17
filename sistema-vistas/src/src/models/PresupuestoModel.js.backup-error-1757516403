@@ -1,0 +1,677 @@
+const pool = require('../config/database');
+
+class PresupuestoModel {
+
+  static async getPresupuestos(page = 1, limit = 20, filters = {}) {
+    const offset = (page - 1) * limit;
+    
+    try {
+      const connection = await pool.getConnection();
+      
+      // Consulta corregida con JOIN a persona_terceros para obtener cliente_nombre
+      const query = `
+        SELECT 
+          p.id,
+          p.numero as numero_presupuesto,
+          p.descripcion,
+          p.precio_venta as importe_total,
+          p.estado,
+          p.created as fecha_emision,
+          p.fecha_cierre as fecha_validez,
+          p.observacion as observaciones,
+          COALESCE(pt.nombre, COALESCE(pt.apellido, "Sin cliente")) as cliente_nombre,
+          COALESCE(pt.cuil_cuit, "N/A") as cliente_cuit,
+          p.cliente_id,
+          CASE 
+            WHEN p.estado = "0" THEN "Borrador"
+            WHEN p.estado = "1" THEN "Enviado"  
+            WHEN p.estado = "2" THEN "Aprobado"
+            WHEN p.estado = "3" THEN "Rechazado"
+            WHEN p.estado = "4" THEN "Vencido"
+            ELSE "Desconocido"
+          END as estado_nombre,
+          CASE 
+            WHEN p.fecha_cierre IS NOT NULL THEN DATEDIFF(p.fecha_cierre, CURDATE())
+            ELSE NULL
+          END as dias_hasta_vencimiento
+        FROM presupuestos p
+        LEFT JOIN persona_terceros pt ON p.cliente_id = pt.id
+        WHERE p.activo = 1
+        ORDER BY p.created DESC
+        LIMIT ? OFFSET ?
+      `;
+      
+      const [rows] = await connection.query(query, [limit, offset]);
+      
+      // Consulta para contar total de registros
+      const countQuery = `
+        SELECT COUNT(*) as total 
+        FROM presupuestos p
+        LEFT JOIN persona_terceros pt ON p.cliente_id = pt.id
+        WHERE p.activo = 1
+      `;
+      
+      const [countResult] = await connection.query(countQuery);
+      const total = countResult[0].total;
+      
+      connection.release();
+      
+      return {
+        data: rows,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalRecords: total,
+          limit: limit,
+          offset: offset
+        }
+      };
+      
+    } catch (error) {
+      console.error("Error al obtener presupuestos:", error);
+      throw error;
+    }
+  }
+  static async getPresupuestos(page = 1, limit = 20, filters = {}) {
+    const offset = (page - 1) * limit;
+    
+    try {
+      const connection = await pool.getConnection();
+      
+      // Consulta simplificada sin parámetros problemáticos
+      const query = `
+        SELECT 
+          p.id,
+          p.numero as numero_presupuesto,
+          p.descripcion,
+          p.precio_venta as importe_total,
+          p.estado,
+          p.created as fecha_emision,
+          p.fecha_cierre as fecha_validez,
+          p.observacion as observaciones,
+          COALESCE(CONCAT(pt.nombre, " ", COALESCE(pt.apellido, "")), "Sin cliente") as cliente_nombre,
+          'N/A' as cliente_cuit,
+          CASE 
+            WHEN p.estado = '0' THEN 'Borrador'
+            WHEN p.estado = '1' THEN 'Enviado'  
+            WHEN p.estado = '2' THEN 'Aprobado'
+            WHEN p.estado = '3' THEN 'Rechazado'
+            WHEN p.estado = '4' THEN 'Vencido'
+            ELSE 'Desconocido'
+          END as estado_nombre,
+          CASE 
+            WHEN p.fecha_cierre IS NOT NULL THEN DATEDIFF(p.fecha_cierre, CURDATE())
+            ELSE NULL
+          END as dias_hasta_vencimiento
+        FROM presupuestos p
+        LEFT JOIN persona_terceros pt ON p.cliente_id = pt.id
+        WHERE p.activo = 1
+        ORDER BY p.created DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      
+      const [presupuestos] = await connection.query(query);
+      
+      // Consulta para contar total
+      const [countResult] = await connection.query(
+        'SELECT COUNT(*) as total FROM presupuestos WHERE activo = 1'
+      );
+      const total = countResult[0].total;
+      
+      connection.release();
+      
+      return {
+        data: presupuestos,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalRecords: total,
+          limit: limit,
+          offset: offset,
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPreviousPage: page > 1
+        }
+      };
+      
+    } catch (error) {
+      console.error('Error al obtener presupuestos:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obtener presupuesto por ID
+   */
+  static async getPresupuestoById(id) {
+    try {
+      const query = `
+        SELECT 
+          p.*,
+          COALESCE(CONCAT(pt.nombre, ' ', COALESCE(pt.apellido, '')), 'Sin cliente') as cliente_nombre,
+          COALESCE(ps.cuil_cuit, 'N/A') as cliente_cuit,
+          CASE 
+            WHEN p.fecha_cierre IS NOT NULL THEN DATEDIFF(p.fecha_cierre, CURDATE())
+            ELSE NULL
+          END as dias_hasta_vencimiento
+        FROM presupuestos p
+        LEFT JOIN persona_terceros pt ON p.cliente_id = pt.id
+        LEFT JOIN personas ps ON pt.id = ps.id
+        WHERE p.id = ? AND p.activo = 1
+      `;
+      
+      const [rows] = await pool.execute(query, [id]);
+      
+      if (rows.length === 0) {
+        return null;
+      }
+      
+      const presupuesto = rows[0];
+      presupuesto.estado_nombre = this.ESTADO_NOMBRES[presupuesto.estado] || 'Desconocido';
+      
+      return presupuesto;
+      
+    } catch (error) {
+      console.error('Error al obtener presupuesto por ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crear nuevo presupuesto
+   */
+  static async createPresupuesto(presupuestoData) {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      
+      const id = uuidv4();
+      const numeroPresupuesto = await this.generateNumeroPresupuesto();
+      
+      const query = `
+        INSERT INTO presupuestos (
+          id, numero, cliente_id, descripcion, precio_venta, estado, 
+          fecha_cierre, observacion, activo, created, modified
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+      `;
+      
+      const valores = [
+        id,
+        numeroPresupuesto,
+        presupuestoData.cliente_id,
+        presupuestoData.descripcion || '',
+        presupuestoData.importe_total || 0,
+        presupuestoData.estado || 0,
+        presupuestoData.fecha_validez,
+        presupuestoData.observaciones || ''
+      ];
+      
+      await connection.execute(query, valores);
+      
+      console.log('✅ Presupuesto creado:', id);
+      return id;
+      
+    } catch (error) {
+      console.error('❌ Error al crear presupuesto:', error);
+      throw error;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Actualizar presupuesto
+   */
+  static async updatePresupuesto(id, presupuestoData) {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      
+      const query = `
+        UPDATE presupuestos 
+        SET cliente_id = ?, descripcion = ?, precio_venta = ?, estado = ?, 
+            fecha_cierre = ?, observacion = ?, modified = NOW()
+        WHERE id = ? AND activo = 1
+      `;
+      
+      const valores = [
+        presupuestoData.cliente_id,
+        presupuestoData.descripcion || '',
+        presupuestoData.importe_total || 0,
+        presupuestoData.estado || 0,
+        presupuestoData.fecha_validez,
+        presupuestoData.observaciones || '',
+        id
+      ];
+      
+      const [result] = await connection.execute(query, valores);
+      
+      const success = result.affectedRows > 0;
+      console.log(success ? '✅ Presupuesto actualizado' : '⚠️ No se encontró el presupuesto');
+      
+      return success;
+      
+    } catch (error) {
+      console.error('❌ Error al actualizar presupuesto:', error);
+      throw error;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Eliminar presupuesto (soft delete)
+   */
+  static async deletePresupuesto(id) {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      
+      const query = `
+        UPDATE presupuestos 
+        SET activo = 0, modified = NOW()
+        WHERE id = ? AND activo = 1
+      `;
+      
+      const [result] = await connection.execute(query, [id]);
+      
+      const success = result.affectedRows > 0;
+      console.log(success ? '✅ Presupuesto eliminado' : '⚠️ No se encontró el presupuesto');
+      
+      return success;
+      
+    } catch (error) {
+      console.error('❌ Error al eliminar presupuesto:', error);
+      throw error;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Duplicar presupuesto
+   */
+  static async duplicatePresupuesto(id) {
+    try {
+      const presupuestoOriginal = await this.getPresupuestoById(id);
+      if (!presupuestoOriginal) {
+        return null;
+      }
+      
+      const nuevoPresupuestoData = {
+        cliente_id: presupuestoOriginal.cliente_id,
+        descripcion: `[COPIA] ${presupuestoOriginal.descripcion}`,
+        importe_total: presupuestoOriginal.precio_venta,
+        fecha_validez: presupuestoOriginal.fecha_cierre,
+        observaciones: presupuestoOriginal.observacion,
+        estado: 0 // Siempre como borrador
+      };
+      
+      const nuevoId = await this.createPresupuesto(nuevoPresupuestoData);
+      console.log('✅ Presupuesto duplicado:', nuevoId);
+      return nuevoId;
+      
+    } catch (error) {
+      console.error('❌ Error al duplicar presupuesto:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar estado de presupuesto
+   */
+  static async updateEstado(id, estado) {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      
+      const query = `
+        UPDATE presupuestos 
+        SET estado = ?, modified = NOW()
+        WHERE id = ? AND activo = 1
+      `;
+      
+      const [result] = await connection.execute(query, [estado, id]);
+      
+      const success = result.affectedRows > 0;
+      console.log(success ? '✅ Estado actualizado' : '⚠️ No se encontró el presupuesto');
+      
+      return success;
+      
+    } catch (error) {
+      console.error('❌ Error al actualizar estado:', error);
+      throw error;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Buscar presupuestos con filtros
+   */
+  static async searchPresupuestos(filters = {}, page = 1, limit = 20, sortBy = 'created', sortOrder = 'DESC') {
+    const offset = (page - 1) * limit;
+    let whereConditions = ['p.activo = 1'];
+    let queryParams = [];
+    
+    try {
+      // Construir condiciones WHERE
+      if (filters.numero_presupuesto) {
+        whereConditions.push('p.numero LIKE ?');
+        queryParams.push(`%${filters.numero_presupuesto}%`);
+      }
+      
+      if (filters.cliente_nombre) {
+        whereConditions.push('pt.nombre LIKE ?');
+        queryParams.push(`%${filters.cliente_nombre}%`);
+      }
+      
+      if (filters.estado !== undefined && filters.estado !== '') {
+        whereConditions.push('p.estado = ?');
+        queryParams.push(filters.estado);
+      }
+      
+      if (filters.fecha_desde) {
+        whereConditions.push('DATE(p.created) >= ?');
+        queryParams.push(filters.fecha_desde);
+      }
+      
+      if (filters.fecha_hasta) {
+        whereConditions.push('DATE(p.created) <= ?');
+        queryParams.push(filters.fecha_hasta);
+      }
+      
+      if (filters.importe_desde) {
+        whereConditions.push('p.precio_venta >= ?');
+        queryParams.push(filters.importe_desde);
+      }
+      
+      if (filters.importe_hasta) {
+        whereConditions.push('p.precio_venta <= ?');
+        queryParams.push(filters.importe_hasta);
+      }
+      
+      if (filters.texto_libre) {
+        whereConditions.push('(p.observacion LIKE ? OR pt.nombre LIKE ? OR p.numero LIKE ? OR p.descripcion LIKE ?)');
+        const searchTerm = `%${filters.texto_libre}%`;
+        queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      }
+      
+      const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
+      
+      // Validar ordenamiento
+      const validSortColumns = ['created', 'numero', 'cliente_nombre', 'precio_venta', 'estado', 'fecha_cierre'];
+      if (!validSortColumns.includes(sortBy)) {
+        sortBy = 'created';
+      }
+      
+      if (!['ASC', 'DESC'].includes(sortOrder.toUpperCase())) {
+        sortOrder = 'DESC';
+      }
+      
+      const sortColumn = sortBy === 'cliente_nombre' ? 'pt.nombre' : 
+                        sortBy === 'precio_venta' ? 'p.precio_venta' :
+                        sortBy === 'fecha_cierre' ? 'p.fecha_cierre' :
+                        'p.' + sortBy;
+      
+      // Construir query con interpolación directa para evitar problemas con execute
+      let finalQuery = `
+        SELECT 
+          p.id,
+          p.numero as numero_presupuesto,
+          p.created as fecha_emision,
+          p.fecha_cierre as fecha_validez,
+          p.precio_venta as importe_total,
+          p.estado,
+          p.observacion as observaciones,
+          COALESCE(CONCAT(pt.nombre, " ", COALESCE(pt.apellido, "")), "Sin cliente") as cliente_nombre,
+          'N/A' as cliente_cuit,
+          CASE 
+            WHEN p.estado = '0' THEN 'Borrador'
+            WHEN p.estado = '1' THEN 'Enviado'  
+            WHEN p.estado = '2' THEN 'Aprobado'
+            WHEN p.estado = '3' THEN 'Rechazado'
+            WHEN p.estado = '4' THEN 'Vencido'
+            ELSE 'Desconocido'
+          END as estado_nombre,
+          CASE 
+            WHEN p.fecha_cierre IS NOT NULL THEN DATEDIFF(p.fecha_cierre, CURDATE())
+            ELSE NULL
+          END as dias_vencimiento
+        FROM presupuestos p
+        LEFT JOIN persona_terceros pt ON p.cliente_id = pt.id
+        WHERE p.activo = 1
+        ORDER BY p.created DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      
+      const [presupuestos] = await pool.query(finalQuery);
+      
+      // Consulta para contar total simple
+      const [countResult] = await pool.query(
+        'SELECT COUNT(*) as total FROM presupuestos WHERE activo = 1'
+      );
+      const total = countResult[0].total;
+      
+      return {
+        data: presupuestos,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalRecords: total,
+          limit: limit,
+          offset: offset,
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPreviousPage: page > 1
+        }
+      };
+      
+    } catch (error) {
+      console.error('Error en búsqueda de presupuestos:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Obtener estadísticas de presupuestos
+   */
+  static async getEstadisticas() {
+    try {
+      const query = `
+        SELECT 
+          COUNT(*) as total_presupuestos,
+          SUM(CASE WHEN estado = '0' THEN 1 ELSE 0 END) as total_borradores,
+          SUM(CASE WHEN estado = '1' THEN 1 ELSE 0 END) as total_enviados,
+          SUM(CASE WHEN estado = '2' THEN 1 ELSE 0 END) as total_aprobados,
+          SUM(CASE WHEN estado = '3' THEN 1 ELSE 0 END) as total_rechazados,
+          SUM(CASE WHEN estado = '4' THEN 1 ELSE 0 END) as total_vencidos,
+          COALESCE(AVG(precio_venta), 0) as importe_promedio,
+          COALESCE(SUM(precio_venta), 0) as importe_total_todos,
+          COALESCE(SUM(CASE WHEN estado = '2' THEN precio_venta ELSE 0 END), 0) as importe_aprobados
+        FROM presupuestos
+        WHERE activo = 1
+      `;
+      
+      const [rows] = await pool.execute(query);
+      const stats = rows[0];
+      
+      // Calcular tasas de conversión
+      const totalEnviados = stats.total_enviados + stats.total_aprobados + stats.total_rechazados;
+      stats.tasa_aprobacion = totalEnviados > 0 ? Math.round((stats.total_aprobados / totalEnviados) * 100) : 0;
+      stats.tasa_rechazo = totalEnviados > 0 ? Math.round((stats.total_rechazados / totalEnviados) * 100) : 0;
+      stats.efectividad_global = stats.total_presupuestos > 0 ? Math.round((stats.total_aprobados / stats.total_presupuestos) * 100) : 0;
+      
+      return stats;
+      
+    } catch (error) {
+      console.error('Error al obtener estadísticas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener presupuestos recientes (para dashboard)
+   */
+  static async getPresupuestosRecientes(limit = 5) {
+    try {
+      const query = `
+        SELECT 
+          p.id,
+          p.numero as numero_presupuesto,
+          p.descripcion,
+          p.precio_venta as importe_total,
+          p.estado,
+          p.created as fecha_emision,
+          p.fecha_cierre as fecha_validez,
+          COALESCE(CONCAT(pt.nombre, " ", COALESCE(pt.apellido, "")), "Sin cliente") as cliente_nombre,
+          CASE 
+            WHEN p.estado = '0' THEN 'Borrador'
+            WHEN p.estado = '1' THEN 'Enviado'  
+            WHEN p.estado = '2' THEN 'Aprobado'
+            WHEN p.estado = '3' THEN 'Rechazado'
+            WHEN p.estado = '4' THEN 'Vencido'
+            ELSE 'Desconocido'
+          END as estado_nombre
+        FROM presupuestos p
+        LEFT JOIN persona_terceros pt ON p.cliente_id = pt.id
+        WHERE p.activo = 1
+        ORDER BY p.created DESC
+        LIMIT ?
+      `;
+      
+      const [rows] = await pool.query(query, [limit]);
+      return rows;
+      
+    } catch (error) {
+      console.error('Error al obtener presupuestos recientes:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtener estadísticas por mes
+   */
+  static async getEstadisticasPorMes() {
+    try {
+      const query = `
+        SELECT 
+          YEAR(created) as año,
+          MONTH(created) as mes,
+          'Mes' as mes_nombre,
+          COUNT(*) as cantidad,
+          SUM(CASE WHEN estado = '2' THEN 1 ELSE 0 END) as aprobados,
+          SUM(CASE WHEN estado = '3' THEN 1 ELSE 0 END) as rechazados,
+          COALESCE(SUM(precio_venta), 0) as importe_total
+        FROM presupuestos
+        WHERE activo = 1 AND created >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+        GROUP BY YEAR(created), MONTH(created)
+        ORDER BY YEAR(created) DESC, MONTH(created) DESC
+      `;
+      
+      const [rows] = await pool.execute(query);
+      return rows;
+      
+    } catch (error) {
+      console.error('Error al obtener estadísticas por mes:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener estadísticas por estado
+   */
+  static async getEstadisticasPorEstado() {
+    try {
+      const query = `
+        SELECT 
+          estado,
+          COUNT(*) as cantidad,
+          COALESCE(SUM(precio_venta), 0) as importe_total,
+          CASE 
+            WHEN estado = 0 THEN 'Borrador'
+            WHEN estado = 1 THEN 'Enviado'  
+            WHEN estado = 2 THEN 'Aprobado'
+            WHEN estado = 3 THEN 'Rechazado'
+            WHEN estado = 4 THEN 'Vencido'
+            ELSE 'Desconocido'
+          END as estado_nombre
+        FROM presupuestos
+        WHERE activo = 1
+        GROUP BY estado
+        ORDER BY cantidad DESC
+      `;
+      
+      const [rows] = await pool.execute(query);
+      return rows;
+      
+    } catch (error) {
+      console.error('Error al obtener estadísticas por estado:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generar número de presupuesto automático
+   */
+  static async generateNumeroPresupuesto() {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      
+      const query = `
+        SELECT MAX(numero) as max_numero
+        FROM presupuestos 
+        WHERE activo = 1
+      `;
+      
+      const [rows] = await connection.execute(query);
+      
+      let nextNumber = 1;
+      if (rows.length > 0 && rows[0].max_numero) {
+        nextNumber = parseInt(rows[0].max_numero) + 1;
+      }
+      
+      console.log('🔢 Número generado:', nextNumber);
+      return nextNumber;
+      
+    } catch (error) {
+      console.error('❌ Error al generar número:', error);
+      // Fallback: usar timestamp
+      return Date.now();
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Formatear moneda
+   */
+  static formatCurrency(amount) {
+    if (!amount || isNaN(amount)) return '$0.00';
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2
+    }).format(amount);
+  }
+
+  /**
+   * Formatear fecha
+   */
+  static formatDate(date) {
+    if (!date) return 'N/A';
+    try {
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) return 'N/A';
+      
+      return dateObj.toLocaleDateString('es-AR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch (error) {
+      return 'N/A';
+    }
+  }
+}
+
+module.exports = PresupuestoModel;

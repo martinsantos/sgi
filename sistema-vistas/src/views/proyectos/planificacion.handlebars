@@ -1,0 +1,441 @@
+{{!-- Planificación de Proyectos --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-tasks me-2"></i>
+            Planificación de Proyectos
+          </h4>
+          <div class="btn-group">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaTareaModal">
+              <i class="fas fa-plus me-1"></i>
+              Nueva Tarea
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-filter me-1"></i>
+                Filtrar
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="filtrarTareas('todos')">Todos los Proyectos</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarTareas('activos')">Solo Activos</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarTareas('pendientes')">Tareas Pendientes</a></li>
+                <li><a class="dropdown-item" href="#" onclick="filtrarTareas('en_progreso')">En Progreso</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {{#if proyectos}}
+        <div class="accordion" id="proyectosAccordion">
+          {{#each proyectos}}
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button {{#unless @first}}collapsed{{/unless}}" type="button" 
+                      data-bs-toggle="collapse" data-bs-target="#proyecto{{this.id}}" 
+                      aria-expanded="{{#if @first}}true{{else}}false{{/if}}">
+                <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                  <div>
+                    <strong>{{this.descripcion}}</strong>
+                    <small class="text-muted ms-2">
+                      Cliente: {{this.cliente_nombre}}
+                    </small>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge 
+                      {{#eq this.estado 'planificacion'}}bg-warning{{/eq}}
+                      {{#eq this.estado 'ejecucion'}}bg-info{{/eq}}
+                      {{#eq this.estado 'completado'}}bg-success{{/eq}}
+                      {{#eq this.estado 'suspendido'}}bg-danger{{/eq}}
+                    ">
+                      {{capitalize this.estado}}
+                    </span>
+                    <small class="text-muted ms-2">
+                      {{this.tareas_completadas}}/{{this.total_tareas}} tareas
+                    </small>
+                  </div>
+                </div>
+              </button>
+            </h2>
+            <div id="proyecto{{this.id}}" class="accordion-collapse collapse {{#if @first}}show{{/if}}" 
+                 data-bs-parent="#proyectosAccordion">
+              <div class="accordion-body">
+                <!-- Información del Proyecto -->
+                <div class="row mb-3">
+                  <div class="col-md-8">
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <small class="text-muted">Fecha Inicio:</small><br>
+                            <strong>{{formatDate this.fecha_inicio}}</strong>
+                          </div>
+                          <div class="col-md-6">
+                            <small class="text-muted">Fecha Estimada Cierre:</small><br>
+                            <strong>{{formatDate this.fecha_cierre}}</strong>
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-6">
+                            <small class="text-muted">Presupuesto:</small><br>
+                            <strong>${{formatNumber this.precio_venta}}</strong>
+                          </div>
+                          <div class="col-md-6">
+                            <small class="text-muted">Progreso:</small><br>
+                            <div class="progress" style="height: 20px;">
+                              <div class="progress-bar" role="progressbar" 
+                                   style="width: {{this.progreso}}%" 
+                                   aria-valuenow="{{this.progreso}}" aria-valuemin="0" aria-valuemax="100">
+                                {{this.progreso}}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-primary btn-sm" onclick="nuevaTareaProyecto('{{this.id}}')">
+                        <i class="fas fa-plus"></i> Agregar Tarea
+                      </button>
+                      <a href="/proyectos/ver/{{this.id}}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-eye"></i> Ver Proyecto
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Lista de Tareas -->
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead class="table-light">
+                      <tr>
+                        <th width="5%">#</th>
+                        <th width="30%">Tarea</th>
+                        <th width="15%">Asignado</th>
+                        <th width="12%">Estado</th>
+                        <th width="12%">Prioridad</th>
+                        <th width="10%">Horas Est.</th>
+                        <th width="10%">Horas Reg.</th>
+                        <th width="6%">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {{#if this.tareas}}
+                        {{#each this.tareas}}
+                        <tr>
+                          <td>{{this.numero}}</td>
+                          <td>
+                            <strong>{{this.nombre}}</strong>
+                            {{#if this.descripcion}}
+                            <br><small class="text-muted">{{this.descripcion}}</small>
+                            {{/if}}
+                          </td>
+                          <td>
+                            {{#if this.asignado_nombre}}
+                              <span class="badge bg-secondary">{{this.asignado_nombre}}</span>
+                            {{else}}
+                              <span class="text-muted">Sin asignar</span>
+                            {{/if}}
+                          </td>
+                          <td>
+                            <span class="badge 
+                              {{#eq this.estado 'pendiente'}}bg-secondary{{/eq}}
+                              {{#eq this.estado 'en_progreso'}}bg-info{{/eq}}
+                              {{#eq this.estado 'completada'}}bg-success{{/eq}}
+                              {{#eq this.estado 'bloqueada'}}bg-warning{{/eq}}
+                            ">
+                              {{capitalize this.estado}}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="badge 
+                              {{#eq this.prioridad 'alta'}}bg-danger{{/eq}}
+                              {{#eq this.prioridad 'media'}}bg-warning{{/eq}}
+                              {{#eq this.prioridad 'baja'}}bg-info{{/eq}}
+                            ">
+                              {{capitalize this.prioridad}}
+                            </span>
+                          </td>
+                          <td>{{this.horas_estimadas}}h</td>
+                          <td>
+                            <strong>{{this.horas_registradas}}h</strong>
+                            {{#if (gt this.horas_registradas this.horas_estimadas)}}
+                              <i class="fas fa-exclamation-triangle text-warning" title="Excede estimación"></i>
+                            {{/if}}
+                          </td>
+                          <td>
+                            <div class="btn-group btn-group-sm">
+                              <button class="btn btn-outline-primary" onclick="editarTarea('{{this.id}}')" title="Editar">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                              <button class="btn btn-outline-success" onclick="registrarHoras('{{this.id}}')" title="Registrar Horas">
+                                <i class="fas fa-clock"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {{/each}}
+                      {{else}}
+                        <tr>
+                          <td colspan="8" class="text-center text-muted py-3">
+                            <i class="fas fa-tasks fa-2x mb-2"></i><br>
+                            No hay tareas planificadas para este proyecto
+                            <br>
+                            <button class="btn btn-sm btn-primary mt-2" onclick="nuevaTareaProyecto('{{../this.id}}')">
+                              Agregar primera tarea
+                            </button>
+                          </td>
+                        </tr>
+                      {{/if}}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{else}}
+        <div class="text-center py-4">
+          <i class="fas fa-project-diagram fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay proyectos para planificar</h5>
+          <p class="text-muted">Los proyectos aparecerán aquí una vez que se activen desde presupuestos aprobados</p>
+          <a href="/proyectos" class="btn btn-primary">
+            <i class="fas fa-eye me-1"></i>
+            Ver Todos los Proyectos
+          </a>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Tarea -->
+<div class="modal fade" id="nuevaTareaModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nueva Tarea</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="nuevaTareaForm">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proyecto *</label>
+                <select class="form-select" id="tarea_proyecto_id" required>
+                  <option value="">Seleccionar proyecto...</option>
+                  {{#each proyectos}}
+                  <option value="{{this.id}}">{{this.descripcion}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Número de Tarea</label>
+                <input type="number" class="form-control" id="tarea_numero" readonly>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Nombre de la Tarea *</label>
+            <input type="text" class="form-control" id="tarea_nombre" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-control" id="tarea_descripcion" rows="3"></textarea>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Prioridad</label>
+                <select class="form-select" id="tarea_prioridad">
+                  <option value="media" selected>Media</option>
+                  <option value="baja">Baja</option>
+                  <option value="alta">Alta</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Horas Estimadas</label>
+                <input type="number" class="form-control" id="tarea_horas_estimadas" min="0" step="0.5" value="8">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="mb-3">
+                <label class="form-label">Asignar a</label>
+                <select class="form-select" id="tarea_asignado_id">
+                  <option value="">Sin asignar</option>
+                  {{#each usuarios}}
+                  <option value="{{this.id}}">{{this.nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear Tarea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registrar Horas -->
+<div class="modal fade" id="registrarHorasModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Registrar Horas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="registrarHorasForm">
+        <div class="modal-body">
+          <input type="hidden" id="horas_tarea_id">
+          <div class="mb-3">
+            <label class="form-label">Horas Trabajadas</label>
+            <input type="number" class="form-control" id="horas_trabajadas" min="0" step="0.5" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha</label>
+            <input type="date" class="form-control" id="fecha_trabajo" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Descripción del Trabajo</label>
+            <textarea class="form-control" id="descripcion_trabajo" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+let tareaSeleccionada = null;
+
+// Nueva tarea para proyecto específico
+function nuevaTareaProyecto(proyectoId) {
+    document.getElementById('tarea_proyecto_id').value = proyectoId;
+    obtenerSiguienteNumeroTarea(proyectoId);
+    new bootstrap.Modal(document.getElementById('nuevaTareaModal')).show();
+}
+
+// Obtener siguiente número de tarea
+function obtenerSiguienteNumeroTarea(proyectoId) {
+    fetch(`/api/proyectos/${proyectoId}/next-task-number`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('tarea_numero').value = data.nextNumber;
+        })
+        .catch(console.error);
+}
+
+// Crear nueva tarea
+document.getElementById('nuevaTareaForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        proyecto_id: document.getElementById('tarea_proyecto_id').value,
+        numero: document.getElementById('tarea_numero').value,
+        nombre: document.getElementById('tarea_nombre').value,
+        descripcion: document.getElementById('tarea_descripcion').value,
+        prioridad: document.getElementById('tarea_prioridad').value,
+        horas_estimadas: document.getElementById('tarea_horas_estimadas').value,
+        asignado_id: document.getElementById('tarea_asignado_id').value
+    };
+    
+    fetch('/api/tareas/crear', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al crear tarea: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear tarea');
+    });
+});
+
+// Registrar horas
+function registrarHoras(tareaId) {
+    tareaSeleccionada = tareaId;
+    document.getElementById('horas_tarea_id').value = tareaId;
+    document.getElementById('fecha_trabajo').value = new Date().toISOString().split('T')[0];
+    new bootstrap.Modal(document.getElementById('registrarHorasModal')).show();
+}
+
+// Form registrar horas
+document.getElementById('registrarHorasForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        tarea_id: document.getElementById('horas_tarea_id').value,
+        horas: document.getElementById('horas_trabajadas').value,
+        fecha: document.getElementById('fecha_trabajo').value,
+        descripcion: document.getElementById('descripcion_trabajo').value
+    };
+    
+    fetch('/api/tareas/registrar-horas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al registrar horas: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar horas');
+    });
+});
+
+// Filtrar tareas
+function filtrarTareas(filtro) {
+    // Implementar filtrado según criterio
+    console.log('Filtrar por:', filtro);
+}
+
+// Auto-complete número de tarea cuando se selecciona proyecto
+document.getElementById('tarea_proyecto_id').addEventListener('change', function() {
+    const proyectoId = this.value;
+    if (proyectoId) {
+        obtenerSiguienteNumeroTarea(proyectoId);
+    }
+});
+</script>
+{{/section}}

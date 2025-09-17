@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}} - SGI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="/">Sistema de Gestión</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">
+              <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              Comercial
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/leads">Leads / Prospectos</a></li>
+              <li><a class="dropdown-item" href="/presupuestos">Presupuestos</a></li>
+              <li><a class="dropdown-item" href="/clientes">Clientes</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              Proyectos
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/proyectos">Gestión Proyectos</a></li>
+              <li><a class="dropdown-item" href="/proyectos/planificacion">Planificación</a></li>
+              <li><a class="dropdown-item" href="/materiales">Lista Materiales</a></li>
+              <li><a class="dropdown-item" href="/certificados">Certificados</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              Abastecimiento
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/requerimientos">Requerimientos</a></li>
+              <li><a class="dropdown-item" href="/cotizaciones">Cotizaciones</a></li>
+              <li><a class="dropdown-item" href="/ordenes-compra">Órdenes Compra</a></li>
+              <li><a class="dropdown-item" href="/acopios">Acopios</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              Finanzas
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/facturas/emitidas">Facturas Emitidas</a></li>
+              <li><a class="dropdown-item" href="/facturas/recibidas">Facturas Recibidas</a></li>
+              <li><a class="dropdown-item" href="/contabilidad">Contabilidad</a></li>
+            </ul>
+          </li>
+        </ul>
+        
+        {{#if user.isAuthenticated}}
+        <!-- Search Form -->
+        <form class="d-flex me-3" id="searchForm" role="search">
+          <div class="input-group">
+            <input 
+              class="form-control me-2" 
+              type="search" 
+              id="searchInput" 
+              placeholder="Buscar factura..." 
+              aria-label="Buscar"
+              autocomplete="off"
+            >
+            <select class="form-select" id="searchType" style="max-width: 120px;">
+              <option value="emitidas">Emitidas</option>
+              <option value="recibidas">Recibidas</option>
+            </select>
+            <button class="btn btn-light" type="submit">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </form>
+        
+        <!-- Search Results Dropdown -->
+        <div class="position-relative">
+          <div id="searchResults" class="dropdown-menu dropdown-menu-end w-100 mt-1" style="display: none;">
+            <div class="list-group list-group-flush" id="searchResultsList">
+              <!-- Search results will be inserted here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu -->
+        <div class="dropdown">
+          <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle"></i>
+            {{user.username}}
+            {{#if user.role}}
+              <span class="badge bg-light text-dark">{{user.role}}</span>
+            {{/if}}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><h6 class="dropdown-header">{{user.username}}</h6></li>
+            {{#if user.role}}
+              <li><span class="dropdown-item-text">
+                <small class="text-muted">{{user.role}}</small>
+              </span></li>
+              <li><hr class="dropdown-divider"></li>
+            {{/if}}
+            <li><a class="dropdown-item" href="/perfil">
+              <i class="bi bi-person"></i> Mi Perfil
+            </a></li>
+            {{#if user.isAdmin}}
+              <li><a class="dropdown-item" href="/admin">
+                <i class="bi bi-gear"></i> Administración
+              </a></li>
+            {{/if}}
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="POST" action="/logout" class="dropdown-item p-0">
+                <button type="submit" class="btn btn-link dropdown-item text-start">
+                  <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+        {{else}}
+        <!-- Login Button -->
+        <a class="btn btn-light" href="/login">
+          <i class="bi bi-box-arrow-in-right"></i>
+          Iniciar Sesión
+        </a>
+        {{/if}}
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    {{> messages}}
+    {{{body}}}
+  </div>
+
+  <footer class="bg-light text-center text-lg-start mt-5">
+    <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+      © {{currentYear}} Sistema de Gestión Integral
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    $(document).ready(function() {
+      const searchForm = $('#searchForm');
+      const searchInput = $('#searchInput');
+      const searchResults = $('#searchResults');
+      const searchResultsList = $('#searchResultsList');
+      let searchTimeout;
+      
+      // Handle search form submission
+      searchForm.on('submit', function(e) {
+        e.preventDefault();
+        const query = searchInput.val().trim();
+        const type = $('#searchType').val();
+        
+        if (query) {
+          performSearch(query, type);
+        }
+      });
+      
+      // Handle search as you type
+      searchInput.on('input', function() {
+        const query = $(this).val().trim();
+        
+        // Clear previous timeout
+        clearTimeout(searchTimeout);
+        
+        // Only search if query has at least 2 characters
+        if (query.length >= 2) {
+          searchTimeout = setTimeout(() => {
+            const type = $('#searchType').val();
+            performSearch(query, type);
+          }, 500);
+        } else {
+          searchResults.hide();
+        }
+      });
+      
+      // Hide search results when clicking outside
+      $(document).on('click', function(e) {
+        if (!$(e.target).closest('.position-relative').length) {
+          searchResults.hide();
+        }
+      });
+      
+      // Function to perform the search
+      function performSearch(query, type) {
+        $.ajax({
+          url: '/facturas/buscar',
+          method: 'GET',
+          data: { q: query, tipo: type },
+          success: function(response) {
+            if (response.success && response.data.length > 0) {
+              // Clear previous results
+              searchResultsList.empty();
+              
+              // Add new results
+              response.data.forEach(function(item) {
+                const resultItem = `
+                  <a href="/facturas/${type === 'recibidas' ? 'recibidas' : 'emitidas'}/${item.id}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h6 class="mb-1">${item.numero} - ${item.tipo}</h6>
+                      <small>${item.fecha}</small>
+                    </div>
+                    <p class="mb-1">${item.total} - ${item.estado || ''}</p>
+                  </a>
+                `;
+                searchResultsList.append(resultItem);
+              });
+              
+              // Show results
+              searchResults.show();
+            } else {
+              searchResultsList.html(`
+                <div class="list-group-item">
+                  <p class="text-muted mb-0">No se encontraron resultados</p>
+                </div>
+              `);
+              searchResults.show();
+            }
+          },
+          error: function() {
+            searchResultsList.html(`
+              <div class="list-group-item">
+                <p class="text-danger mb-0">Error al realizar la búsqueda</p>
+              </div>
+            `);
+            searchResults.show();
+          }
+        });
+      }
+    });
+  </script>
+  {{#if _sections.scripts}}
+    {{{_sections.scripts}}}
+  {{/if}}
+</body>
+</html>

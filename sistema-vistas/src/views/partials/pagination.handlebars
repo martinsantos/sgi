@@ -1,0 +1,44 @@
+{{#if pagination.pages}}
+<nav aria-label="Paginación" class="mt-4">
+  <ul class="pagination justify-content-center">
+    {{#if (gt pagination.page 1)}}
+      <li class="page-item">
+        <a class="page-link" href="?page={{subtract pagination.page 1}}" aria-label="Anterior">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+    {{else}}
+      <li class="page-item disabled">
+        <span class="page-link">&laquo;</span>
+      </li>
+    {{/if}}
+    
+    {{#each (range 1 pagination.pages) as |p|}}
+      {{#if (or (eq p 1) (eq p pagination.page) (eq p (add pagination.page 1)) (eq p (subtract pagination.page 1)) (eq p pagination.pages))}}
+        <li class="page-item {{#if (eq p ../pagination.page)}}active{{/if}}">
+          <a class="page-link" href="?page={{p}}">{{p}}</a>
+        </li>
+      {{else if (or (eq p 2) (eq p (subtract pagination.pages 1)))}}
+        <li class="page-item disabled">
+          <span class="page-link">...</span>
+        </li>
+      {{/if}}
+    {{/each}}
+    
+    {{#if (lt pagination.page pagination.pages)}}
+      <li class="page-item">
+        <a class="page-link" href="?page={{add pagination.page 1}}" aria-label="Siguiente">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+    {{else}}
+      <li class="page-item disabled">
+        <span class="page-link">&raquo;</span>
+      </li>
+    {{/if}}
+  </ul>
+  <div class="text-center text-muted">
+    Mostrando {{pagination.from}} a {{pagination.to}} de {{pagination.total}} registros
+  </div>
+</nav>
+{{/if}}

@@ -1,0 +1,122 @@
+{{!-- Editar Factura Emitida --}}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h3 mb-0">{{title}}</h1>
+        <a href="/facturas/emitidas/{{factura.id}}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Datos de la Factura</h5>
+        </div>
+        <div class="card-body">
+          <form action="/facturas/emitidas/{{factura.id}}/editar" method="POST">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="numero_factura" class="form-label">Número de Factura</label>
+                <input type="text" class="form-control" id="numero_factura" value="{{factura.numero_factura}}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label for="tipo_factura" class="form-label">Tipo de Factura</label>
+                <input type="text" class="form-control" id="tipo_factura" value="{{factura.tipo_factura}}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="cliente_id" class="form-label">Cliente</label>
+                <select class="form-select" id="cliente_id" name="cliente_id">
+                  {{#each clientes}}
+                  <option value="{{id}}" {{#if (eq ../factura.cliente_id id)}}selected{{/if}}>
+                    {{nombre}} {{apellido}}
+                  </option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="fecha_emision" class="form-label">Fecha de Emisión</label>
+                <input type="text" class="form-control" id="fecha_emision" value="{{formatDate factura.fecha_emision}}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="fecha_vto_pago" class="form-label">Fecha de Vencimiento</label>
+                <input type="date" class="form-control" id="fecha_vto_pago" name="fecha_vto_pago" value="{{factura.fecha_vto_pago}}">
+              </div>
+              <div class="col-md-6">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                  <option value="0" {{#if (eq factura.estado 0)}}selected{{/if}}>Borrador</option>
+                  <option value="1" {{#if (eq factura.estado 1)}}selected{{/if}}>Pendiente</option>
+                  <option value="2" {{#if (eq factura.estado 2)}}selected{{/if}}>Parcialmente Cobrada</option>
+                  <option value="3" {{#if (eq factura.estado 3)}}selected{{/if}}>Cobrada</option>
+                  <option value="4" {{#if (eq factura.estado 4)}}selected{{/if}}>Anulada</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="subtotal" class="form-label">Subtotal</label>
+                <input type="text" class="form-control" id="subtotal" value="{{formatCurrency factura.subtotal}}" readonly>
+              </div>
+              <div class="col-md-4">
+                <label for="iva" class="form-label">IVA</label>
+                <input type="text" class="form-control" id="iva" value="{{formatCurrency factura.iva}}" readonly>
+              </div>
+              <div class="col-md-4">
+                <label for="total" class="form-label">Total</label>
+                <input type="text" class="form-control" id="total" value="{{formatCurrency factura.total}}" readonly>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="observaciones" class="form-label">Observaciones</label>
+              <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{factura.observaciones}}</textarea>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="/facturas/emitidas/{{factura.id}}" class="btn btn-secondary me-md-2">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Información AFIP</h5>
+        </div>
+        <div class="card-body">
+          <p><strong>CAE:</strong> {{factura.cae}}</p>
+          <p><strong>Fecha Vto. CAE:</strong> {{formatDate factura.fecha_vto_cae}}</p>
+          <p><strong>Punto de Venta:</strong> {{factura.punto_venta}}</p>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Auditoría</h5>
+        </div>
+        <div class="card-body">
+          <p><strong>ID:</strong> {{factura.id}}</p>
+          <p><strong>Fecha de Creación:</strong> {{formatDate factura.fecha_creacion}}</p>
+          <p><strong>Última Modificación:</strong> {{formatDate factura.fecha_actualizacion}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

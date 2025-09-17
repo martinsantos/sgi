@@ -1,0 +1,615 @@
+{{!-- Órdenes de Compra --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-shopping-bag me-2"></i>
+            Órdenes de Compra
+          </h4>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaOrdenModal">
+            <i class="fas fa-plus me-1"></i>
+            Nueva Orden de Compra
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Filtros -->
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <select class="form-select" id="filtroEstado">
+              <option value="">Todos los estados</option>
+              <option value="borrador">Borrador</option>
+              <option value="enviado">Enviado</option>
+              <option value="confirmado">Confirmado</option>
+              <option value="parcial">Entrega Parcial</option>
+              <option value="completado">Completado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroProveedor">
+              <option value="">Todos los proveedores</option>
+              {{#each proveedores}}
+              <option value="{{this.id}}">{{this.nombre}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtroProyecto">
+              <option value="">Todos los proyectos</option>
+              {{#each proyectos}}
+              <option value="{{this.id}}">{{this.nombre}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Buscar..." id="filtroTexto">
+              <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen de Estadísticas -->
+        <div class="row mb-4">
+          <div class="col-md-2">
+            <div class="card bg-dark text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.total}}</h5>
+                <p class="card-text">Total</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-warning text-dark">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.borrador}}</h5>
+                <p class="card-text">Borradores</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-primary text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.enviado}}</h5>
+                <p class="card-text">Enviadas</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-info">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.confirmado}}</h5>
+                <p class="card-text">Confirmadas</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.completado}}</h5>
+                <p class="card-text">Completadas</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="card bg-danger text-white">
+              <div class="card-body text-center">
+                <h5 class="card-title">{{stats.cancelado}}</h5>
+                <p class="card-text">Canceladas</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Órdenes -->
+        <div class="table-responsive">
+          <table class="table table-hover" id="tablaOrdenes">
+            <thead class="table-light">
+              <tr>
+                <th width="8%">N° Orden</th>
+                <th width="15%">Proveedor</th>
+                <th width="15%">Proyecto</th>
+                <th width="10%">Estado</th>
+                <th width="10%">Fecha Orden</th>
+                <th width="10%">Fecha Entrega</th>
+                <th width="12%">Monto Total</th>
+                <th width="10%">Progreso</th>
+                <th width="10%">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each ordenes}}
+              <tr data-orden-id="{{this.id}}">
+                <td>
+                  <strong>OC-{{this.numero}}</strong>
+                </td>
+                <td>
+                  <strong>{{this.proveedor_nombre}}</strong>
+                  {{#if this.proveedor_contacto}}
+                  <br><small class="text-muted">{{this.proveedor_contacto}}</small>
+                  {{/if}}
+                </td>
+                <td>
+                  <strong>{{this.proyecto_nombre}}</strong>
+                  <br><small class="text-muted">{{this.cliente_nombre}}</small>
+                </td>
+                <td>
+                  <span class="badge 
+                    {{#eq this.estado 'borrador'}}bg-secondary{{/eq}}
+                    {{#eq this.estado 'enviado'}}bg-primary{{/eq}}
+                    {{#eq this.estado 'confirmado'}}bg-info{{/eq}}
+                    {{#eq this.estado 'parcial'}}bg-warning{{/eq}}
+                    {{#eq this.estado 'completado'}}bg-success{{/eq}}
+                    {{#eq this.estado 'cancelado'}}bg-danger{{/eq}}
+                  ">
+                    {{capitalize this.estado}}
+                  </span>
+                </td>
+                <td>{{formatDate this.fecha_orden}}</td>
+                <td>
+                  {{#if this.fecha_entrega_esperada}}
+                    {{formatDate this.fecha_entrega_esperada}}
+                    {{#if this.dias_hasta_entrega}}
+                      {{#if (lt this.dias_hasta_entrega 0)}}
+                        <br><small class="text-danger">Vencida ({{math this.dias_hasta_entrega '*' -1}} días)</small>
+                      {{else if (lt this.dias_hasta_entrega 3)}}
+                        <br><small class="text-warning">{{this.dias_hasta_entrega}} días</small>
+                      {{else}}
+                        <br><small class="text-muted">{{this.dias_hasta_entrega}} días</small>
+                      {{/if}}
+                    {{/if}}
+                  {{else}}
+                    <span class="text-muted">Sin definir</span>
+                  {{/if}}
+                </td>
+                <td class="text-end">
+                  <strong>{{this.moneda}} {{formatNumber this.monto_total}}</strong>
+                </td>
+                <td>
+                  {{#if (gt this.total_items 0)}}
+                  <div class="progress" style="height: 6px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{this.porcentaje_completado}}%" 
+                         aria-valuenow="{{this.porcentaje_completado}}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                  </div>
+                  <small class="text-muted">{{this.items_recibidos}}/{{this.total_items}} items</small>
+                  {{else}}
+                  <span class="text-muted">Sin items</span>
+                  {{/if}}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/ordenes-compra/ver/{{this.id}}" class="btn btn-outline-info" title="Ver">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    {{#eq this.estado 'borrador'}}
+                    <button class="btn btn-outline-primary" onclick="editarOrden('{{this.id}}')" title="Editar">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-success" onclick="enviarOrden('{{this.id}}')" title="Enviar">
+                      <i class="fas fa-paper-plane"></i>
+                    </button>
+                    {{/eq}}
+                    {{#eq this.estado 'enviado'}}
+                    <button class="btn btn-outline-info" onclick="confirmarOrden('{{this.id}}')" title="Confirmar">
+                      <i class="fas fa-check"></i>
+                    </button>
+                    {{/eq}}
+                    {{#or (eq this.estado 'confirmado') (eq this.estado 'parcial')}}
+                    <button class="btn btn-outline-warning" onclick="registrarRecepcion('{{this.id}}')" title="Registrar Recepción">
+                      <i class="fas fa-truck"></i>
+                    </button>
+                    {{/or}}
+                    <div class="btn-group">
+                      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="imprimirOrden('{{this.id}}')">
+                          <i class="fas fa-print me-1"></i> Imprimir
+                        </a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportarOrden('{{this.id}}')">
+                          <i class="fas fa-file-excel me-1"></i> Exportar
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {{#eq this.estado 'borrador'}}
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="eliminarOrden('{{this.id}}')">
+                          <i class="fas fa-trash me-1"></i> Eliminar
+                        </a></li>
+                        {{else}}
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="cancelarOrden('{{this.id}}')">
+                          <i class="fas fa-ban me-1"></i> Cancelar
+                        </a></li>
+                        {{/eq}}
+                      </ul>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        {{#unless ordenes}}
+        <div class="text-center py-5">
+          <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay órdenes de compra registradas</h5>
+          <p class="text-muted">Comienza creando una nueva orden de compra</p>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaOrdenModal">
+            <i class="fas fa-plus me-1"></i>
+            Crear Primera Orden
+          </button>
+        </div>
+        {{/unless}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nueva Orden de Compra -->
+<div class="modal fade" id="nuevaOrdenModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-plus me-2"></i>
+          Nueva Orden de Compra
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevaOrden">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proyecto <span class="text-danger">*</span></label>
+                <select class="form-select" name="proyecto_id" required>
+                  <option value="">Seleccionar proyecto...</option>
+                  {{#each proyectos}}
+                  <option value="{{this.id}}">{{this.nombre}} - {{this.cliente_nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Proveedor <span class="text-danger">*</span></label>
+                <select class="form-select" name="proveedor_id" required>
+                  <option value="">Seleccionar proveedor...</option>
+                  {{#each proveedores}}
+                  <option value="{{this.id}}">{{this.nombre}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Fecha de Entrega Esperada</label>
+                <input type="date" class="form-control" name="fecha_entrega_esperada">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Moneda</label>
+                <select class="form-select" name="moneda">
+                  <option value="ARS">Pesos Argentinos (ARS)</option>
+                  <option value="USD">Dólares (USD)</option>
+                  <option value="EUR">Euros (EUR)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Condiciones de Pago</label>
+                <input type="text" class="form-control" name="condiciones_pago" placeholder="Ej: 30 días">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Lugar de Entrega</label>
+                <input type="text" class="form-control" name="lugar_entrega">
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Cotización de Referencia (Opcional)</label>
+            <select class="form-select" name="cotizacion_id" id="cotizacionReferencia">
+              <option value="">Sin cotización de referencia</option>
+            </select>
+            <small class="form-text text-muted">Si selecciona una cotización, se cargarán automáticamente sus items</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-control" name="observaciones" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="crearOrden()">
+          <i class="fas fa-save me-1"></i>
+          Crear Orden
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registrar Recepción -->
+<div class="modal fade" id="recepcionModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-truck me-2"></i>
+          Registrar Recepción de Materiales
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formRecepcion">
+          <input type="hidden" name="orden_id" id="recepcionOrdenId">
+          <div class="mb-3">
+            <label class="form-label">Fecha de Recepción <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" name="fecha_recepcion" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Items Recibidos</label>
+            <div id="itemsRecepcion"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-control" name="observaciones_recepcion" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="guardarRecepcion()">
+          <i class="fas fa-check me-1"></i>
+          Registrar Recepción
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+$(document).ready(function() {
+    // Inicializar DataTable
+    $('#tablaOrdenes').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
+        order: [[0, 'desc']],
+        pageLength: 25
+    });
+
+    // Configurar filtros
+    $('#filtroEstado, #filtroProveedor, #filtroProyecto').on('change', filtrarOrdenes);
+    $('#filtroTexto').on('keyup', filtrarOrdenes);
+
+    // Cargar cotizaciones cuando cambie el proveedor
+    $('select[name="proveedor_id"]').on('change', cargarCotizaciones);
+});
+
+// Filtrar órdenes
+function filtrarOrdenes() {
+    const estado = $('#filtroEstado').val();
+    const proveedor = $('#filtroProveedor').val();
+    const proyecto = $('#filtroProyecto').val();
+    const texto = $('#filtroTexto').val();
+
+    let url = '/api/ordenes-compra?';
+    if (estado) url += `estado=${estado}&`;
+    if (proveedor) url += `proveedor=${proveedor}&`;
+    if (proyecto) url += `proyecto=${proyecto}&`;
+    if (texto) url += `search=${texto}&`;
+
+    // Reload page with filters
+    window.location.href = '/ordenes-compra?' + url.slice(0, -1);
+}
+
+// Cargar cotizaciones del proveedor
+function cargarCotizaciones() {
+    const proveedorId = $('select[name="proveedor_id"]').val();
+    const proyectoId = $('select[name="proyecto_id"]').val();
+    
+    if (proveedorId && proyectoId) {
+        fetch(`/api/cotizaciones?proveedor=${proveedorId}&proyecto=${proyectoId}&estado=seleccionado`)
+            .then(response => response.json())
+            .then(data => {
+                const select = $('#cotizacionReferencia');
+                select.empty().append('<option value="">Sin cotización de referencia</option>');
+                data.cotizaciones.forEach(cot => {
+                    select.append(`<option value="${cot.id}">COT-${cot.numero} - ${cot.moneda} ${cot.monto_total}</option>`);
+                });
+            });
+    }
+}
+
+// Crear nueva orden
+function crearOrden() {
+    const formData = new FormData(document.getElementById('formNuevaOrden'));
+    
+    fetch('/api/ordenes-compra', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al crear orden: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al crear orden');
+    });
+}
+
+// Editar orden
+function editarOrden(id) {
+    window.location.href = `/ordenes-compra/editar/${id}`;
+}
+
+// Enviar orden
+function enviarOrden(id) {
+    if (confirm('¿Enviar esta orden de compra al proveedor?')) {
+        cambiarEstadoOrden(id, 'enviado');
+    }
+}
+
+// Confirmar orden
+function confirmarOrden(id) {
+    if (confirm('¿Confirmar que el proveedor aceptó esta orden?')) {
+        cambiarEstadoOrden(id, 'confirmado');
+    }
+}
+
+// Cancelar orden
+function cancelarOrden(id) {
+    const motivo = prompt('Motivo de cancelación (opcional):');
+    if (motivo !== null) {
+        cambiarEstadoOrden(id, 'cancelado', motivo);
+    }
+}
+
+// Cambiar estado de orden
+function cambiarEstadoOrden(id, nuevoEstado, observaciones = '') {
+    fetch(`/api/ordenes-compra/${id}/estado`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            estado: nuevoEstado,
+            observaciones: observaciones
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error al cambiar estado: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar estado');
+    });
+}
+
+// Registrar recepción
+function registrarRecepcion(id) {
+    // Cargar items de la orden
+    fetch(`/api/ordenes-compra/${id}/items`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                $('#recepcionOrdenId').val(id);
+                
+                let itemsHtml = '';
+                data.items.forEach(item => {
+                    const pendiente = item.cantidad - (item.cantidad_recibida || 0);
+                    if (pendiente > 0) {
+                        itemsHtml += `
+                            <div class="row mb-2 align-items-center">
+                                <div class="col-md-6">
+                                    <strong>${item.nombre}</strong>
+                                    <small class="text-muted d-block">Pendiente: ${pendiente} ${item.unidad}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control" 
+                                           name="item_${item.id}_cantidad" 
+                                           max="${pendiente}" min="0" 
+                                           placeholder="Cantidad recibida">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" 
+                                           name="item_${item.id}_observaciones" 
+                                           placeholder="Observaciones">
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                $('#itemsRecepcion').html(itemsHtml);
+                $('#recepcionModal').modal('show');
+            }
+        });
+}
+
+// Guardar recepción
+function guardarRecepcion() {
+    const formData = new FormData(document.getElementById('formRecepcion'));
+    const ordenId = $('#recepcionOrdenId').val();
+    
+    fetch(`/api/ordenes-compra/${ordenId}/recepcion`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#recepcionModal').modal('hide');
+            location.reload();
+        } else {
+            alert('Error al registrar recepción: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al registrar recepción');
+    });
+}
+
+// Imprimir orden
+function imprimirOrden(id) {
+    window.open(`/ordenes-compra/imprimir/${id}`, '_blank');
+}
+
+// Exportar orden
+function exportarOrden(id) {
+    window.open(`/api/ordenes-compra/${id}/export`, '_blank');
+}
+
+// Eliminar orden
+function eliminarOrden(id) {
+    if (confirm('¿Está seguro de eliminar esta orden de compra? Esta acción no se puede deshacer.')) {
+        fetch(`/api/ordenes-compra/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al eliminar orden: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar orden');
+        });
+    }
+}
+</script>
+{{/section}}

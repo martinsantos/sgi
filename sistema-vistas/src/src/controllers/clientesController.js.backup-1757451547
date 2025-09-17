@@ -1,0 +1,472 @@
+const XLSX = require('xlsx');
+const ClienteModel = require('../models/ClienteModel');
+const ProyectoModel = require('../models/ProyectoModel');
+
+const clientesController = {
+  /**
+   * Obtiene el listado de clientes con paginación
+   */
+  getClientes: async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const search = req.query.search || '';
+      const sortBy = req.query.sort_by || '';
+      const sortOrder = req.query.sort_order || 'ASC';
+      
+      const filters = {
+        search: search
+      };
+      
+      const { data: clientes, pagination } = await ClienteModel.getClientesCompletos(page, limit, filters, sortBy, sortOrder);
+      
+      res.render('clientes/listar', {
+        title: 'Clientes',
+        clientes,
+        pagination,
+        currentPage: page,
+        search: search,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+        layout: 'main',
+        helpers: {
+          formatDate: function(date) {
+            return date ? new Date(date).toLocaleDateString('es-AR') : '';
+          },
+          formatCurrency: function(amount) {
+            return new Intl.NumberFormat('es-AR', {
+              style: 'currency',
+              currency: 'ARS'
+            }).format(amount || 0);
+          },
+          getBadgeClass: function(tipo_persona) {
+            return tipo_persona === 'Física' ? 'bg-info' : 'bg-success';
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error al obtener clientes:', error);
+      res.status(500).render('error', {
+        title: 'Error',
+        message: 'Ocurrió un error al obtener el listado de clientes',
+        layout: 'main'
+      });
+    }
+  },
+
+  /**
+   * Obtiene el listado de clientes en formato JSON (API)
+   */
+  getClientesAPI: async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const search = req.query.search || '';
+      const sortBy = req.query.sortBy || req.query.sort_by || '';
+      const sortOrder = req.query.sortOrder || req.query.sort_order || 'ASC';
+      
+      const filters = {
+        search: search
+      };
+      
+      console.log('🚀 API getClientesAPI - Params:', { page, limit, search, sortBy, sortOrder });
+      
+      const { data: clientes, pagination } = await ClienteModel.getClientesCompletos(page, limit, filters, sortBy, sortOrder);
+      
+      res.json({
+        success: true,
+        data: clientes,
+        pagination
+      });
+      
+    } catch (error) {
+      console.error('❌ Error en getClientesAPI:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener clientes',
+        message: error.message
+      });
+    }
+  },
+
+  /**
+   * Vista 360° del cliente - Información completa
+   */
+  getClienteDetalle: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const cliente = await ClienteModel.getClienteById(id);
+      
+      if (!cliente) {
+        return res.status(404).render('error', {
+          title: 'Error',
+          message: 'Cliente no encontrado',
+          layout: 'main'
+        });
+      }
+      
+      res.render('clientes/ver', {
+        title: `Cliente: ${cliente.nombre_completo}`,
+        cliente,
+        layout: 'main',
+        helpers: {
+          formatDate: function(date) {
+            if (!date) return '';
+            try {
+              return new Date(date).toLocaleDateString('es-AR');
+            } catch (e) {
+              return date;
+            }
+          },
+          formatCurrency: function(amount) {
+            return new Intl.NumberFormat('es-AR', {
+              style: 'currency',
+              currency: 'ARS'
+            }).format(amount || 0);
+          },
+          formatNumber: function(number) {
+            return new Intl.NumberFormat('es-AR').format(number || 0);
+          },
+          getEstadoBadge: function(estado, tipo = 'factura') {
+            const badges = {
+              factura: {
+                1: { class: 'bg-warning text-dark', text: 'Pendiente' },
+                2: { class: 'bg-info', text: 'Pagada Parcial' },
+                3: { class: 'bg-success', text: 'Pagada' },
+                4: { class: 'bg-primary', text: 'En Proceso' },
+                5: { class: 'bg-danger', text: 'Anulada' }
+              },
+              proyecto: {
+                1: { class: 'bg-secondary', text: 'Pendiente' },
+                2: { class: 'bg-primary', text: 'En Progreso' },
+                3: { class: 'bg-success', text: 'Finalizado' },
+                4: { class: 'bg-danger', text: 'Cancelado' }
+              },
+              certificado: {
+                0: { class: 'bg-warning text-dark', text: 'Pendiente' },
+                1: { class: 'bg-success', text: 'Aprobado' },
+                2: { class: 'bg-info', text: 'Facturado' }
+              }
+            };
+            
+            const badge = badges[tipo] && badges[tipo][estado] || 
+                         { class: 'bg-secondary', text: 'Desconocido' };
+            
+            return `<span class="badge ${badge.class}">${badge.text}</span>`;
+          },
+          getCondicionIva: function(condicion) {
+            const condiciones = {
+              1: 'IVA Responsable Inscripto',
+              2: 'IVA Responsable No Inscripto', 
+              3: 'IVA Exento',
+              4: 'No Responsable',
+              5: 'Consumidor Final',
+              6: 'Responsable Monotributo',
+              7: 'Sujeto No Categorizado'
+            };
+            return condiciones[condicion] || 'No definida';
+          },
+          calcularPorcentaje: function(parte, total) {
+            if (!total || total === 0) return 0;
+            return Math.round((parte / total) * 100);
+          },
+          eq: function(a, b) {
+            return a == b;
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error al obtener cliente:', error);
+      res.status(500).render('error', {
+        title: 'Error',
+        message: 'Ocurrió un error al obtener los detalles del cliente',
+        layout: 'main'
+      });
+    }
+  },
+
+  /**
+   * Busca clientes según criterios
+   */
+  buscarClientes: async (req, res) => {
+    try {
+      const { 
+        nombre, 
+        email, 
+        telefono,
+        activo,
+        page = 1,
+        limit = 20
+      } = req.query;
+      
+      const filters = {
+        search: nombre || req.query.search || req.query.q || '',
+        email, 
+        telefono,
+        activo: activo !== undefined ? parseInt(activo) : undefined
+      };
+      
+      console.log('🔍 buscarClientes - Parámetros:', filters);
+      
+      const { data: clientes, pagination } = await ClienteModel.getClientesCompletos(
+        parseInt(page), 
+        parseInt(limit),
+        filters,
+        'apellido',
+        'ASC'
+      );
+      
+      // Si es una petición AJAX, devolver JSON
+      if (req.xhr || req.get('Content-Type') === 'application/json' || req.get('Accept') && req.get('Accept').includes('application/json')) {
+        return res.json({
+          success: true,
+          data: clientes,
+          pagination
+        });
+      }
+      
+      // Si no es AJAX, renderizar la vista
+      res.render('clientes/resultados-busqueda', {
+        title: 'Resultados de Búsqueda - Clientes',
+        clientes,
+        pagination,
+        currentPage: parseInt(page),
+        filters,
+        layout: 'main',
+        helpers: {
+          formatDate: (date) => date ? new Date(date).toLocaleDateString('es-AR') : '',
+          getBadgeClass: (tipo_persona) => tipo_persona === 'Física' ? 'bg-info' : 'bg-success'
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error al buscar clientes:', error);
+      
+      if (req.xhr || req.get('Content-Type') === 'application/json') {
+        return res.status(500).json({
+          success: false,
+          error: 'Error al realizar la búsqueda de clientes'
+        });
+      }
+      
+      res.status(500).render('error', {
+        title: 'Error',
+        message: 'Ocurrió un error al realizar la búsqueda',
+        layout: 'main'
+      });
+    }
+  },
+
+  /**
+   * API específica para búsqueda de clientes (siempre devuelve JSON)
+   */
+  buscarClientesAPI: async (req, res) => {
+    try {
+      const { search, q, nombre, page = 1, limit = 50 } = req.query;
+      
+      // Unificar parámetros de búsqueda
+      const searchTerm = search || q || nombre || '';
+      
+      console.log('🔍 API buscarClientesAPI - Parámetros:', { searchTerm, page, limit });
+      
+      // Usar el método getClientesCompletos con filtro de búsqueda
+      const filters = {
+        search: searchTerm
+      };
+      
+      const { data: clientes, pagination } = await ClienteModel.getClientesCompletos(
+        parseInt(page), 
+        parseInt(limit), 
+        filters,
+        'apellido', // sortBy
+        'ASC'       // sortOrder
+      );
+      
+      console.log('✅ Clientes encontrados:', clientes.length);
+      
+      res.json({
+        success: true,
+        data: clientes,
+        pagination,
+        total: pagination.total
+      });
+      
+    } catch (error) {
+      console.error('❌ Error en buscarClientesAPI:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al buscar clientes',
+        message: error.message
+      });
+    }
+  },
+
+  /**
+   * Exporta clientes a Excel
+   */
+  exportarClientes: async (req, res) => {
+    try {
+      const { nombre, email, telefono, activo } = req.query;
+      
+      const filters = {
+        nombre,
+        email,
+        telefono,
+        activo: activo !== undefined ? parseInt(activo) : undefined
+      };
+      
+      // Obtener todos los clientes que coincidan con los filtros
+      const { data: clientes } = await ClienteModel.searchClientes(filters, 1, 10000);
+      
+      // Formatear datos para Excel
+      const data = clientes.map(cliente => ({
+        'Nombre Completo': cliente.nombre_completo,
+        'Código': cliente.codigo || '',
+        'Tipo': cliente.tipo_persona || '',
+        'Email': cliente.email || '',
+        'Teléfono': cliente.telefono || '',
+        'CUIT': cliente.cuil_cuit || '',
+        'Dirección': cliente.direccion || '',
+        'Código Postal': cliente.codigo_postal || '',
+        'Activo': cliente.activo ? 'Sí' : 'No'
+      }));
+      
+      // Crear libro de Excel
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+      
+      // Añadir hoja al libro
+      XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+      
+      // Generar buffer del archivo
+      const excelBuffer = XLSX.write(wb, { 
+        bookType: 'xlsx', 
+        type: 'buffer' 
+      });
+      
+      // Configurar encabezados de respuesta
+      const fileName = `clientes_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(excelBuffer);
+      
+    } catch (error) {
+      console.error('Error al exportar clientes:', error);
+      
+      if (req.xhr || req.get('Content-Type') === 'application/json') {
+        return res.status(500).json({
+          success: false,
+          error: 'Error al exportar los clientes a Excel'
+        });
+      }
+      
+      res.status(500).render('error', {
+        title: 'Error',
+        message: 'Ocurrió un error al exportar los clientes',
+        layout: 'main'
+      });
+    }
+  },
+
+  /**
+   * Obtiene las facturas de un cliente (API)
+   */
+  getFacturasCliente: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const facturas = await ClienteModel.getFacturasCliente(id);
+      
+      res.json({
+        success: true,
+        data: facturas
+      });
+      
+    } catch (error) {
+      console.error('Error al obtener facturas del cliente:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener las facturas del cliente'
+      });
+    }
+  },
+
+  /**
+   * Obtiene los proyectos de un cliente (API)
+   */
+  getProyectosCliente: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const proyectos = await ClienteModel.getProyectosCliente(id);
+      
+      res.json({
+        success: true,
+        data: proyectos
+      });
+      
+    } catch (error) {
+      console.error('Error al obtener proyectos del cliente:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener los proyectos del cliente'
+      });
+    }
+  },
+
+  /**
+   * Crea un nuevo cliente
+   */
+  createCliente: async (req, res) => {
+    try {
+      const clienteData = req.body;
+      const clienteId = await ClienteModel.createCliente(clienteData);
+      
+      if (req.xhr || req.get('Content-Type') === 'application/json') {
+        return res.json({
+          success: true,
+          message: 'Cliente creado exitosamente',
+          data: { id: clienteId }
+        });
+      }
+      
+      res.redirect(`/clientes/ver/${clienteId}`);
+      
+    } catch (error) {
+      console.error('Error al crear cliente:', error);
+      
+      if (req.xhr || req.get('Content-Type') === 'application/json') {
+        return res.status(500).json({
+          success: false,
+          error: 'Error al crear el cliente'
+        });
+      }
+      
+      res.status(500).render('error', {
+        title: 'Error',
+        message: 'Ocurrió un error al crear el cliente',
+        layout: 'main'
+      });
+    }
+  },
+
+  /**
+   * Formulario para nuevo cliente
+   */
+  nuevoCliente: async (req, res) => {
+    try {
+      res.render('clientes/nuevo', {
+        title: 'Nuevo Cliente',
+        layout: 'main'
+      });
+    } catch (error) {
+      console.error('Error al mostrar formulario de nuevo cliente:', error);
+      res.status(500).render('error', {
+        title: 'Error',
+        message: 'Ocurrió un error al cargar el formulario',
+        layout: 'main'
+      });
+    }
+  }
+};
+
+module.exports = clientesController;

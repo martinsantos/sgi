@@ -1,0 +1,298 @@
+{{!-- Nuevo Presupuesto Comercial --}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="card-title mb-0">
+            <i class="fas fa-plus me-2"></i>
+            Nuevo Presupuesto Comercial
+          </h4>
+          <a href="/presupuestos" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>
+            Volver
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <form id="presupuestoForm" action="/presupuestos/crear" method="POST">
+          <div class="row">
+            <!-- Información General -->
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label for="numero" class="form-label">Número de Presupuesto</label>
+                    <input type="number" class="form-control" id="numero" name="numero" required>
+                    <small class="form-text text-muted">Número correlativo automático</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="cliente_id" class="form-label">Cliente / Prospecto *</label>
+                    <select class="form-select" id="cliente_id" name="cliente_id" required>
+                      <option value="">Seleccionar cliente...</option>
+                      {{#each clientes}}
+                      <option value="{{this.id}}" data-tipo="{{this.tipo}}">
+                        {{this.nombre}} {{this.apellido}} - {{this.codigo}}
+                      </option>
+                      {{/each}}
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="lead_id" class="form-label">Lead de Origen</label>
+                    <select class="form-select" id="lead_id" name="lead_id">
+                      <option value="">Sin lead asociado</option>
+                      {{#each leads}}
+                      <option value="{{this.id}}">
+                        Lead #{{this.numero}} - {{this.descripcion}}
+                      </option>
+                      {{/each}}
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="tipo" class="form-label">Tipo de Presupuesto *</label>
+                    <select class="form-select" id="tipo" name="tipo" required>
+                      <option value="">Seleccionar tipo...</option>
+                      <option value="provision">Provisión de Equipos</option>
+                      <option value="servicios_it">Servicios IT</option>
+                      <option value="soluciones_it">Soluciones IT</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fechas y Estado -->
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0">Fechas y Estado</h5>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label for="fecha" class="form-label">Fecha de Emisión *</label>
+                    <input type="date" class="form-control" id="fecha" name="fecha" value="{{today}}" required>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="validez" class="form-label">Fecha de Validez</label>
+                    <input type="date" class="form-control" id="validez" name="validez">
+                    <small class="form-text text-muted">Fecha límite de validez del presupuesto</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                      <option value="borrador" selected>Borrador</option>
+                      <option value="enviado">Enviado</option>
+                      <option value="aprobado">Aprobado</option>
+                      <option value="rechazado">Rechazado</option>
+                      <option value="vencido">Vencido</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="moneda" class="form-label">Moneda</label>
+                    <select class="form-select" id="moneda" name="moneda">
+                      <option value="ARS" selected>Pesos Argentinos (ARS)</option>
+                      <option value="USD">Dólares Americanos (USD)</option>
+                      <option value="EUR">Euros (EUR)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Descripción -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0">Descripción y Alcance</h5>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <label for="descripcion" class="form-label">Descripción del Presupuesto *</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required
+                      placeholder="Describe el alcance del presupuesto, los servicios o productos incluidos..."></textarea>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="observaciones" class="form-label">Observaciones y Condiciones</label>
+                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3"
+                      placeholder="Condiciones comerciales, términos de entrega, garantías, etc."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detalles del Presupuesto -->
+          <div class="row">
+            <div class="col-12">
+              <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0">Detalles del Presupuesto</h5>
+                  <button type="button" class="btn btn-sm btn-success" onclick="agregarItem()">
+                    <i class="fas fa-plus me-1"></i>
+                    Agregar Item
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="itemsTable">
+                      <thead>
+                        <tr>
+                          <th width="30%">Descripción</th>
+                          <th width="15%">Cantidad</th>
+                          <th width="15%">Precio Unitario</th>
+                          <th width="15%">Subtotal</th>
+                          <th width="10%">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody id="itemsTableBody">
+                        <!-- Los items se agregarán dinámicamente -->
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="row mt-3">
+                    <div class="col-md-8"></div>
+                    <div class="col-md-4">
+                      <table class="table table-sm">
+                        <tr>
+                          <th>Subtotal:</th>
+                          <td class="text-end" id="subtotal">$0.00</td>
+                        </tr>
+                        <tr>
+                          <th>IVA (21%):</th>
+                          <td class="text-end" id="iva">$0.00</td>
+                        </tr>
+                        <tr class="table-primary">
+                          <th>Total:</th>
+                          <th class="text-end" id="total">$0.00</th>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de Acción -->
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-between">
+                <a href="/presupuestos" class="btn btn-secondary">
+                  <i class="fas fa-times me-1"></i>
+                  Cancelar
+                </a>
+                <div>
+                  <button type="submit" name="action" value="guardar_borrador" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-save me-1"></i>
+                    Guardar Borrador
+                  </button>
+                  <button type="submit" name="action" value="guardar_enviar" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-1"></i>
+                    Guardar y Enviar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+let itemCounter = 0;
+
+function agregarItem() {
+    itemCounter++;
+    const tbody = document.getElementById('itemsTableBody');
+    const row = document.createElement('tr');
+    row.id = `item_${itemCounter}`;
+    
+    row.innerHTML = `
+        <td>
+            <input type="text" class="form-control" name="items[${itemCounter}][descripcion]" 
+                   placeholder="Descripción del item..." required>
+        </td>
+        <td>
+            <input type="number" class="form-control" name="items[${itemCounter}][cantidad]" 
+                   value="1" min="1" step="1" onchange="calcularSubtotal(${itemCounter})" required>
+        </td>
+        <td>
+            <input type="number" class="form-control" name="items[${itemCounter}][precio_unitario]" 
+                   value="0" min="0" step="0.01" onchange="calcularSubtotal(${itemCounter})" required>
+        </td>
+        <td>
+            <span class="form-control-plaintext" id="subtotal_${itemCounter}">$0.00</span>
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-danger" onclick="eliminarItem(${itemCounter})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+}
+
+function eliminarItem(itemId) {
+    const row = document.getElementById(`item_${itemId}`);
+    row.remove();
+    calcularTotales();
+}
+
+function calcularSubtotal(itemId) {
+    const cantidad = parseFloat(document.querySelector(`input[name="items[${itemId}][cantidad]"]`).value) || 0;
+    const precio = parseFloat(document.querySelector(`input[name="items[${itemId}][precio_unitario]"]`).value) || 0;
+    const subtotal = cantidad * precio;
+    
+    document.getElementById(`subtotal_${itemId}`).textContent = `$${subtotal.toFixed(2)}`;
+    calcularTotales();
+}
+
+function calcularTotales() {
+    let subtotalGeneral = 0;
+    
+    // Sumar todos los subtotales
+    const subtotales = document.querySelectorAll('[id^="subtotal_"]');
+    subtotales.forEach(function(element) {
+        const valor = parseFloat(element.textContent.replace('$', '')) || 0;
+        subtotalGeneral += valor;
+    });
+    
+    const iva = subtotalGeneral * 0.21;
+    const total = subtotalGeneral + iva;
+    
+    document.getElementById('subtotal').textContent = `$${subtotalGeneral.toFixed(2)}`;
+    document.getElementById('iva').textContent = `$${iva.toFixed(2)}`;
+    document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+}
+
+// Agregar primer item por defecto
+document.addEventListener('DOMContentLoaded', function() {
+    agregarItem();
+    
+    // Auto-generar número de presupuesto
+    fetch('/api/presupuestos/next-number')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('numero').value = data.nextNumber;
+        })
+        .catch(console.error);
+});
+</script>
+{{/section}}

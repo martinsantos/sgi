@@ -1,0 +1,73 @@
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Nuevo Cliente</h4>
+        </div>
+        <div class="card-body">
+            <form id="clienteForm" method="POST" action="/clientes">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="apellido" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="apellido" name="apellido">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="codigo" class="form-label">Código *</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo *</label>
+                            <select class="form-control" id="tipo" name="tipo" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="1">Cliente</option>
+                                <option value="2">Proveedor</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="condicion_iva" class="form-label">Condición IVA</label>
+                            <select class="form-control" id="condicion_iva" name="condicion_iva">
+                                <option value="">Seleccionar...</option>
+                                <option value="1">Responsable Inscripto</option>
+                                <option value="2">Monotributista</option>
+                                <option value="3">Exento</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success me-2">
+                            <i class="bi bi-save"></i> Guardar Cliente
+                        </button>
+                        <a href="/clientes" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver al Listado
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('clienteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Funcionalidad de guardar pendiente de implementación');
+});
+</script>

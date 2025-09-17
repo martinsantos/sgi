@@ -1,0 +1,144 @@
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Lead - {{lead.descripcion}}</h2>
+                <div>
+                    <a href="/leads" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Listado
+                    </a>
+                    <button class="btn btn-primary" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Datos del Lead -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Datos del Lead</h5>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{lead.descripcion}}</h5>
+                    <p class="card-text">
+                        <strong>Cliente:</strong> {{lead.cliente_nombre}}<br>
+                        <strong>Estado:</strong> 
+                        <span class="badge {{#if (eq lead.estado 'nuevo')}}bg-info{{else if (eq lead.estado 'contactado')}}bg-warning{{else if (eq lead.estado 'en_proceso')}}bg-primary{{else if (eq lead.estado 'cerrado')}}bg-success{{else}}bg-secondary{{/if}}">
+                            {{lead.estado}}
+                        </span><br>
+                        <strong>Fecha Contacto:</strong> {{formatDate lead.fecha_cierre}}<br>
+                        <strong>Valor Estimado:</strong> {{formatCurrency lead.valor_estimado}}<br>
+                        <strong>Observaciones:</strong> {{lead.observaciones}}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos del Cliente -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Datos del Cliente</h5>
+                </div>
+                <div class="card-body">
+                    {{#if lead.cliente_nombre}}
+                    <h5 class="card-title">{{lead.cliente_nombre}}</h5>
+                    <p class="card-text">
+                        <strong>Código:</strong> {{lead.cliente_codigo}}<br>
+                        <strong>Tipo:</strong> {{lead.cliente_tipo}}<br>
+                        <strong>Condición IVA:</strong> {{lead.cliente_condicion_iva}}
+                    </p>
+                    {{else}}
+                    <p class="text-muted">Sin cliente asociado</p>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{#if proyectos}}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Proyectos Relacionados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Proyecto</th>
+                                    <th>Fecha Inicio</th>
+                                    <th>Fecha Fin</th>
+                                    <th>Estado</th>
+                                    <th>Presupuesto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each proyectos}}
+                                <tr>
+                                    <td>{{this.descripcion}}</td>
+                                    <td>{{formatDate this.fecha_inicio}}</td>
+                                    <td>{{formatDate this.fecha_cierre}}</td>
+                                    <td>
+                                        <span class="badge {{#if (eq this.estado 1)}}bg-warning{{else if (eq this.estado 2)}}bg-info{{else if (eq this.estado 3)}}bg-success{{else}}bg-danger{{/if}}">
+                                            {{#if (eq this.estado 1)}}Pendiente{{else if (eq this.estado 2)}}En Progreso{{else if (eq this.estado 3)}}Finalizado{{else}}Cancelado{{/if}}
+                                        </span>
+                                    </td>
+                                    <td>{{formatCurrency this.precio_venta}}</td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+
+    {{#if facturas}}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Facturas Relacionadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each facturas}}
+                                <tr>
+                                    <td>{{this.numero_factura_completo}}</td>
+                                    <td>{{formatDate this.fecha_emision}}</td>
+                                    <td>{{formatCurrency this.monto}}</td>
+                                    <td>
+                                        <span class="badge {{#if (eq this.estado 'pendiente')}}bg-warning{{else if (eq this.estado 'pagada')}}bg-success{{else}}bg-secondary{{/if}}">
+                                            {{this.estado}}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</div>

@@ -1,0 +1,233 @@
+<!-- Header Section -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h2 mb-0">Facturas Emitidas</h1>
+  <div class="btn-group" role="group">
+    <button type="button" class="btn btn-success" onclick="exportarFacturas()">
+      <i class="fas fa-file-excel"></i> Exportar Excel
+    </button>
+    <button type="button" class="btn btn-info" onclick="toggleAdvancedFilters()">
+      <i class="fas fa-filter"></i> Filtros Avanzados
+    </button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='/facturas/nueva'">
+      <i class="fas fa-plus"></i> Nueva Factura
+    </button>
+  </div>
+</div>
+
+<!-- Search and Filters Section -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="input-group">
+      <span class="input-group-text">
+        <i class="fas fa-search"></i>
+      </span>
+      <input type="text" id="facturasSearchInput" class="form-control" 
+             placeholder="Buscar por número, cliente, CUIT..." 
+             autocomplete="off">
+      <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="d-flex justify-content-end align-items-center">
+      <small class="text-muted me-3" id="resultsInfo">Cargando facturas...</small>
+      <div id="loadingIndicator" class="spinner-border spinner-border-sm text-primary" role="status" style="display: none;">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Advanced Filters Panel -->
+<div class="collapse mb-4" id="advancedFiltersCollapse">
+  <div class="card">
+    <div class="card-header">
+      <h6 class="mb-0">Filtros Avanzados</h6>
+    </div>
+    <div class="card-body">
+      <form id="advancedFiltersForm">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Estado</label>
+            <select class="form-select" name="estado">
+              <option value="">Todos los estados</option>
+              <option value="1">Pendiente</option>
+              <option value="2">Pagada</option>
+              <option value="3">Anulada</option>
+              <option value="4">En proceso</option>
+              <option value="5">Rechazada</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Fecha Desde</label>
+            <input type="date" class="form-control" name="fecha_desde">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Fecha Hasta</label>
+            <input type="date" class="form-control" name="fecha_hasta">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Tipo Factura</label>
+            <select class="form-select" name="tipo_factura">
+              <option value="">Todos los tipos</option>
+              <option value="A">Factura A</option>
+              <option value="B">Factura B</option>
+              <option value="C">Factura C</option>
+              <option value="M">Factura M</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Monto Mínimo</label>
+            <input type="number" class="form-control" name="monto_desde" step="0.01" placeholder="0.00">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Monto Máximo</label>
+            <input type="number" class="form-control" name="monto_hasta" step="0.01" placeholder="0.00">
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-secondary me-2" id="resetFiltersBtn">
+              <i class="fas fa-undo"></i> Limpiar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Main Table Section -->
+<div class="card">
+  <div class="card-header bg-light">
+    <h5 class="card-title mb-0">Listado de Facturas</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="sortable-header" data-sort="numero_factura" style="cursor: pointer;">
+              <i class="fas fa-sort me-1"></i>N° Factura
+            </th>
+            <th class="sortable-header" data-sort="fecha_emision" style="cursor: pointer;">
+              <i class="fas fa-sort me-1"></i>Fecha Emisión
+            </th>
+            <th>Cliente</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th class="sortable-header text-end" data-sort="total" style="cursor: pointer;">
+              <i class="fas fa-sort me-1"></i>Total
+            </th>
+            <th class="text-end">Cobrado / Saldo</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="facturasTableBody">
+          <!-- Contenido será cargado dinámicamente -->
+          <tr>
+            <td colspan="8" class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <div class="mt-2">Cargando facturas...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="text-muted small">
+        <span id="resultsInfoFooter"></span>
+      </div>
+      <div id="facturasPagination">
+        <!-- Paginación será generada dinámicamente -->
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+    <!-- Script específico para facturas emitidas -->
+<script src="/js/facturas-emitidas.js?v=20250901-1633"></script>
+
+<script>
+  // Variables globales y funciones auxiliares
+  let advancedFiltersVisible = false;
+
+  // Función para mostrar/ocultar filtros avanzados
+  function toggleAdvancedFilters() {
+    const collapse = document.getElementById('advancedFiltersCollapse');
+    const bsCollapse = new bootstrap.Collapse(collapse, {
+      toggle: true
+    });
+    advancedFiltersVisible = !advancedFiltersVisible;
+  }
+
+  // Función para exportar facturas
+  function exportarFacturas() {
+    // Obtener filtros actuales del manager
+    if (window.facturasManager) {
+      const params = new URLSearchParams({
+        ...window.facturasManager.currentFilters
+      });
+      window.open(`/facturas/export/excel?${params.toString()}`, '_blank');
+    } else {
+      window.open('/facturas/export/excel', '_blank');
+    }
+  }
+
+  // Inicialización cuando el documento esté listo
+  document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Auto-cargar datos al inicializar
+    setTimeout(() => {
+      if (window.facturasManager) {
+        window.facturasManager.loadData();
+      }
+    }, 100);
+
+    // CSS adicional para indicadores de ordenamiento
+    const style = document.createElement('style');
+    style.textContent = `
+      .sortable-header {
+        position: relative;
+        user-select: none;
+      }
+      .sortable-header:hover {
+        background-color: var(--bs-gray-100);
+      }
+      .sortable-header.sort-asc:after {
+        content: '↑';
+        position: absolute;
+        right: 8px;
+        color: var(--bs-primary);
+        font-weight: bold;
+      }
+      .sortable-header.sort-desc:after {
+        content: '↓';
+        position: absolute;
+        right: 8px;
+        color: var(--bs-primary);
+        font-weight: bold;
+      }
+      .page-link {
+        cursor: pointer;
+      }
+      .page-link:hover {
+        text-decoration: none;
+      }
+      #facturasTableBody tr:hover {
+        background-color: var(--bs-gray-50);
+      }
+    `;
+    document.head.appendChild(style);
+  });
+</script>
+{{/section}}

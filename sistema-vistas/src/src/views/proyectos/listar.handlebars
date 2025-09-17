@@ -1,0 +1,266 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{title}}</h1>
+  <div>
+    <a href="/" class="btn btn-outline-secondary me-2">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <a href="/api/proyectos/exportar" class="btn btn-info me-2">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
+    <a href="/proyectos/nuevo" class="btn btn-success">
+      <i class="bi bi-plus-circle"></i> Nuevo Proyecto
+    </a>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Filtros de Búsqueda</h5>
+  </div>
+  <div class="card-body">
+    <form id="formBusqueda" class="row g-3">
+      <div class="col-md-3">
+        <label for="nombre_proyecto" class="form-label">Nombre</label>
+        <input type="text" class="form-control" id="nombre_proyecto" name="nombre_proyecto" placeholder="Nombre del proyecto">
+      </div>
+      <div class="col-md-3">
+        <label for="cliente" class="form-label">Cliente</label>
+        <input type="text" class="form-control" id="cliente" name="cliente" placeholder="Nombre del cliente">
+      </div>
+      <div class="col-md-2">
+        <label for="estado" class="form-label">Estado</label>
+        <select class="form-select" id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="1">Pendiente</option>
+          <option value="2">En Progreso</option>
+          <option value="3">Finalizado</option>
+          <option value="4">Cancelado</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover" id="tablaProyectos">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Cliente</th>
+            <th>Prioridad</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Fin</th>
+            <th>Estado</th>
+            <th class="text-end">Presupuesto</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each proyectos}}
+          <tr>
+            <td>
+              <div>
+                <strong>{{this.nombre}}</strong>
+                {{#if this.descripcion}}
+                <small class="text-muted d-block">{{this.descripcion}}</small>
+                {{/if}}
+              </div>
+            </td>
+            <td>{{this.cliente_nombre}}</td>
+            <td>
+              <span class="badge {{#eq this.prioridad 'alta'}}bg-danger{{/eq}}{{#eq this.prioridad 'media'}}bg-warning{{/eq}}{{#eq this.prioridad 'baja'}}bg-success{{/eq}}">
+                {{#eq this.prioridad 'alta'}}Alta{{/eq}}
+                {{#eq this.prioridad 'media'}}Media{{/eq}}
+                {{#eq this.prioridad 'baja'}}Baja{{/eq}}
+                {{#unless this.prioridad}}Media{{/unless}}
+              </span>
+            </td>
+            <td>{{formatDate this.fecha_inicio}}</td>
+            <td>{{formatDate this.fecha_fin}}</td>
+            <td>
+              <span class="badge {{#eq this.estado 1}}bg-warning{{/eq}}{{#eq this.estado 2}}bg-info{{/eq}}{{#eq this.estado 3}}bg-success{{/eq}}{{#eq this.estado 4}}bg-secondary{{/eq}}">
+                {{#eq this.estado 1}}Pendiente{{/eq}}
+                {{#eq this.estado 2}}En Progreso{{/eq}}
+                {{#eq this.estado 3}}Finalizado{{/eq}}
+                {{#eq this.estado 4}}Cancelado{{/eq}}
+              </span>
+            </td>
+            <td class="text-end">{{formatCurrency this.presupuesto}}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="/proyectos/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/proyectos/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr>
+            <td colspan="8" class="text-center py-4">
+              <div class="text-muted">No se encontraron proyectos</div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar DataTable
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+      $('#tablaProyectos').DataTable({
+        pageLength: 25,
+        order: [[4, 'desc']], // Ordenar por fecha inicio
+        language: {
+          url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
+        responsive: true,
+        columnDefs: [
+          { orderable: false, targets: [7] } // Acciones no ordenables
+        ]
+      });
+    }
+
+    // Si hay muchos proyectos, usar AJAX DataTable
+    {{#if (gt proyectos.length 50)}}
+    const ajaxTable = $('#tablaProyectos').DataTable({
+      ajax: {
+        url: '/api/proyectos',
+        dataSrc: 'data'
+      },
+      columns: [
+        { 
+          data: 'nombre',
+          render: function(data, type, row) {
+            let html = `<div><strong>${data}</strong>`;
+            if (row.descripcion) {
+              html += `<small class="text-muted d-block">${row.descripcion}</small>`;
+            }
+            html += '</div>';
+            return html;
+          }
+        },
+        { data: 'cliente_nombre' },
+        { 
+          data: 'fecha_inicio',
+          render: function(data) {
+            return data ? new Date(data).toLocaleDateString('es-AR') : '';
+          }
+        },
+        { 
+          data: 'fecha_fin',
+          render: function(data) {
+            return data ? new Date(data).toLocaleDateString('es-AR') : '';
+          }
+        },
+        {
+          data: 'estado',
+          render: function(data) {
+            const estados = {
+              1: { text: 'Pendiente', class: 'bg-warning' },
+              2: { text: 'En Progreso', class: 'bg-info' },
+              3: { text: 'Finalizado', class: 'bg-success' },
+              4: { text: 'Cancelado', class: 'bg-secondary' }
+            };
+            const estado = estados[data] || { text: 'Desconocido', class: 'bg-secondary' };
+            return `<span class="badge ${estado.class}">${estado.text}</span>`;
+          }
+        },
+        { 
+          data: 'presupuesto',
+          className: 'text-end',
+          render: function(data) {
+            return data ? new Intl.NumberFormat('es-AR', { 
+              style: 'currency', 
+              currency: 'ARS' 
+            }).format(data) : '$ 0,00';
+          }
+        },
+        {
+          data: 'id',
+          orderable: false,
+          render: function(data) {
+            return `
+              <div class="btn-group btn-group-sm">
+                <a href="/proyectos/ver/${data}" class="btn btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/proyectos/editar/${data}" class="btn btn-outline-warning" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            `;
+          }
+        }
+      ],
+      order: [[2, 'desc']], // Ordenar por fecha de inicio descendente
+      language: {
+        processing: "Procesando...",
+        search: "Buscar:",
+        lengthMenu: "Mostrar _MENU_ entradas",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+        infoEmpty: "Mostrando 0 a 0 de 0 entradas",
+        infoFiltered: "(filtrado de _MAX_ entradas totales)",
+        infoPostFix: "",
+        loadingRecords: "Cargando...",
+        zeroRecords: "No se encontraron datos",
+        emptyTable: "No hay datos disponibles en la tabla",
+        paginate: {
+          first: "Primero",
+          previous: "Anterior",
+          next: "Siguiente",
+          last: "Último"
+        },
+        aria: {
+          sortAscending: ": activar para ordenar la columna de manera ascendente",
+          sortDescending: ": activar para ordenar la columna de manera descendente"
+        }
+      },
+      responsive: true,
+      processing: true
+    });
+    {{/if}}
+
+    // Manejar búsqueda
+    $('#formBusqueda').on('submit', function(e) {
+      e.preventDefault();
+      const formData = $(this).serialize();
+      // Recargar la página con los parámetros de búsqueda
+      window.location.href = `${window.location.pathname}?${formData}`;
+    });
+
+    // Manejar botón limpiar
+    $('#btnLimpiar').on('click', function() {
+      $('#formBusqueda')[0].reset();
+      window.location.href = window.location.pathname;
+    });
+
+    // Export function
+    window.exportarProyectos = function() {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = `/api/proyectos/exportar?${params.toString()}`;
+    };
+  });
+</script>
+{{/section}}

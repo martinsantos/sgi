@@ -1,0 +1,121 @@
+require('dotenv').config();
+const express = require('express');
+const { engine } = require('express-handlebars');
+const path = require('path');
+const cors = require('cors');
+const basicAuth = require('./middleware/basicAuth');
+
+// Importar todas las rutas disponibles
+let presupuestosRoutes, facturasRoutes, clientesRoutes, dashboardRoutes, proyectosRoutes, certificadosRoutes, leadsRoutes, prospectosRoutes, authRoutes;
+
+// Cargar rutas con manejo de errores
+const loadRoute = (path, name) => {
+  try {
+    const route = require(path);
+    console.log(`✅ Ruta ${name} cargada`);
+    return route;
+  } catch(e) { 
+    console.log(`❌ Ruta ${name} no encontrada: ${e.message}`);
+    return null;
+  }
+};
+
+presupuestosRoutes = loadRoute('./routes/presupuestos', 'presupuestos');
+facturasRoutes = loadRoute('./routes/facturas', 'facturas');
+clientesRoutes = loadRoute('./routes/clientes', 'clientes');
+dashboardRoutes = loadRoute('./routes/dashboard', 'dashboard');
+proyectosRoutes = loadRoute('./routes/proyectos', 'proyectos');
+certificadosRoutes = loadRoute('./routes/certificados', 'certificados');
+leadsRoutes = loadRoute('./routes/leads', 'leads');
+prospectosRoutes = loadRoute('./routes/prospectos', 'prospectos');
+authRoutes = loadRoute('./routes/auth', 'auth');
+
+// Cargar rutas de módulos básicos
+const modulosBasicos = loadRoute('./routes/modulos-basicos', 'modulos-basicos');
+
+const app = express();
+
+// Configuración de middlewares
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ⚠️ AUTENTICACIÓN BÁSICA - PROTEGE TODO EL SISTEMA
+app.use(basicAuth);
+
+// Configuración de Handlebars - Versión funcional
+const handlebarsEngine = engine({
+  extname: '.handlebars',
+  defaultLayout: 'main',
+  layoutsDir: path.join(__dirname, 'views/layouts'),
+  partialsDir: path.join(__dirname, 'views/partials'),
+  helpers: require('./helpers/handlebars'),
+  runtimeOptions: {
+    allowProtoPropertiesByDefault: true,
+    allowProtoMethodsByDefault: true
+  }
+});
+
+app.engine('handlebars', handlebarsEngine);
+app.set('view engine', 'handlebars');
+app.set('views', path.join(__dirname, 'views'));
+
+// Archivos estáticos
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Montar todas las rutas disponibles
+const mountRoute = (route, path, name) => {
+  if (route) {
+    app.use(path, route);
+    console.log(`✅ Ruta ${name} montada en ${path}`);
+  }
+};
+
+mountRoute(authRoutes, '/auth', 'auth');
+mountRoute(dashboardRoutes, '/dashboard', 'dashboard');
+mountRoute(facturasRoutes, '/facturas', 'facturas');
+mountRoute(clientesRoutes, '/clientes', 'clientes');
+mountRoute(presupuestosRoutes, '/presupuestos', 'presupuestos');
+mountRoute(proyectosRoutes, '/proyectos', 'proyectos');
+mountRoute(certificadosRoutes, '/certificados', 'certificados');
+mountRoute(leadsRoutes, '/leads', 'leads');
+mountRoute(prospectosRoutes, '/prospectos', 'prospectos');
+
+// Montar rutas de módulos básicos
+if (modulosBasicos) {
+  app.use('/', modulosBasicos);
+  console.log('✅ Rutas de módulos básicos montadas');
+}
+
+// Ruta de inicio - redirigir al dashboard
+app.get('/', (req, res) => {
+  res.redirect('/dashboard');
+});
+
+// Ruta de prueba para diagnosticar handlebars
+app.get('/test-handlebars', (req, res) => {
+  try {
+    res.render('test-simple', {
+      layout: false, // Sin layout para esta prueba
+      title: 'Prueba Handlebars - Sistema SGI',
+      message: 'Si ves esto, handlebars funciona correctamente!',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Error en handlebars',
+      details: error.message
+    });
+  }
+});
+
+// Manejo de errores
+app.use((req, res) => {
+  res.status(404).render('error', {
+    title: 'Página no encontrada',
+    message: 'La página que buscas no existe',
+    layout: 'main'
+  });
+});
+
+module.exports = app;

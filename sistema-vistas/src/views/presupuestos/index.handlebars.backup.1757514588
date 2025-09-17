@@ -1,0 +1,205 @@
+{{!-- Presupuestos Comerciales Index --}}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h3 mb-0">{{title}}</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevoPresupuestoModal">
+          <i class="fas fa-plus me-2"></i>Nuevo Presupuesto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Statistics Cards --}}
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{stats.total}}</h4>
+          <p class="card-text mb-0">Total</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-dark text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{stats.borrador}}</h4>
+          <p class="card-text mb-0">Borrador</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-warning">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{stats.enviado}}</h4>
+          <p class="card-text mb-0">Enviado</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{stats.aprobado}}</h4>
+          <p class="card-text mb-0">Aprobado</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-danger text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{stats.rechazado}}</h4>
+          <p class="card-text mb-0">Rechazado</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card bg-info">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{formatCurrency stats.valor_promedio}}</h4>
+          <p class="card-text mb-0">Valor Promedio</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Filters --}}
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-body">
+          <form class="row g-3" id="filtros-form">
+            <div class="col-md-3">
+              <label for="estado" class="form-label">Estado</label>
+              <select class="form-select" id="estado" name="estado">
+                <option value="">Todos los estados</option>
+                <option value="borrador">Borrador</option>
+                <option value="enviado">Enviado</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="cliente" class="form-label">Cliente</label>
+              <select class="form-select" id="cliente" name="cliente">
+                <option value="">Todos los clientes</option>
+                {{#each clientes}}
+                <option value="{{id}}">{{nombre}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="fecha" class="form-label">Fecha</label>
+              <input type="date" class="form-control" id="fecha" name="fecha">
+            </div>
+            <div class="col-md-3">
+              <label for="search" class="form-label">Buscar</label>
+              <input type="text" class="form-control" id="search" name="search" placeholder="Buscar presupuesto...">
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Presupuestos Table --}}
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover" id="presupuestos-table">
+              <thead class="table-dark">
+                <tr>
+                  <th>Número</th>
+                  <th>Cliente</th>
+                  <th>Título</th>
+                  <th>Fecha</th>
+                  <th>Vencimiento</th>
+                  <th>Estado</th>
+                  <th>Valor Total</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each presupuestos}}
+                <tr>
+                  <td><strong>{{numero_presupuesto}}</strong></td>
+                  <td>{{cliente_nombre}}</td>
+                  <td>{{descripcion}}</td>
+                  <td>{{fecha_emision_formatted}}</td>
+                  <td>
+                    {{fecha_validez_formatted}}
+                    {{#if (lt dias_hasta_vencimiento 0)}}
+                    <span class="badge bg-danger ms-2">Vencido</span>
+                    {{else if (lt dias_hasta_vencimiento 7)}}
+                    <span class="badge bg-warning ms-2">{{dias_hasta_vencimiento}} días</span>
+                    {{/if}}
+                  </td>
+                  <td>
+                    <span class="badge {{estado_badge_class}}">{{estado_nombre}}</span>
+                  </td>
+                  <td><strong>{{importe_total_formatted}}</strong></td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <a href="/presupuestos/ver/{{id}}" class="btn btn-sm btn-outline-primary" title="Ver">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                      <a href="/presupuestos/editar/{{id}}" class="btn btn-sm btn-outline-warning" title="Editar">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarPresupuesto('{{id}}')" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {{else}}
+                <tr>
+                  <td colspan="8" class="text-center text-muted">No se encontraron presupuestos</td>
+                </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+        $('#presupuestos-table').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            order: [[0, 'desc']],
+            pageLength: 25
+        });
+    }
+
+    // Filter form handling
+    document.getElementById('filtros-form').addEventListener('change', function() {
+        const formData = new FormData(this);
+        const params = new URLSearchParams(formData);
+        window.location.href = window.location.pathname + '?' + params.toString();
+    });
+});
+
+function eliminarPresupuesto(id) {
+    if (confirm('¿Está seguro de eliminar este presupuesto?')) {
+        fetch(`/api/presupuestos/${id}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error al eliminar presupuesto: ' + data.message);
+                }
+            });
+    }
+}
+</script>

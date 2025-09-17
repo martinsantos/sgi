@@ -1,0 +1,618 @@
+{{> header title=(concat "Factura " tipo_factura " " (formatNumber punto_venta 4) "-" (formatNumber numero_factura 8)) section="facturas"}}
+
+<div class="container-fluid">
+  <!-- Breadcrumb y acciones -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/facturas">Facturas</a></li>
+        <li class="breadcrumb-item"><a href="/facturas/list">Listado</a></li>
+        <li class="breadcrumb-item active">{{tipo_factura}} {{formatNumber punto_venta 4}}-{{formatNumber numero_factura 8}}</li>
+      </ol>
+    </nav>
+
+    <div class="btn-group">
+      <a href="/facturas/{{id}}/pdf" class="btn btn-outline-danger" target="_blank">
+        <i class="fas fa-file-pdf me-1"></i>PDF
+      </a>
+      {{#ne estado 'pagada'}}
+      <a href="/facturas/{{id}}/editar" class="btn btn-outline-warning">
+        <i class="fas fa-edit me-1"></i>Editar
+      </a>
+      {{/ne}}
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="fas fa-ellipsis-v"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <a class="dropdown-item" href="/facturas/{{id}}/duplicar">
+            <i class="fas fa-copy me-2"></i>Duplicar Factura
+          </a>
+        </li>
+        {{#eq estado 'borrador'}}
+        <li>
+          <button class="dropdown-item text-primary" id="authorizeBtn">
+            <i class="fas fa-paper-plane me-2"></i>Autorizar Factura
+          </button>
+        </li>
+        {{/eq}}
+        {{#ne estado 'pagada'}}
+        <li>
+          <button class="dropdown-item text-success" id="markPaidBtn">
+            <i class="fas fa-check me-2"></i>Marcar como Pagada
+          </button>
+        </li>
+        {{/ne}}
+        {{#ne estado 'anulada'}}
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <button class="dropdown-item text-danger" id="cancelBtn">
+            <i class="fas fa-ban me-2"></i>Anular Factura
+          </button>
+        </li>
+        {{/ne}}
+      </ul>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Información principal -->
+    <div class="col-lg-8">
+      <!-- Cabecera de la factura -->
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-receipt me-2"></i>
+            Factura {{tipo_factura}} {{formatNumber punto_venta 4}}-{{formatNumber numero_factura 8}}
+          </h5>
+          <span class="badge {{getStatusBadge estado}} fs-6">
+            {{getStatusName estado}}
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">Fecha:</dt>
+                <dd class="col-sm-8">{{formatDate fecha_factura}}</dd>
+                
+                <dt class="col-sm-4">Vencimiento:</dt>
+                <dd class="col-sm-8">
+                  <span class="{{#isOverdue fecha_vencimiento}}text-danger fw-bold{{/isOverdue}}">
+                    {{formatDate fecha_vencimiento}}
+                  </span>
+                  {{#isOverdue fecha_vencimiento}}
+                  <br><small class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Vencida hace {{daysBetween fecha_vencimiento now}} días
+                  </small>
+                  {{/isOverdue}}
+                </dd>
+
+                {{#if cae}}
+                <dt class="col-sm-4">CAE:</dt>
+                <dd class="col-sm-8">{{cae}}</dd>
+                
+                <dt class="col-sm-4">Venc. CAE:</dt>
+                <dd class="col-sm-8">{{formatDate cae_vencimiento}}</dd>
+                {{/if}}
+              </dl>
+            </div>
+            <div class="col-md-6">
+              <dl class="row">
+                <dt class="col-sm-4">Tipo:</dt>
+                <dd class="col-sm-8">{{tipo_factura}} - {{nombre_tipo_factura}}</dd>
+                
+                <dt class="col-sm-4">Punto Venta:</dt>
+                <dd class="col-sm-8">{{formatNumber punto_venta 4}}</dd>
+
+                {{#if fecha_pagada}}
+                <dt class="col-sm-4">Pagada:</dt>
+                <dd class="col-sm-8 text-success">
+                  <i class="fas fa-check me-1"></i>{{formatDate fecha_pagada}}
+                </dd>
+                {{/if}}
+
+                {{#if fecha_anulada}}
+                <dt class="col-sm-4">Anulada:</dt>
+                <dd class="col-sm-8 text-danger">
+                  <i class="fas fa-ban me-1"></i>{{formatDate fecha_anulada}}
+                </dd>
+                {{/if}}
+              </dl>
+            </div>
+          </div>
+
+          {{#if notas}}
+          <div class="mt-3">
+            <h6>Observaciones:</h6>
+            <div class="bg-light p-3 rounded">
+              <p class="mb-0">{{nl2br notas}}</p>
+            </div>
+          </div>
+          {{/if}}
+        </div>
+      </div>
+
+      <!-- Información del cliente -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-user-tie me-2"></i>Información del Cliente
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>{{cliente.nombre}}</h6>
+              {{#if cliente.cuit}}
+              <p class="mb-1"><strong>CUIT:</strong> {{cliente.cuit}}</p>
+              {{/if}}
+              {{#if cliente.direccion}}
+              <p class="mb-1"><strong>Dirección:</strong> {{cliente.direccion}}</p>
+              {{/if}}
+            </div>
+            <div class="col-md-6">
+              {{#if cliente.telefono}}
+              <p class="mb-1">
+                <i class="fas fa-phone me-2"></i>{{cliente.telefono}}
+              </p>
+              {{/if}}
+              {{#if cliente.email}}
+              <p class="mb-1">
+                <i class="fas fa-envelope me-2"></i>
+                <a href="mailto:{{cliente.email}}">{{cliente.email}}</a>
+              </p>
+              {{/if}}
+              {{#if cliente.sitio_web}}
+              <p class="mb-1">
+                <i class="fas fa-globe me-2"></i>
+                <a href="{{cliente.sitio_web}}" target="_blank">{{cliente.sitio_web}}</a>
+              </p>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items de la factura -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-list me-2"></i>Detalle de Items
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Descripción</th>
+                  <th width="80" class="text-center">Cantidad</th>
+                  <th width="120" class="text-end">Precio Unit.</th>
+                  <th width="80" class="text-center">IVA</th>
+                  <th width="120" class="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each items}}
+                <tr>
+                  <td>
+                    <strong>{{descripcion}}</strong>
+                    {{#if codigo}}
+                    <br><small class="text-muted">Código: {{codigo}}</small>
+                    {{/if}}
+                  </td>
+                  <td class="text-center">{{formatNumber cantidad 2}}</td>
+                  <td class="text-end">{{formatCurrency precio_unitario}}</td>
+                  <td class="text-center">{{formatPercentage alicuota_iva}}%</td>
+                  <td class="text-end">
+                    <strong>{{formatCurrency (multiply cantidad precio_unitario)}}</strong>
+                  </td>
+                </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proyecto vinculado -->
+      {{#if proyecto}}
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-project-diagram me-2"></i>Proyecto Vinculado
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h6>{{proyecto.nombre}}</h6>
+              <p class="text-muted mb-2">{{proyecto.descripcion}}</p>
+              <div class="row">
+                <div class="col-md-6">
+                  <small class="text-muted d-block">Estado</small>
+                  <span class="badge {{getStatusBadge proyecto.estado}}">
+                    {{getStatusName proyecto.estado}}
+                  </span>
+                </div>
+                <div class="col-md-6">
+                  <small class="text-muted d-block">Presupuesto Total</small>
+                  <span class="fw-bold">{{formatCurrency proyecto.presupuesto_total}}</span>
+                </div>
+              </div>
+            </div>
+            <a href="/proyectos/{{proyecto.id}}" class="btn btn-outline-info btn-sm">
+              <i class="fas fa-external-link-alt me-1"></i>Ver Proyecto
+            </a>
+          </div>
+        </div>
+      </div>
+      {{/if}}
+    </div>
+
+    <!-- Sidebar con resumen -->
+    <div class="col-lg-4">
+      <!-- Resumen de totales -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-calculator me-2"></i>Resumen de Totales
+          </h6>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-7">Subtotal:</dt>
+            <dd class="col-5 text-end">{{formatCurrency subtotal}}</dd>
+            
+            {{#if descuentos}}
+            <dt class="col-7">Descuentos:</dt>
+            <dd class="col-5 text-end text-success">-{{formatCurrency descuentos}}</dd>
+            {{/if}}
+            
+            {{#if recargos}}
+            <dt class="col-7">Recargos:</dt>
+            <dd class="col-5 text-end text-warning">+{{formatCurrency recargos}}</dd>
+            {{/if}}
+            
+            <dt class="col-7">IVA:</dt>
+            <dd class="col-5 text-end">{{formatCurrency iva}}</dd>
+            
+            {{#if otros_impuestos}}
+            <dt class="col-7">Otros Impuestos:</dt>
+            <dd class="col-5 text-end">{{formatCurrency otros_impuestos}}</dd>
+            {{/if}}
+            
+            <dt class="col-7 border-top pt-2"><strong>TOTAL:</strong></dt>
+            <dd class="col-5 text-end border-top pt-2">
+              <h5 class="text-primary mb-0">{{formatCurrency total}}</h5>
+            </dd>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Estado y seguimiento -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>Estado y Seguimiento
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-3">
+            <span class="badge {{getStatusBadge estado}} fs-6">
+              {{getStatusName estado}}
+            </span>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-marker bg-primary"></div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Factura Creada</h6>
+                <small class="text-muted">{{formatDateTime created_at}}</small>
+              </div>
+            </div>
+
+            {{#if fecha_autorizada}}
+            <div class="timeline-item">
+              <div class="timeline-marker bg-info"></div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Autorizada</h6>
+                <small class="text-muted">{{formatDateTime fecha_autorizada}}</small>
+                {{#if cae}}
+                <br><small class="text-muted">CAE: {{cae}}</small>
+                {{/if}}
+              </div>
+            </div>
+            {{/if}}
+
+            {{#if fecha_pagada}}
+            <div class="timeline-item">
+              <div class="timeline-marker bg-success"></div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Pagada</h6>
+                <small class="text-muted">{{formatDateTime fecha_pagada}}</small>
+              </div>
+            </div>
+            {{/if}}
+
+            {{#if fecha_anulada}}
+            <div class="timeline-item">
+              <div class="timeline-marker bg-danger"></div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Anulada</h6>
+                <small class="text-muted">{{formatDateTime fecha_anulada}}</small>
+                {{#if motivo_anulacion}}
+                <br><small class="text-danger">Motivo: {{motivo_anulacion}}</small>
+                {{/if}}
+              </div>
+            </div>
+            {{/if}}
+
+            {{#if updated_at}}
+            <div class="timeline-item">
+              <div class="timeline-marker bg-secondary"></div>
+              <div class="timeline-content">
+                <h6 class="mb-1">Última Modificación</h6>
+                <small class="text-muted">{{formatDateTime updated_at}}</small>
+              </div>
+            </div>
+            {{/if}}
+          </div>
+
+          {{#isOverdue fecha_vencimiento}}
+          <div class="alert alert-warning mt-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Factura Vencida</strong><br>
+            Venció hace {{daysBetween fecha_vencimiento now}} días
+          </div>
+          {{/if}}
+        </div>
+      </div>
+
+      <!-- Acciones rápidas -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="mailto:{{cliente.email}}?subject=Factura {{tipo_factura}} {{formatNumber punto_venta 4}}-{{formatNumber numero_factura 8}}" 
+               class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-envelope me-2"></i>Enviar por Email
+            </a>
+            
+            {{#if proyecto}}
+            <a href="/proyectos/{{proyecto.id}}" class="btn btn-outline-info btn-sm">
+              <i class="fas fa-project-diagram me-2"></i>Ver Proyecto
+            </a>
+            {{/if}}
+
+            {{#eq estado 'pendiente'}}
+            <button class="btn btn-outline-warning btn-sm" id="sendReminderBtn">
+              <i class="fas fa-bell me-2"></i>Enviar Recordatorio
+            </button>
+            {{/eq}}
+
+            <a href="/facturas/nueva?cliente={{cliente.id}}" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-plus me-2"></i>Nueva para este Cliente
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial y relacionados -->
+    <div class="col-lg-4">
+      {{#if historial}}
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-history me-2"></i>Historial de Cambios
+          </h6>
+        </div>
+        <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+          {{#each historial}}
+          <div class="d-flex mb-3">
+            <div class="flex-shrink-0">
+              <span class="badge bg-light text-dark rounded-pill">
+                {{formatDate fecha 'DD/MM HH:mm'}}
+              </span>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="mb-1">{{accion}}</h6>
+              <p class="mb-0 text-muted small">{{descripcion}}</p>
+              {{#if usuario}}
+              <small class="text-muted">por {{usuario}}</small>
+              {{/if}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+
+      {{#if facturas_relacionadas}}
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="fas fa-link me-2"></i>Facturas Relacionadas
+          </h6>
+        </div>
+        <div class="card-body">
+          {{#each facturas_relacionadas}}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <a href="/facturas/{{id}}" class="text-decoration-none">
+                {{tipo_factura}} {{formatNumber punto_venta 4}}-{{formatNumber numero_factura 8}}
+              </a>
+              <br><small class="text-muted">{{formatDate fecha_factura}}</small>
+            </div>
+            <div class="text-end">
+              <span class="badge {{getStatusBadge estado}}">{{getStatusName estado}}</span>
+              <br><small>{{formatCurrency total}}</small>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const facturaId = '{{id}}';
+
+  // Autorizar factura
+  document.getElementById('authorizeBtn')?.addEventListener('click', function() {
+    if (confirm('¿Confirma que desea autorizar esta factura?')) {
+      fetch(`/facturas/${facturaId}/autorizar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error al autorizar la factura: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+      });
+    }
+  });
+
+  // Marcar como pagada
+  document.getElementById('markPaidBtn')?.addEventListener('click', function() {
+    if (confirm('¿Confirma que desea marcar esta factura como pagada?')) {
+      fetch(`/facturas/${facturaId}/marcar-pagada`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert('Error al actualizar la factura: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+      });
+    }
+  });
+
+  // Anular factura
+  document.getElementById('cancelBtn')?.addEventListener('click', function() {
+    if (confirm('¿Está seguro que desea ANULAR esta factura? Esta acción no se puede deshacer.')) {
+      const motivo = prompt('Ingrese el motivo de la anulación:');
+      if (motivo) {
+        fetch(`/facturas/${facturaId}/anular`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ motivo: motivo })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert('Error al anular la factura: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al procesar la solicitud');
+        });
+      }
+    }
+  });
+
+  // Enviar recordatorio
+  document.getElementById('sendReminderBtn')?.addEventListener('click', function() {
+    if (confirm('¿Desea enviar un recordatorio de pago al cliente?')) {
+      fetch(`/facturas/${facturaId}/enviar-recordatorio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Recordatorio enviado exitosamente');
+        } else {
+          alert('Error al enviar el recordatorio: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+      });
+    }
+  });
+});
+</script>
+
+<style>
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #dee2e6;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -37px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.timeline-content {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 3px solid #007bff;
+}
+
+.timeline-content h6 {
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+</style>
+
+{{> footer}}

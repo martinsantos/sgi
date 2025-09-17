@@ -1,0 +1,121 @@
+{{!-- Editar Factura Recibida --}}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h3 mb-0">{{title}}</h1>
+        <a href="/facturas/recibidas/{{factura.id}}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Datos de la Factura</h5>
+        </div>
+        <div class="card-body">
+          <form action="/facturas/recibidas/editar/{{factura.id}}" method="POST">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="numero_factura" class="form-label">Número de Factura</label>
+                <input type="text" class="form-control" id="numero_factura" value="{{factura.numero_factura}}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label for="proveedor" class="form-label">Proveedor</label>
+                <input type="text" class="form-control" id="proveedor" value="{{factura.proveedor_nombre}}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="fecha_compra" class="form-label">Fecha de Compra</label>
+                <input type="text" class="form-control" id="fecha_compra" value="{{formatDate factura.fecha_compra}}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label for="fecha_pago" class="form-label">Fecha de Pago</label>
+                <input type="date" class="form-control" id="fecha_pago" name="fecha_pago" value="{{factura.fecha_pago}}">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="total" class="form-label">Total</label>
+                <input type="text" class="form-control" id="total" value="{{formatCurrency factura.total}}" readonly>
+              </div>
+              <div class="col-md-4">
+                <label for="cancelado" class="form-label">Cancelado</label>
+                <input type="number" class="form-control" id="cancelado" name="cancelado" value="{{factura.cancelado}}" step="0.01" min="0">
+              </div>
+              <div class="col-md-4">
+                <label for="saldo_pendiente" class="form-label">Saldo Pendiente</label>
+                <input type="text" class="form-control" id="saldo_pendiente" value="{{formatCurrency factura.saldo_pendiente}}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                  {{#each estados}}
+                  <option value="{{value}}" {{#if (eq ../factura.estado value)}}selected{{/if}}>{{name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="observaciones" class="form-label">Observaciones</label>
+              <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{factura.observaciones}}</textarea>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="/facturas/recibidas/{{factura.id}}" class="btn btn-secondary me-md-2">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">Información Adicional</h5>
+        </div>
+        <div class="card-body">
+          <p><strong>ID:</strong> {{factura.id}}</p>
+          <p><strong>Fecha de Creación:</strong> {{formatDate factura.fecha_creacion}}</p>
+          <p><strong>Última Modificación:</strong> {{formatDate factura.fecha_actualizacion}}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calcular saldo pendiente automáticamente
+    const totalField = document.getElementById('total');
+    const canceladoField = document.getElementById('cancelado');
+    const saldoField = document.getElementById('saldo_pendiente');
+    
+    function calcularSaldo() {
+        const total = parseFloat(totalField.value.replace(/[^\d.-]/g, '')) || 0;
+        const cancelado = parseFloat(canceladoField.value) || 0;
+        const saldo = total - cancelado;
+        
+        saldoField.value = new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS'
+        }).format(saldo);
+    }
+    
+    canceladoField.addEventListener('input', calcularSaldo);
+});
+</script>

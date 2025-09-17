@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factura #{{factura.numero_factura}} - {{empresa.nombre}}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.5cm;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      color: #333;
+      background-color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      max-width: 21cm;
+      margin: 0 auto;
+      padding: 0.5cm;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #666;
+      padding-bottom: 20px;
+    }
+    
+    .logo {
+      max-width: 200px;
+      margin-bottom: 10px;
+    }
+    
+    .empresa-info {
+      text-align: right;
+    }
+    
+    .empresa-info h1 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+      font-size: 24px;
+    }
+    
+    .empresa-info p {
+      margin: 3px 0;
+      font-size: 13px;
+    }
+    
+    .factura-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    
+    .factura-numero {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      text-align: center;
+      flex: 0 0 30%;
+    }
+    
+    .factura-numero h2 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+      font-size: 20px;
+    }
+    
+    .factura-numero p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    
+    .cliente-info {
+      flex: 0 0 65%;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+    }
+    
+    .cliente-info h3 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+      font-size: 16px;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 5px;
+    }
+    
+    .cliente-datos {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    
+    .cliente-dato {
+      width: 50%;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+    
+    .cliente-dato strong {
+      display: inline-block;
+      width: 100px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      font-size: 13px;
+    }
+    
+    th {
+      background-color: #f8f9fa;
+      text-align: left;
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      font-weight: bold;
+    }
+    
+    td {
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      vertical-align: top;
+    }
+    
+    .text-right {
+      text-align: right;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .totales {
+      float: right;
+      width: 300px;
+      margin-top: 20px;
+    }
+    
+    .total-fila {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      padding: 5px 0;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .total-fila.total-general {
+      font-weight: bold;
+      font-size: 16px;
+      border-top: 2px solid #666;
+      margin-top: 10px;
+      padding-top: 10px;
+    }
+    
+    .observaciones {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    
+    .observaciones h4 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+    
+    .footer {
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #dee2e6;
+      font-size: 12px;
+      text-align: center;
+      color: #6c757d;
+    }
+    
+    .qr-code {
+      width: 100px;
+      height: 100px;
+      margin: 20px auto;
+      display: block;
+    }
+    
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      
+      .no-print {
+        display: none !important;
+      }
+      
+      .container {
+        padding: 0;
+      }
+      
+      .btn-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="no-print" style="text-align: right; margin-bottom: 20px;">
+      <button onclick="window.print()" class="btn-print">Imprimir Factura</button>
+    </div>
+    
+    <div class="header">
+      <div>
+        {{#if empresa.logo}}
+          <img src="{{empresa.logo}}" alt="{{empresa.nombre}}" class="logo">
+        {{else}}
+          <h1>{{empresa.nombre}}</h1>
+        {{/if}}
+        <p>{{empresa.direccion}}</p>
+        <p>{{empresa.localidad}} - {{empresa.provincia}}</p>
+        <p>Tel: {{empresa.telefono}} | Email: {{empresa.email}}</p>
+        <p>CUIT: {{empresa.cuit}} | IIBB: {{empresa.iibb}}</p>
+        <p>Inicio de Actividades: {{empresa.inicio_actividades}}</p>
+      </div>
+      
+      <div class="empresa-info">
+        <h1>FACTURA {{factura.tipo_factura}}</h1>
+        <p><strong>Punto de Venta:</strong> {{factura.punto_venta}}</p>
+        <p><strong>N° Factura:</strong> {{factura.numero_factura}}</p>
+        <p><strong>Fecha Emisión:</strong> {{formatDate factura.fecha_emision 'DD/MM/YYYY'}}</p>
+        {{#if factura.fecha_vto_pago}}
+          <p><strong>Vencimiento:</strong> {{formatDate factura.fecha_vto_pago 'DD/MM/YYYY'}}</p>
+        {{/if}}
+      </div>
+    </div>
+    
+    <div class="factura-info">
+      <div class="factura-numero">
+        <h2>FACTURA</h2>
+        <p><strong>N° {{factura.numero_factura}}</strong></p>
+        <p>Fecha: {{formatDate factura.fecha_emision 'DD/MM/YYYY'}}</p>
+        {{#if factura.cae}}
+          <p>CAE: {{factura.cae}}</p>
+          <p>Vto. CAE: {{formatDate factura.fecha_vto_cae 'DD/MM/YYYY'}}</p>
+        {{/if}}
+      </div>
+      
+      <div class="cliente-info">
+        <h3>Datos del Cliente</h3>
+        <div class="cliente-datos">
+          <div class="cliente-dato"><strong>Razón Social:</strong> {{factura.cliente_nombre}}</div>
+          <div class="cliente-dato"><strong>CUIT:</strong> {{factura.cliente_cuit}}</div>
+          <div class="cliente-dato"><strong>Domicilio:</strong> {{factura.cliente_direccion}}</div>
+          <div class="cliente-dato"><strong>Localidad:</strong> {{factura.cliente_localidad}}</div>
+          <div class="cliente-dato"><strong>Provincia:</strong> {{factura.provincia_nombre}}</div>
+          <div class="cliente-dato"><strong>C.P.:</strong> {{factura.cliente_cp}}</div>
+          {{#if factura.cliente_telefono}}
+            <div class="cliente-dato"><strong>Teléfono:</strong> {{factura.cliente_telefono}}</div>
+          {{/if}}
+          {{#if factura.cliente_email}}
+            <div class="cliente-dato"><strong>Email:</strong> {{factura.cliente_email}}</div>
+          {{/if}}
+          {{#if factura.condicion_iva}}
+            <div class="cliente-dato"><strong>Cond. IVA:</strong> {{factura.condicion_iva}}</div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+    
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 5%;">#</th>
+          <th style="width: 10%;">Código</th>
+          <th style="width: 35%;">Descripción</th>
+          <th style="width: 10%; text-align: center;">Cantidad</th>
+          <th style="width: 10%; text-align: right;">Precio Unit.</th>
+          <th style="width: 10%; text-align: right;">% IVA</th>
+          <th style="width: 10%; text-align: right;">IVA</th>
+          <th style="width: 10%; text-align: right;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each factura.detalles}}
+          <tr>
+            <td>{{add @index 1}}</td>
+            <td>{{this.articulo_codigo}}</td>
+            <td>{{this.articulo_nombre}}</td>
+            <td class="text-center">{{this.cantidad}} {{this.unidad_medida}}</td>
+            <td class="text-right">{{formatCurrency this.precio_unitario}}</td>
+            <td class="text-right">{{this.iva_porcentaje}}%</td>
+            <td class="text-right">{{formatCurrency this.iva_importe}}</td>
+            <td class="text-right">{{formatCurrency this.subtotal}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    
+    <div style="clear: both;">
+      <div class="totales">
+        {{#if (gt factura.total_iva_10 0)}}
+          <div class="total-fila">
+            <span>Subtotal 10.5%:</span>
+            <span>{{formatCurrency (subtract (divide factura.total_iva_10 0.105) factura.total_iva_10)}}</span>
+          </div>
+          <div class="total-fila">
+            <span>IVA 10.5%:</span>
+            <span>{{formatCurrency factura.total_iva_10}}</span>
+          </div>
+        {{/if}}
+        
+        {{#if (gt factura.total_iva_21 0)}}
+          <div class="total-fila">
+            <span>Subtotal 21%:</span>
+            <span>{{formatCurrency (subtract (divide factura.total_iva_21 0.21) factura.total_iva_21)}}</span>
+          </div>
+          <div class="total-fila">
+            <span>IVA 21%:</span>
+            <span>{{formatCurrency factura.total_iva_21}}</span>
+          </div>
+        {{/if}}
+        
+        {{#if (gt factura.total_iva_27 0)}}
+          <div class="total-fila">
+            <span>Subtotal 27%:</span>
+            <span>{{formatCurrency (subtract (divide factura.total_iva_27 0.27) factura.total_iva_27)}}</span>
+          </div>
+          <div class="total-fila">
+            <span>IVA 27%:</span>
+            <span>{{formatCurrency factura.total_iva_27}}</span>
+          </div>
+        {{/if}}
+        
+        {{#if (gt factura.neto_iibb 0)}}
+          <div class="total-fila">
+            <span>IIBB ({{factura.porcentaje_iibb}}%):</span>
+            <span>{{formatCurrency factura.neto_iibb}}</span>
+          </div>
+        {{/if}}
+        
+        <div class="total-fila" style="border-top: 1px solid #000; margin-top: 10px; padding-top: 10px;">
+          <strong>Importe Total:</strong>
+          <strong>{{formatCurrency factura.total}}</strong>
+        </div>
+        
+        {{#if (gt factura.cancelado 0)}}
+          <div class="total-fila">
+            <span>Pagado:</span>
+            <span>{{formatCurrency factura.cancelado}}</span>
+          </div>
+          <div class="total-fila">
+            <strong>Saldo Pendiente:</strong>
+            <strong>{{formatCurrency (subtract factura.total factura.cancelado)}}</strong>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+    
+    {{#if factura.observaciones}}
+      <div class="observaciones">
+        <h4>Observaciones:</h4>
+        <p>{{factura.observaciones}}</p>
+      </div>
+    {{/if}}
+    
+    <div style="margin-top: 30px; text-align: center;">
+      {{#if factura.cae}}
+        <p><strong>Comprobante Autorizado</strong></p>
+        <p>CAE N°: {{factura.cae}}</p>
+        <p>Vencimiento CAE: {{formatDate factura.fecha_vto_cae 'DD/MM/YYYY'}}</p>
+      {{/if}}
+      
+      {{#if factura.codigo_barras}}
+        <div style="margin: 20px 0;">
+          <img src="data:image/png;base64,{{factura.codigo_barras}}" alt="Código de barras" style="height: 50px;">
+        </div>
+      {{/if}}
+      
+      <div class="footer">
+        <p>{{empresa.nombre}} - {{empresa.direccion}} - {{empresa.localidad}} - {{empresa.provincia}}</p>
+        <p>CUIT: {{empresa.cuit}} - IIBB: {{empresa.iibb}} - Tel: {{empresa.telefono}} - Email: {{empresa.email}}</p>
+        <p>Usuario: {{usuario.nombre}} - Impreso el: {{formatDate fecha_impresion 'DD/MM/YYYY HH:mm'}}</p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Auto-print when the page loads
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+        // Close the print window after printing
+        setTimeout(function() {
+          window.close();
+        }, 1000);
+      }, 500);
+    };
+    
+    // Also allow manual printing
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        window.print();
+      }
+    });
+  </script>
+</body>
+</html>
