@@ -34,3 +34,10 @@ logs/
 ._*
 
 git/
+
+# Exclude app internals
+sistema-vistas/node_modules/
+sistema-vistas/logs/
+sistema-vistas/*.log
+sistema-vistas/*.zip
+sistema-vistas/*.tar
