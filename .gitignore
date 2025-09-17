@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# OS/Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Large files
+*.tar
+*.zip
+*.gz
+*.7z
+*.bz2
+*.xz
+*.dmg
+*.iso
+
+# DB dumps
+*.sql
+/sql/
+/db/
+/bd/
+
+# Mac resource forks
+._*
+
