@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const { engine } = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
@@ -36,13 +37,42 @@ const modulosBasicos = loadRoute('./routes/modulos-basicos', 'modulos-basicos');
 
 const app = express();
 
-// Configuración de middlewares
+// Configuración de middlewares - ORDEN CRÍTICO
 app.use(cors());
+
+// ⚠️ SESIONES PRIMERO - CRÍTICO PARA LOGIN
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'SGI-Secret-Key-2025-UltimaMillaSystem',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: false, // Cambiar a true solo con HTTPS completo
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+  }
+}));
+
+// ⚠️ BODY PARSERS DESPUÉS DE SESIÓN
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ⚠️ AUTENTICACIÓN BÁSICA - PROTEGE TODO EL SISTEMA
-app.use(basicAuth);
+// ⚠️ AUTENTICACIÓN BÁSICA - PROTEGE TODO EL SISTEMA (excepto /auth/* y /public)
+app.use((req, res, next) => {
+  // Permitir acceso sin auth a rutas de autenticación y assets
+  if (req.path.startsWith('/auth/') || req.path.startsWith('/css/') || req.path.startsWith('/js/') || req.path.startsWith('/images/')) {
+    return next();
+  }
+  // Aplicar basicAuth a todas las demás rutas
+  return basicAuth(req, res, next);
+});
+
+// Middleware para hacer el usuario disponible en las vistas
+app.use((req, res, next) => {
+  if (req.user) {
+    res.locals.user = req.user;
+  }
+  next();
+});
 
 // Configuración de Handlebars - Versión funcional
 const handlebarsEngine = engine({
@@ -89,9 +119,14 @@ if (modulosBasicos) {
   console.log('✅ Rutas de módulos básicos montadas');
 }
 
-// Ruta de inicio - redirigir al dashboard
+// Ruta de inicio - redirigir al login
 app.get('/', (req, res) => {
-  res.redirect('/dashboard');
+  // Si ya está autenticado, ir al dashboard
+  if (req.session && req.session.userId) {
+    return res.redirect('/dashboard');
+  }
+  // Si no, ir al login
+  res.redirect('/auth/login');
 });
 
 // Ruta de prueba para diagnosticar handlebars
@@ -111,12 +146,11 @@ app.get('/test-handlebars', (req, res) => {
   }
 });
 
-// Manejo de errores
-app.use((req, res) => {
-  res.status(404).render('error', {
-    title: 'Página no encontrada',
-    message: 'La página que buscas no existe',
-    layout: 'main'
+// Handler 404 - Debe estar al final de todas las rutas
+app.use((req, res, next) => {
+  res.status(404).render('errors/404', {
+    layout: false,
+    url: req.url
   });
 });
 

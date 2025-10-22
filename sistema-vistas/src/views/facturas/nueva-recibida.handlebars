@@ -10,12 +10,7 @@
     <h5 class="mb-0">Datos de la Factura</h5>
   </div>
   <div class="card-body">
-    <div class="alert alert-info">
-      <i class="bi bi-info-circle"></i>
-      Esta funcionalidad está en desarrollo. Por favor, use el sistema CakePHP para crear nuevas facturas.
-    </div>
-    
-    <form>
+    <form method="POST" action="/facturas/nueva-recibida">
       <div class="row">
         <div class="col-md-6">
           <div class="mb-3">
@@ -48,7 +43,7 @@
       
       <div class="d-flex justify-content-end gap-2">
         <a href="/facturas/recibidas" class="btn btn-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary" disabled>Guardar (En desarrollo)</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
   </div>

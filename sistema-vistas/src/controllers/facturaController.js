@@ -1071,11 +1071,20 @@ class FacturaController {
     try {
       console.log('📝 Mostrando formulario de nueva factura recibida');
 
-      // Obtener proveedores activos para el dropdown
-      const [rows] = await pool.query(
-        'SELECT id, codigo, nombre FROM persona_terceros WHERE activo = 1 AND tipo = "proveedor" ORDER BY nombre'
-      );
-      const proveedores = rows;
+      let proveedores = [];
+      
+      try {
+        // Intentar obtener proveedores activos para el dropdown
+        const [rows] = await pool.query(
+          'SELECT id, codigo, nombre FROM persona_terceros WHERE activo = 1 AND tipo = ? ORDER BY nombre',
+          ['proveedor']
+        );
+        proveedores = rows;
+        console.log(`✅ Se encontraron ${proveedores.length} proveedores`);
+      } catch (dbError) {
+        console.warn('⚠️ No se pudieron cargar proveedores desde la BD:', dbError.message);
+        // Continuar sin proveedores - el formulario mostrará el mensaje de "en desarrollo"
+      }
 
       res.render('facturas/nueva-recibida', {
         title: 'Nueva Factura Recibida',

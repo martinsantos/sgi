@@ -1,0 +1,94 @@
+name: Tests Nocturnos Completos
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 2 AM UTC (11 PM Argentina)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  comprehensive-tests:
+    name: Suite Completa de Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: 📦 Instalar dependencias
+        run: npm ci
+      
+      - name: 🧪 Tests completos con coverage
+        run: npm test -- --coverage --verbose
+        env:
+          NODE_ENV: test
+      
+      - name: 📊 Reporte detallado de coverage
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 REPORTE DE COVERAGE NOCTURNO"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          npm test -- --coverage --coverageReporters=text
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      
+      - name: 📈 Guardar reporte de coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report-${{ github.run_number }}
+          path: coverage/
+      
+      - name: 🔍 Análisis de código estático
+        run: |
+          echo "Analizando calidad de código..."
+          npm run lint --if-present || echo "Lint no configurado"
+        continue-on-error: true
+      
+      - name: 📊 Estadísticas de tests
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 ESTADÍSTICAS DE TESTS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Fecha: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Commit: ${{ github.sha }}"
+          
+          # Contar archivos de tests
+          echo "Archivos de test: $(find tests -name '*.test.js' -o -name '*.spec.js' | wc -l)"
+          
+          # Total de líneas de tests
+          echo "Líneas de código de tests: $(find tests -name '*.test.js' -o -name '*.spec.js' -exec wc -l {} + | tail -1)"
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  health-check-production:
+    name: Health Check de Producción
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🌐 Verificar SGI en producción
+        run: |
+          echo "Verificando estado de SGI..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sgi.ultimamilla.com.ar/ || echo "000")
+          
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] || [ "$STATUS" = "401" ]; then
+            echo "✅ SGI funcionando correctamente (HTTP $STATUS)"
+          else
+            echo "❌ SGI con problemas (HTTP $STATUS)"
+            exit 1
+          fi
+      
+      - name: 📊 Reporte de health check
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🏥 HEALTH CHECK NOCTURNO"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Fecha: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "URL: https://sgi.ultimamilla.com.ar"
+          echo "Estado: ${{ job.status }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

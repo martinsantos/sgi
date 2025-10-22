@@ -1,0 +1,245 @@
+name: CD - Deploy a Producción
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Saltar tests (NO RECOMENDADO)'
+        required: false
+        default: 'false'
+
+jobs:
+  pre-deploy-validation:
+    name: Validación Pre-Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      
+      - name: 📦 Instalar dependencias
+        run: npm ci
+      
+      - name: 🧪 Ejecutar tests completos
+        if: github.event.inputs.skip_tests != 'true'
+        run: npm test -- --coverage
+        env:
+          NODE_ENV: test
+      
+      - name: ⚠️ ADVERTENCIA - Tests saltados
+        if: github.event.inputs.skip_tests == 'true'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "⚠️  ADVERTENCIA: TESTS SALTADOS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Se está desplegando SIN ejecutar tests."
+          echo "Esto NO es recomendado en producción."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      
+      - name: 📋 Crear reporte de deploy
+        run: |
+          echo "Deploy trigger: ${{ github.event_name }}" > deploy-info.txt
+          echo "Branch: ${{ github.ref_name }}" >> deploy-info.txt
+          echo "Commit: ${{ github.sha }}" >> deploy-info.txt
+          echo "Autor: ${{ github.actor }}" >> deploy-info.txt
+          echo "Fecha: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> deploy-info.txt
+          cat deploy-info.txt
+      
+      - name: 📤 Upload deploy info
+        uses: actions/upload-artifact@v3
+        with:
+          name: deploy-info
+          path: deploy-info.txt
+
+  deploy-to-production:
+    name: Deploy SGI a Producción
+    runs-on: ubuntu-latest
+    needs: pre-deploy-validation
+    environment:
+      name: production
+      url: https://sgi.ultimamilla.com.ar
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+      
+      - name: 🔑 Configurar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 23.105.176.45 >> ~/.ssh/known_hosts
+      
+      - name: 🚀 Deploy a servidor de producción
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🚀 INICIANDO DEPLOY A PRODUCCIÓN"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Servidor: 23.105.176.45"
+          echo "Aplicación: SGI (Puerto 3456)"
+          echo "Método: PM2 restart"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          # Crear backup antes de deploy
+          ssh root@23.105.176.45 << 'ENDSSH'
+            echo "📦 Creando backup pre-deploy..."
+            cd /home/sgi.ultimamilla.com.ar
+            BACKUP_DIR="/home/backups/sgi/$(date +%Y%m%d_%H%M%S)"
+            mkdir -p "$BACKUP_DIR"
+            
+            # Backup de archivos críticos
+            cp -r src "$BACKUP_DIR/" 2>/dev/null || true
+            cp -r tests "$BACKUP_DIR/" 2>/dev/null || true
+            cp package*.json "$BACKUP_DIR/" 2>/dev/null || true
+            
+            echo "✅ Backup creado en: $BACKUP_DIR"
+          ENDSSH
+          
+          # Sincronizar archivos
+          echo "📤 Sincronizando archivos..."
+          rsync -avz --exclude 'node_modules' \
+                     --exclude '.git' \
+                     --exclude '.env' \
+                     --exclude 'coverage' \
+                     --exclude '.DS_Store' \
+                     ./ root@23.105.176.45:/home/sgi.ultimamilla.com.ar/
+          
+          # Ejecutar comandos en servidor
+          ssh root@23.105.176.45 << 'ENDSSH'
+            cd /home/sgi.ultimamilla.com.ar
+            
+            echo "📦 Instalando/actualizando dependencias..."
+            npm install --production
+            
+            echo "🔄 Reiniciando aplicación SGI con PM2..."
+            pm2 restart sgi
+            
+            echo "⏳ Esperando 5 segundos para estabilización..."
+            sleep 5
+            
+            echo "🔍 Verificando estado del servicio..."
+            pm2 status sgi
+            
+            # Verificar que la app responde
+            echo "🌐 Verificando endpoint..."
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3456/ || echo "000")
+            
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] || [ "$STATUS" = "401" ]; then
+              echo "✅ Aplicación respondiendo correctamente (HTTP $STATUS)"
+            else
+              echo "⚠️  Aplicación retorna HTTP $STATUS"
+            fi
+            
+            echo "📊 Logs recientes:"
+            pm2 logs sgi --lines 20 --nostream
+          ENDSSH
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ DEPLOY COMPLETADO"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      
+      - name: 🔍 Verificación post-deploy
+        run: |
+          echo "Verificando aplicación en producción..."
+          sleep 10
+          
+          # Verificar desde internet
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sgi.ultimamilla.com.ar/ || echo "000")
+          
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] || [ "$STATUS" = "401" ]; then
+            echo "✅ SGI accesible desde internet (HTTP $STATUS)"
+          else
+            echo "⚠️  Posible problema - HTTP $STATUS"
+            echo "Verificar manualmente: https://sgi.ultimamilla.com.ar"
+          fi
+      
+      - name: 📢 Notificación de deploy exitoso
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ DEPLOY EXITOSO"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "URL: https://sgi.ultimamilla.com.ar"
+          echo "Servidor: 23.105.176.45"
+          echo "Puerto: 3456"
+          echo "Proceso: PM2 (sgi)"
+          echo "Commit: ${{ github.sha }}"
+          echo "Autor: ${{ github.actor }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      
+      - name: 🚨 Rollback automático en caso de fallo
+        if: failure()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🚨 DEPLOY FALLÓ - INICIANDO ROLLBACK"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          ssh root@23.105.176.45 << 'ENDSSH'
+            cd /home/sgi.ultimamilla.com.ar
+            
+            # Encontrar último backup
+            LAST_BACKUP=$(ls -td /home/backups/sgi/* | head -1)
+            
+            if [ -n "$LAST_BACKUP" ] && [ -d "$LAST_BACKUP" ]; then
+              echo "📦 Restaurando desde: $LAST_BACKUP"
+              
+              # Restaurar archivos
+              cp -rf "$LAST_BACKUP"/* ./
+              
+              # Reinstalar dependencias del backup
+              npm install --production
+              
+              # Reiniciar servicio
+              pm2 restart sgi
+              
+              echo "✅ Rollback completado"
+              pm2 status sgi
+            else
+              echo "⚠️  No se encontró backup para rollback"
+              echo "Verificar manualmente el estado del servicio"
+            fi
+          ENDSSH
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          exit 1
+
+  post-deploy-tests:
+    name: Tests Post-Deploy
+    runs-on: ubuntu-latest
+    needs: deploy-to-production
+    
+    steps:
+      - name: 🌐 Verificar endpoints públicos
+        run: |
+          echo "Verificando endpoints de SGI..."
+          
+          # Verificar que el sistema responde
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://sgi.ultimamilla.com.ar/ || echo "000")
+          
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] || [ "$STATUS" = "401" ]; then
+            echo "✅ SGI accesible (HTTP $STATUS)"
+          else
+            echo "❌ SGI no accesible (HTTP $STATUS)"
+            exit 1
+          fi
+      
+      - name: 📊 Generar reporte de deploy
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 REPORTE DE DEPLOY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Fecha: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Commit: ${{ github.sha }}"
+          echo "Rama: ${{ github.ref_name }}"
+          echo "Autor: ${{ github.actor }}"
+          echo "Estado: ${{ job.status }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

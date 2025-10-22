@@ -5,8 +5,8 @@
 
 // Credenciales de acceso
 const CREDENTIALS = {
-  'admin': 'sgi2025!admin',
-  'ultimamilla': 'SGI@2025!UM'
+  [process.env.BASIC_AUTH_ADMIN_USER]: process.env.BASIC_AUTH_ADMIN_PASS,
+  [process.env.BASIC_AUTH_UM_USER]: process.env.BASIC_AUTH_UM_PASS
 };
 
 function basicAuth(req, res, next) {

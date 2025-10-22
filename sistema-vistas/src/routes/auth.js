@@ -3,19 +3,14 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 
-// En memoria para pruebas
-// Mocks/stubs for testing and development
-const testUser = process.env.NODE_ENV === 'test' ?
-  require('../../tests/mocks/auth').testUser :
-  {
-    id: 'test-user',
-    username: 'test@test.com',
-    password: '$2b$10$IxW3HN9oZkjhZkZS9z6Wg.jM/YcaW0qz3P2Sp.jV.gYR5O4O6XQ2q' // test123
-  };
-
-const testToken = process.env.NODE_ENV === 'test' ?
-  require('../../tests/mocks/auth').testToken :
-  null;
+// En memoria para pruebas y desarrollo
+// NOTA: Este usuario es para desarrollo y pruebas. No usar en producción.
+const testUser = {
+  id: 'test-user',
+  username: 'test@test.com',
+  password: '$2b$10$IxW3HN9oZkjhZkZS9z6Wg.jM/YcaW0qz3P2Sp.jV.gYR5O4O6XQ2q' // test123
+};
+const testToken = 'mock.jwt.token.for.testing';
 
 // POST /auth/login
 router.post('/login', async (req, res) => {
