@@ -12,7 +12,9 @@ class CertificadoModel {
   static ESTADOS = {
     PENDIENTE: 0,
     APROBADO: 1,
-    FACTURADO: 2
+    FACTURADO: 2,
+    EN_PROCESO: 3,
+    ANULADO: 4
   };
 
   /**
@@ -21,16 +23,30 @@ class CertificadoModel {
   static ESTADO_NOMBRES = {
     0: 'Pendiente',
     1: 'Aprobado', 
-    2: 'Facturado'
+    2: 'Facturado',
+    3: 'En Proceso',
+    4: 'Anulado'
   };
 
   /**
    * Obtener lista de certificados con paginación
    */
-  static async getCertificados(page = 1, limit = 20) {
+  static async getCertificados(page = 1, limit = 20, sortBy = 'numero', order = 'desc') {
     const offset = (page - 1) * limit;
     
     try {
+      // Mapeo de campos para ordenamiento
+      const sortFields = {
+        'numero': 'c.numero',
+        'fecha': 'c.fecha',
+        'importe': 'c.importe',
+        'estado': 'c.estado',
+        'cliente': 'cliente_nombre'
+      };
+      
+      const sortField = sortFields[sortBy] || 'c.numero';
+      const sortOrder = (order === 'asc') ? 'ASC' : 'DESC';
+      
       const query = `
         SELECT 
           c.id,
@@ -47,25 +63,27 @@ class CertificadoModel {
             WHEN c.estado = 0 THEN 'Pendiente'
             WHEN c.estado = 1 THEN 'Aprobado'
             WHEN c.estado = 2 THEN 'Facturado'
+            WHEN c.estado = 3 THEN 'En Proceso'
+            WHEN c.estado = 4 THEN 'Anulado'
             ELSE 'Desconocido'
           END as estado_nombre,
           p.descripcion as proyecto_nombre,
           p.id as proyecto_id,
           COALESCE(
             CASE 
-              WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
-              ELSE COALESCE(pt.nombre, pt.apellido, 'Sin cliente')
+              WHEN pers.apellido IS NOT NULL AND pers.apellido != '' THEN CONCAT(pers.apellido, ', ', COALESCE(pers.nombre, ''))
+              ELSE COALESCE(pers.nombre, pers.apellido, 'Sin cliente')
             END,
             'Sin cliente'
           ) as cliente_nombre,
-          pt.id as cliente_id,
+          pers.id as cliente_id,
           c.created,
           c.modified
         FROM certificacions c
         LEFT JOIN proyectos p ON c.proyecto_id = p.id
-        LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
+        LEFT JOIN personals pers ON p.personal_id = pers.id
         WHERE c.activo = 1
-        ORDER BY c.numero DESC, c.fecha DESC
+        ORDER BY ${sortField} ${sortOrder}, c.numero DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
       
@@ -75,19 +93,14 @@ class CertificadoModel {
       const [countResult] = await pool.query(
         'SELECT COUNT(*) as total FROM certificacions WHERE activo = 1'
       );
-      const total = countResult[0].total;
+      
+      const total = countResult[0]?.total || 0;
+      
+      console.log(`📊 Query ejecutado: ${certificados.length} certificados, Total en BD: ${total}`);
       
       return {
-        data: certificados,
-        pagination: {
-          currentPage: page,
-          totalPages: Math.ceil(total / limit),
-          totalRecords: total,
-          limit: limit,
-          offset: offset,
-          hasNextPage: page < Math.ceil(total / limit),
-          hasPreviousPage: page > 1
-        }
+        certificados,
+        total
       };
       
     } catch (error) {
@@ -103,32 +116,43 @@ class CertificadoModel {
     try {
       const query = `
         SELECT 
-          c.*,
+          c.id,
+          c.numero,
+          c.fecha,
+          c.alcance,
+          c.cantidad,
+          c.precio_unitario,
+          c.importe,
+          c.estado,
+          c.fecha_factura,
+          c.observacion as condiciones,
+          c.proyecto_id,
+          c.activo,
+          c.created,
+          c.modified,
           CASE 
             WHEN c.estado = 0 THEN 'Pendiente'
             WHEN c.estado = 1 THEN 'Aprobado'
             WHEN c.estado = 2 THEN 'Facturado'
+            WHEN c.estado = 3 THEN 'En Proceso'
+            WHEN c.estado = 4 THEN 'Anulado'
             ELSE 'Desconocido'
           END as estado_nombre,
           p.descripcion as proyecto_nombre,
-          p.codigo as proyecto_codigo,
+          p.id as proyecto_id_rel,
           p.fecha_inicio as proyecto_fecha_inicio,
           p.precio_venta as proyecto_valor,
           COALESCE(
             CASE 
-              WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
-              ELSE COALESCE(pt.nombre, pt.apellido, 'Sin cliente')
+              WHEN pers.apellido IS NOT NULL AND pers.apellido != '' THEN CONCAT(pers.apellido, ', ', COALESCE(pers.nombre, ''))
+              ELSE COALESCE(pers.nombre, pers.apellido, 'Sin cliente')
             END,
             'Sin cliente'
           ) as cliente_nombre,
-          pt.id as cliente_id,
-          pt.codigo as cliente_codigo,
-          pers.email as cliente_email,
-          pers.telefono as cliente_telefono
+          pers.id as cliente_id
         FROM certificacions c
         LEFT JOIN proyectos p ON c.proyecto_id = p.id
-        LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
-        LEFT JOIN personas pers ON pt.id = pers.id
+        LEFT JOIN personals pers ON p.personal_id = pers.id
         WHERE c.id = ? AND c.activo = 1
       `;
       
@@ -137,6 +161,14 @@ class CertificadoModel {
       if (rows.length === 0) {
         return null;
       }
+      
+      console.log(`📋 Certificado ID ${id}:`, {
+        numero: rows[0].numero,
+        cliente_nombre: rows[0].cliente_nombre,
+        cliente_id: rows[0].cliente_id,
+        proyecto_id: rows[0].proyecto_id,
+        allKeys: Object.keys(rows[0])
+      });
       
       return rows[0];
       
@@ -453,6 +485,161 @@ class CertificadoModel {
       });
     } catch (error) {
       return 'N/A';
+    }
+  }
+
+  /**
+   * Obtener estadísticas de certificados de un cliente
+   */
+  static async getStatsCliente(clienteId) {
+    try {
+      const query = `
+        SELECT 
+          COUNT(*) as totalCertificados,
+          COALESCE(SUM(c.importe), 0) as montoTotal
+        FROM certificacions c
+        LEFT JOIN proyectos p ON c.proyecto_id = p.id
+        WHERE p.personal_id = ? AND c.activo = 1
+      `;
+      
+      const [result] = await pool.query(query, [clienteId]);
+      return result[0] || { totalCertificados: 0, montoTotal: 0 };
+    } catch (error) {
+      console.error('Error al obtener stats del cliente:', error);
+      return { totalCertificados: 0, montoTotal: 0 };
+    }
+  }
+
+  /**
+   * Buscar certificados con filtros
+   */
+  static async buscarCertificados(filters = {}, page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+    
+    try {
+      let whereConditions = ['c.activo = 1'];
+      let queryParams = [];
+      
+      // Filtro por número
+      if (filters.numero) {
+        whereConditions.push('c.numero = ?');
+        queryParams.push(filters.numero);
+      }
+      
+      // Filtro por cliente ID (exacto)
+      if (filters.cliente_id) {
+        whereConditions.push('pers.id = ?');
+        queryParams.push(filters.cliente_id);
+      }
+      
+      // Filtro por cliente nombre (búsqueda texto - mantener para compatibilidad)
+      if (filters.cliente_nombre) {
+        whereConditions.push('(pers.nombre LIKE ? OR pers.apellido LIKE ? OR CONCAT(pers.apellido, \', \', pers.nombre) LIKE ?)');
+        const searchTerm = `%${filters.cliente_nombre}%`;
+        queryParams.push(searchTerm, searchTerm, searchTerm);
+      }
+      
+      // Filtro por alcance/descripción
+      if (filters.alcance) {
+        whereConditions.push('c.alcance LIKE ?');
+        queryParams.push(`%${filters.alcance}%`);
+      }
+      
+      // Filtro por estado
+      if (filters.estado !== null && filters.estado !== undefined) {
+        whereConditions.push('c.estado = ?');
+        queryParams.push(filters.estado);
+      }
+      
+      // Filtro por proyecto
+      if (filters.proyecto_id) {
+        whereConditions.push('c.proyecto_id = ?');
+        queryParams.push(filters.proyecto_id);
+      }
+      
+      // Filtro por fecha exacta
+      if (filters.fecha) {
+        whereConditions.push('DATE(c.fecha) = ?');
+        queryParams.push(filters.fecha);
+      }
+      
+      // Filtro por rango de fechas
+      if (filters.fecha_desde) {
+        whereConditions.push('DATE(c.fecha) >= ?');
+        queryParams.push(filters.fecha_desde);
+      }
+      
+      if (filters.fecha_hasta) {
+        whereConditions.push('DATE(c.fecha) <= ?');
+        queryParams.push(filters.fecha_hasta);
+      }
+      
+      const whereClause = whereConditions.join(' AND ');
+      
+      const query = `
+        SELECT 
+          c.id,
+          c.numero,
+          c.fecha,
+          c.alcance,
+          c.cantidad,
+          c.precio_unitario,
+          c.importe,
+          c.estado,
+          c.fecha_factura,
+          c.observacion as condiciones,
+          CASE 
+            WHEN c.estado = 0 THEN 'Pendiente'
+            WHEN c.estado = 1 THEN 'Aprobado'
+            WHEN c.estado = 2 THEN 'Facturado'
+            WHEN c.estado = 3 THEN 'En Proceso'
+            WHEN c.estado = 4 THEN 'Anulado'
+            ELSE 'Desconocido'
+          END as estado_nombre,
+          p.descripcion as proyecto_nombre,
+          p.id as proyecto_id,
+          COALESCE(
+            CASE 
+              WHEN pers.apellido IS NOT NULL AND pers.apellido != '' THEN CONCAT(pers.apellido, ', ', COALESCE(pers.nombre, ''))
+              ELSE COALESCE(pers.nombre, pers.apellido, 'Sin cliente')
+            END,
+            'Sin cliente'
+          ) as cliente_nombre,
+          pers.id as cliente_id,
+          c.created,
+          c.modified
+        FROM certificacions c
+        LEFT JOIN proyectos p ON c.proyecto_id = p.id
+        LEFT JOIN personals pers ON p.personal_id = pers.id
+        WHERE ${whereClause}
+        ORDER BY c.numero DESC, c.fecha DESC
+        LIMIT ? OFFSET ?
+      `;
+      
+      queryParams.push(limit, offset);
+      
+      const [certificados] = await pool.query(query, queryParams);
+      
+      // Contar total
+      const countQuery = `
+        SELECT COUNT(*) as total 
+        FROM certificacions c
+        LEFT JOIN proyectos p ON c.proyecto_id = p.id
+        LEFT JOIN personals pers ON p.personal_id = pers.id
+        WHERE ${whereClause}
+      `;
+      
+      const [countResult] = await pool.query(countQuery, queryParams.slice(0, -2));
+      const total = countResult[0].total;
+      
+      return {
+        certificados,
+        total
+      };
+      
+    } catch (error) {
+      console.error('Error al buscar certificados:', error);
+      throw error;
     }
   }
 }

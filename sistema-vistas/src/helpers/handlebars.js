@@ -14,10 +14,47 @@ const {
 } = require('./formatters');
 
 module.exports = {
+  
+  /**
+   * Helper para construir URLs de paginación preservando query params
+   */
+  buildPageUrl: function(page, query) {
+    const params = new URLSearchParams();
+    params.set('page', page);
+    
+    // Preservar parámetros de ordenamiento
+    if (query.sort) params.set('sort', query.sort);
+    if (query.order) params.set('order', query.order);
+    
+    // Preservar parámetros de búsqueda/filtros
+    if (query.numero) params.set('numero', query.numero);
+    if (query.cliente_nombre) params.set('cliente_nombre', query.cliente_nombre);
+    if (query.alcance) params.set('alcance', query.alcance);
+    if (query.estado !== undefined && query.estado !== '') params.set('estado', query.estado);
+    if (query.fecha) params.set('fecha', query.fecha);
+    if (query.fecha_desde) params.set('fecha_desde', query.fecha_desde);
+    if (query.fecha_hasta) params.set('fecha_hasta', query.fecha_hasta);
+    if (query.limit) params.set('limit', query.limit);
+    
+    return '?' + params.toString();
+  },
+  
   // === FORMATTERS ===
   formatCurrency: (amount) => formatCurrency(amount),
   formatDate: (date) => formatDate(date),
-  formatDateTime: (date) => formatDateTime(date),
+  formatDateTime: (date) => {
+    if (!date) return '';
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return '';
+    return dateObj.toLocaleString('es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Argentina/Buenos_Aires'
+    });
+  },
   formatNumber: (number) => formatNumber(number),
   formatPercentage: (value, decimals = 1) => formatPercentage(value, decimals),
   truncateText: (text, length = 50) => truncateText(text, length),
@@ -248,6 +285,41 @@ module.exports = {
     };
     return estados[estado] || 'bg-secondary';
   },
+  
+  // Alias para compatibilidad con vistas de presupuestos
+  getEstadoBadgeClass: function(estado) {
+    const estados = {
+      0: 'bg-secondary',  // Borrador
+      1: 'bg-primary',    // Enviado
+      2: 'bg-success',    // Aprobado
+      3: 'bg-danger',     // Rechazado
+      4: 'bg-warning'     // Vencido
+    };
+    return estados[estado] || 'bg-secondary';
+  },
+  
+  // === HELPERS PARA CERTIFICADOS ===
+  getEstadoCertificado: function(estado) {
+    const estados = {
+      0: 'Pendiente',
+      1: 'Aprobado',
+      2: 'Facturado',
+      3: 'En Proceso',
+      4: 'Anulado'
+    };
+    return estados[estado] || 'Desconocido';
+  },
+  
+  getEstadoCertificadoBadge: function(estado) {
+    const estados = {
+      0: 'bg-warning',     // Pendiente
+      1: 'bg-info',        // Aprobado
+      2: 'bg-success',     // Facturado
+      3: 'bg-primary',     // En Proceso
+      4: 'bg-danger'       // Anulado
+    };
+    return estados[estado] || 'bg-secondary';
+  },
 
   getImporteFormateado: function(importe) {
     if (!importe || isNaN(importe)) return '$0,00';
@@ -256,6 +328,17 @@ module.exports = {
       currency: 'ARS',
       minimumFractionDigits: 2
     }).format(importe);
+  },
+  
+  // Helper para convertir fecha a formato yyyy-mm-dd para inputs de tipo date
+  formatDateInput: function(date) {
+    if (!date) return '';
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return '';
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   },
 
   getDiasVencimiento: function(fecha) {
@@ -454,5 +537,42 @@ module.exports = {
     if (obj === undefined) return 'undefined';
     if (Array.isArray(obj)) return 'array';
     return typeof obj;
+  },
+  
+  // === HELPERS PARA SISTEMA DE AUDITORÍA ===
+  
+  // Redondear números
+  round: function(value, decimals = 0) {
+    if (!value || isNaN(value)) return 0;
+    const multiplier = Math.pow(10, decimals);
+    return Math.round(parseFloat(value) * multiplier) / multiplier;
+  },
+  
+  // Contar elementos de un array por tipo
+  countType: function(arr, type) {
+    if (!Array.isArray(arr)) return 0;
+    return arr.filter(item => item.alert_type === type).length;
+  },
+  
+  // Contar elementos por severidad
+  countSeverity: function(arr, severity) {
+    if (!Array.isArray(arr)) return 0;
+    return arr.filter(item => item.severity === severity).length;
+  },
+  
+  // Truncar texto
+  truncate: function(str, length) {
+    if (!str || typeof str !== 'string') return '';
+    if (str.length <= length) return str;
+    return str.substring(0, length) + '...';
+  },
+
+  // Helper para loop de paginación
+  loop: function(start, end, options) {
+    let accum = '';
+    for (let i = start; i <= end; i++) {
+      accum += options.fn(i);
+    }
+    return accum;
   }
 };

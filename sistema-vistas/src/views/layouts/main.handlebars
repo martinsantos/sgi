@@ -64,6 +64,17 @@
               <li><a class="dropdown-item" href="/contabilidad">Contabilidad</a></li>
             </ul>
           </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-file-text"></i> Auditoría
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/logs"><i class="bi bi-list-ul"></i> Logs del Sistema</a></li>
+              <li><a class="dropdown-item" href="/logs/statistics"><i class="bi bi-graph-up"></i> Estadísticas</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-warning" href="/logs/alerts"><i class="bi bi-exclamation-triangle"></i> Alertas Críticas</a></li>
+            </ul>
+          </li>
         </ul>
         
         {{#if user}}

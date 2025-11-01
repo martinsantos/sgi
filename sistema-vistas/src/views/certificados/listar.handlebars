@@ -18,29 +18,47 @@
     <h5 class="mb-0">Filtros de Búsqueda</h5>
   </div>
   <div class="card-body">
-    <form id="formBusqueda" class="row g-3">
-      <div class="col-md-3">
-        <label for="numero_certificado" class="form-label">N° Certificado</label>
-        <input type="text" class="form-control" id="numero_certificado" name="numero_certificado" placeholder="Número de certificado">
+    <form id="formBusqueda" class="row g-3" method="GET" action="/certificados">
+      <div class="col-md-2">
+        <label for="numero" class="form-label">N° Certificado</label>
+        <input type="number" class="form-control" id="numero" name="numero" placeholder="Número" value="{{query.numero}}">
       </div>
       <div class="col-md-3">
-        <label for="cliente" class="form-label">Cliente</label>
-        <input type="text" class="form-control" id="cliente" name="cliente" placeholder="Nombre del cliente">
+        <label for="cliente_search" class="form-label">Cliente</label>
+        <div class="input-group">
+          <input type="text" 
+                 class="form-control" 
+                 id="cliente_search" 
+                 placeholder="Cliente seleccionado..." 
+                 readonly
+                 value="{{query.cliente_display}}">
+          <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalClientes">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+          <input type="hidden" id="cliente_id" name="cliente_id" value="{{query.cliente_id}}">
+        </div>
+        {{#if query.cliente_id}}
+        <button type="button" class="btn btn-sm btn-link text-danger" onclick="limpiarCliente()">
+          <i class="bi bi-x-circle"></i> Limpiar selección
+        </button>
+        {{/if}}
       </div>
       <div class="col-md-2">
-        <label for="tipo" class="form-label">Tipo</label>
-        <select class="form-select" id="tipo" name="tipo">
+        <label for="estado" class="form-label">Estado</label>
+        <select class="form-select" id="estado" name="estado">
           <option value="">Todos</option>
-          <option value="obra">Obra</option>
-          <option value="servicio">Servicio</option>
-          <option value="avance">Avance</option>
+          <option value="0" {{#if (eq query.estado '0')}}selected{{/if}}>Pendiente</option>
+          <option value="1" {{#if (eq query.estado '1')}}selected{{/if}}>Aprobado</option>
+          <option value="2" {{#if (eq query.estado '2')}}selected{{/if}}>Facturado</option>
+          <option value="3" {{#if (eq query.estado '3')}}selected{{/if}}>En Proceso</option>
+          <option value="4" {{#if (eq query.estado '4')}}selected{{/if}}>Anulado</option>
         </select>
       </div>
       <div class="col-md-2">
-        <label for="fecha_emision" class="form-label">Fecha Emisión</label>
-        <input type="date" class="form-control" id="fecha_emision" name="fecha_emision">
+        <label for="fecha" class="form-label">Fecha Emisión</label>
+        <input type="date" class="form-control" id="fecha" name="fecha" value="{{query.fecha}}">
       </div>
-      <div class="col-md-2 d-flex align-items-end">
+      <div class="col-md-3 d-flex align-items-end">
         <button type="submit" class="btn btn-primary me-2">
           <i class="bi bi-search"></i> Buscar
         </button>
@@ -55,26 +73,36 @@
 <div class="card">
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-hover table-sm" id="tablaCertificados" style="width: 100%; table-layout: fixed;">
+      <table class="table table-hover table-sm table-sortable" id="tablaCertificados" style="width: 100%; table-layout: fixed;">
         <thead class="table-dark">
           <tr>
-            <th style="width: 8%;">N° Cert.</th>
-            <th style="width: 18%;">Cliente/Proyecto</th>
+            <th style="width: 8%; cursor: pointer;" onclick="sortBy('numero')" title="Click para ordenar">
+              N° Cert. <i class="bi bi-arrow-down-up" id="sort-numero"></i>
+            </th>
+            <th style="width: 18%; cursor: pointer;" onclick="sortBy('cliente')" title="Click para ordenar">
+              Cliente/Proyecto <i class="bi bi-arrow-down-up" id="sort-cliente"></i>
+            </th>
             <th style="width: 20%;">Descripción</th>
-            <th style="width: 10%;">F. Emisión</th>
+            <th style="width: 10%; cursor: pointer;" onclick="sortBy('fecha')" title="Click para ordenar">
+              F. Emisión <i class="bi bi-arrow-down-up" id="sort-fecha"></i>
+            </th>
             <th style="width: 10%;">F. Factura</th>
-            <th style="width: 6%;">Cant.</th>
-            <th class="text-end" style="width: 10%;">P. Unit.</th>
-            <th class="text-end" style="width: 10%;">Monto</th>
-            <th style="width: 8%;">Estado</th>
-            <th style="width: 10%;">Acciones</th>
+            <th style="width: 8%;">Cant.</th>
+            <th style="width: 10%;">P. Unit.</th>
+            <th style="width: 10%; cursor: pointer;" onclick="sortBy('importe')" title="Click para ordenar">
+              Monto <i class="bi bi-arrow-down-up" id="sort-importe"></i>
+            </th>
+            <th style="width: 10%; cursor: pointer;" onclick="sortBy('estado')" title="Click para ordenar">
+              Estado <i class="bi bi-arrow-down-up" id="sort-estado"></i>
+            </th>
+            <th style="width: 10%; min-width: 90px;">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {{#each certificados}}
           <tr>
             <td>
-              <strong>{{this.numero_certificado}}</strong>
+              <strong>{{this.numero}}</strong>
             </td>
             <td style="word-wrap: break-word; overflow: hidden;">
               <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -85,39 +113,42 @@
               </div>
             </td>
             <td style="word-wrap: break-word; overflow: hidden;">
-              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.descripcion}}">
-                {{#if this.descripcion}}
-                <strong>{{this.descripcion}}</strong>
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.alcance}}">
+                {{#if this.alcance}}
+                <strong>{{this.alcance}}</strong>
                 {{/if}}
                 {{#if this.condiciones}}
                 <small class="text-muted d-block" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.condiciones}}">{{this.condiciones}}</small>
                 {{/if}}
               </div>
             </td>
-            <td>{{formatDate this.fecha_emision}}</td>
-            <td>{{formatDate this.fecha_factura}}</td>
-            <td>{{this.cantidad}}</td>
+            <td><small>{{formatDate this.fecha}}</small></td>
+            <td><small>{{#if this.fecha_factura}}{{formatDate this.fecha_factura}}{{else}}-{{/if}}</small></td>
+            <td class="text-center">{{this.cantidad}}</td>
             <td class="text-end">{{formatCurrency this.precio_unitario}}</td>
-            <td class="text-end">{{formatCurrency this.monto}}</td>
-            <td>
-              <span class="badge {{#eq this.estado 0}}bg-secondary{{/eq}}{{#eq this.estado 1}}bg-warning{{/eq}}{{#eq this.estado 2}}bg-success{{/eq}}{{#eq this.estado 3}}bg-info{{/eq}}{{#eq this.estado 4}}bg-danger{{/eq}}">
-                {{#eq this.estado 0}}Borrador{{/eq}}
-                {{#eq this.estado 1}}Pendiente{{/eq}}
-                {{#eq this.estado 2}}Aprobado{{/eq}}
-                {{#eq this.estado 3}}Facturado{{/eq}}
-                {{#eq this.estado 4}}Rechazado{{/eq}}
-              </span>
+            <td class="text-end">{{formatCurrency this.importe}}</td>
+            <td class="text-center" style="white-space: nowrap;">
+              {{#if (eq this.estado 0)}}
+                <span class="badge bg-warning text-dark" style="font-size: 0.75rem; font-weight: 700;">Pendiente</span>
+              {{else if (eq this.estado 1)}}
+                <span class="badge bg-primary text-white" style="font-size: 0.75rem; font-weight: 700;">Aprobado</span>
+              {{else if (eq this.estado 2)}}
+                <span class="badge bg-success text-white" style="font-size: 0.75rem; font-weight: 700;">Facturado</span>
+              {{else if (eq this.estado 3)}}
+                <span class="badge bg-info text-white" style="font-size: 0.75rem; font-weight: 700;">En Proceso</span>
+              {{else if (eq this.estado 4)}}
+                <span class="badge bg-danger text-white" style="font-size: 0.75rem; font-weight: 700;">Anulado</span>
+              {{else}}
+                <span class="badge bg-secondary text-white" style="font-size: 0.75rem; font-weight: 700;">Desconocido</span>
+              {{/if}}
             </td>
-            <td>
-              <div class="btn-group btn-group-sm">
-                <a href="/certificados/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
+            <td class="text-center" style="white-space: nowrap;">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/certificados/ver/{{this.id}}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
                   <i class="bi bi-eye"></i>
                 </a>
-                <a href="/certificados/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
+                <a href="/certificados/editar/{{this.id}}" class="btn btn-outline-warning btn-sm" title="Editar">
                   <i class="bi bi-pencil"></i>
-                </a>
-                <a href="/certificados/imprimir/{{this.id}}" class="btn btn-outline-secondary" title="Imprimir" target="_blank">
-                  <i class="bi bi-printer"></i>
                 </a>
               </div>
             </td>
@@ -132,121 +163,135 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Paginación -->
+    {{#if pagination}}
+    <div class="card-footer">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="text-muted">
+          Mostrando {{pagination.from}} a {{pagination.to}} de {{pagination.total}} certificados
+        </div>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <!-- Anterior -->
+            <li class="page-item {{#if pagination.isFirstPage}}disabled{{/if}}">
+              <a class="page-link" href="{{buildPageUrl pagination.previousPage query}}" {{#if pagination.isFirstPage}}tabindex="-1"{{/if}}>
+                <i class="bi bi-chevron-left"></i> Anterior
+              </a>
+            </li>
+
+            <!-- Primera página -->
+            {{#unless pagination.isFirstPage}}
+            <li class="page-item">
+              <a class="page-link" href="{{buildPageUrl 1 query}}">1</a>
+            </li>
+            {{#if pagination.showStartDots}}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {{/if}}
+            {{/unless}}
+
+            <!-- Páginas cercanas -->
+            {{#each pagination.pages}}
+            <li class="page-item {{#if this.active}}active{{/if}}">
+              <a class="page-link" href="{{buildPageUrl this.number ../query}}">{{this.number}}</a>
+            </li>
+            {{/each}}
+
+            <!-- Última página -->
+            {{#unless pagination.isLastPage}}
+            {{#if pagination.showEndDots}}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {{/if}}
+            <li class="page-item">
+              <a class="page-link" href="{{buildPageUrl pagination.totalPages query}}">{{pagination.totalPages}}</a>
+            </li>
+            {{/unless}}
+
+            <!-- Siguiente -->
+            <li class="page-item {{#if pagination.isLastPage}}disabled{{/if}}">
+              <a class="page-link" href="{{buildPageUrl pagination.nextPage query}}" {{#if pagination.isLastPage}}tabindex="-1"{{/if}}>
+                Siguiente <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+</div>
+
+<!-- Modal de Búsqueda de Clientes -->
+<div class="modal fade" id="modalClientes" tabindex="-1" aria-labelledby="modalClientesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalClientesLabel">
+          <i class="bi bi-people"></i> Seleccionar Cliente
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Búsqueda dentro del modal -->
+        <div class="mb-3">
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" 
+                   class="form-control form-control-lg" 
+                   id="buscarClienteModal" 
+                   placeholder="Buscar por nombre, apellido o CUIT...">
+          </div>
+        </div>
+        
+        <!-- Tabla de clientes -->
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+          <table class="table table-hover table-sm" id="tablaClientesModal">
+            <thead class="table-dark sticky-top">
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 40%;">Nombre Completo</th>
+                <th style="width: 20%;">CUIT</th>
+                <th style="width: 25%;">Email</th>
+                <th style="width: 10%;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="clientesModalBody">
+              <tr>
+                <td colspan="5" class="text-center">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  <p class="mt-2">Cargando clientes...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Paginación del modal -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div id="infoClientesModal" class="text-muted">
+            <!-- Info de paginación -->
+          </div>
+          <nav>
+            <ul class="pagination pagination-sm mb-0" id="paginacionClientesModal">
+              <!-- Botones de paginación -->
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
 {{#section 'scripts'}}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar DataTable si no hay datos desde el servidor
-    {{#unless certificados}}
-    const table = $('#tablaCertificados').DataTable({
-      ajax: {
-        url: '/api/certificados',
-        dataSrc: 'data'
-      },
-      columns: [
-        { 
-          data: 'numero_certificado',
-          render: function(data, type, row) {
-            let html = `<strong>${data}</strong>`;
-            if (row.descripcion) {
-              html += `<small class="text-muted d-block">${row.descripcion}</small>`;
-            }
-            return html;
-          }
-        },
-        { data: 'cliente_nombre' },
-        {
-          data: 'tipo',
-          render: function(data) {
-            const tipos = {
-              'obra': { class: 'bg-primary' },
-              'servicio': { class: 'bg-info' },
-              'avance': { class: 'bg-warning' }
-            };
-            const tipo = tipos[data] || { class: 'bg-secondary' };
-            return `<span class="badge ${tipo.class}">${data}</span>`;
-          }
-        },
-        { 
-          data: 'fecha_emision',
-          render: function(data) {
-            return data ? new Date(data).toLocaleDateString('es-AR') : '';
-          }
-        },
-        {
-          data: 'estado',
-          render: function(data) {
-            const estados = {
-              0: { text: 'Borrador', class: 'bg-secondary' },
-              1: { text: 'Pendiente', class: 'bg-warning' },
-              2: { text: 'Aprobado', class: 'bg-success' },
-              3: { text: 'Facturado', class: 'bg-info' },
-              4: { text: 'Rechazado', class: 'bg-danger' }
-            };
-            const estado = estados[data] || { text: 'Desconocido', class: 'bg-secondary' };
-            return `<span class="badge ${estado.class}">${estado.text}</span>`;
-          }
-        },
-        { 
-          data: 'monto',
-          className: 'text-end',
-          render: function(data) {
-            return data ? new Intl.NumberFormat('es-AR', { 
-              style: 'currency', 
-              currency: 'ARS' 
-            }).format(data) : '$ 0,00';
-          }
-        },
-        {
-          data: 'id',
-          orderable: false,
-          render: function(data) {
-            return `
-              <div class="btn-group btn-group-sm">
-                <a href="/certificados/ver/${data}" class="btn btn-outline-primary" title="Ver detalle">
-                  <i class="bi bi-eye"></i>
-                </a>
-                <a href="/certificados/editar/${data}" class="btn btn-outline-warning" title="Editar">
-                  <i class="bi bi-pencil"></i>
-                </a>
-                <a href="/certificados/imprimir/${data}" class="btn btn-outline-secondary" title="Imprimir" target="_blank">
-                  <i class="bi bi-printer"></i>
-                </a>
-              </div>
-            `;
-          }
-        }
-      ],
-      order: [[3, 'desc']], // Ordenar por fecha de emisión descendente
-      language: {
-        processing: "Procesando...",
-        search: "Buscar:",
-        lengthMenu: "Mostrar _MENU_ entradas",
-        info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
-        infoEmpty: "Mostrando 0 a 0 de 0 entradas",
-        infoFiltered: "(filtrado de _MAX_ entradas totales)",
-        infoPostFix: "",
-        loadingRecords: "Cargando...",
-        zeroRecords: "No se encontraron datos",
-        emptyTable: "No hay datos disponibles en la tabla",
-        paginate: {
-          first: "Primero",
-          previous: "Anterior",
-          next: "Siguiente",
-          last: "Último"
-        },
-        aria: {
-          sortAscending: ": activar para ordenar la columna de manera ascendente",
-          sortDescending: ": activar para ordenar la columna de manera descendente"
-        }
-      },
-      responsive: true,
-      processing: true
-    });
-    {{/unless}}
-
     // Manejar búsqueda
     $('#formBusqueda').on('submit', function(e) {
       e.preventDefault();
@@ -264,6 +309,277 @@
     window.exportarCertificados = function() {
       const params = new URLSearchParams(window.location.search);
       window.location.href = `/api/certificados/exportar?${params.toString()}`;
+    };
+
+    // Función para ordenar por el servidor (toda la lista)
+    window.sortBy = function(field) {
+      const params = new URLSearchParams(window.location.search);
+      const currentSort = params.get('sort');
+      const currentOrder = params.get('order');
+      
+      // Toggle entre asc y desc
+      let newOrder = 'asc';
+      if (currentSort === field && currentOrder === 'asc') {
+        newOrder = 'desc';
+      }
+      
+      // Actualizar parámetros
+      params.set('sort', field);
+      params.set('order', newOrder);
+      params.set('page', '1'); // Volver a la primera página al ordenar
+      
+      // Recargar página con nuevos parámetros
+      window.location.href = `${window.location.pathname}?${params.toString()}`;
+    };
+    
+    // Actualizar iconos según el ordenamiento actual
+    const currentSort = new URLSearchParams(window.location.search).get('sort');
+    const currentOrder = new URLSearchParams(window.location.search).get('order');
+    if (currentSort) {
+      const icon = document.getElementById(`sort-${currentSort}`);
+      if (icon) {
+        icon.className = currentOrder === 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+      }
+    }
+    
+    // ===== MODAL DE CLIENTES =====
+    let clientesPaginaActual = 1;
+    let clientesTotales = [];
+    let clientesFiltrados = [];
+    const CLIENTES_POR_PAGINA = 20;
+    
+    // Cargar clientes al abrir el modal
+    document.getElementById('modalClientes').addEventListener('show.bs.modal', function() {
+      if (clientesTotales.length === 0) {
+        cargarTodosLosClientes();
+      }
+    });
+    
+    // Función para cargar TODOS los clientes
+    function cargarTodosLosClientes() {
+      document.getElementById('clientesModalBody').innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">Cargando clientes...</p>
+          </td>
+        </tr>
+      `;
+      
+      // Cargar en lotes para evitar timeout
+      let allClientes = [];
+      let currentPage = 1;
+      const limitPerPage = 100;
+      
+      function cargarPagina(page) {
+        fetch(`/clientes/api/search-json?page=${page}&limit=${limitPerPage}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (!data.success || !data.data) {
+              throw new Error(data.message || 'Respuesta inválida del servidor');
+            }
+            
+            allClientes = allClientes.concat(data.data);
+            
+            // Si hay más páginas, cargar la siguiente
+            if (data.pagination && data.pagination.hasNextPage) {
+              cargarPagina(page + 1);
+            } else {
+              // Terminó de cargar todas las páginas
+              clientesTotales = allClientes;
+              clientesFiltrados = allClientes;
+              clientesPaginaActual = 1;
+              renderizarClientesModal();
+            }
+          })
+          .catch(error => {
+            console.error('Error al cargar clientes:', error);
+            document.getElementById('clientesModalBody').innerHTML = `
+              <tr>
+                <td colspan="5" class="text-center text-danger">
+                  <i class="bi bi-exclamation-triangle"></i> 
+                  <p class="mb-2">Error al cargar clientes</p>
+                  <small>${error.message}</small><br>
+                  <button class="btn btn-sm btn-primary mt-2" onclick="cargarTodosLosClientes()">
+                    <i class="bi bi-arrow-clockwise"></i> Reintentar
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+      }
+      
+      // Iniciar carga desde página 1
+      cargarPagina(1);
+    }
+    
+    // Renderizar tabla de clientes con paginación
+    function renderizarClientesModal() {
+      const inicio = (clientesPaginaActual - 1) * CLIENTES_POR_PAGINA;
+      const fin = inicio + CLIENTES_POR_PAGINA;
+      const clientesPagina = clientesFiltrados.slice(inicio, fin);
+      
+      if (clientesPagina.length === 0) {
+        document.getElementById('clientesModalBody').innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center text-muted">
+              <i class="bi bi-inbox"></i> No se encontraron clientes
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      document.getElementById('clientesModalBody').innerHTML = clientesPagina.map((cliente, index) => {
+        const numero = inicio + index + 1;
+        const nombre = cliente.nombre || '';
+        const apellido = cliente.apellido || '';
+        const nombreCompleto = apellido ? `${apellido}, ${nombre}` : nombre;
+        const cuit = cliente.cuit || '-';
+        const email = cliente.email || '-';
+        
+        return `
+          <tr style="cursor: pointer;" class="cliente-row" 
+              data-id="${cliente.id}" 
+              data-nombre="${nombreCompleto}">
+            <td>${numero}</td>
+            <td><strong>${nombreCompleto}</strong></td>
+            <td>${cuit}</td>
+            <td><small>${email}</small></td>
+            <td>
+              <button class="btn btn-sm btn-success seleccionar-cliente" 
+                      data-id="${cliente.id}" 
+                      data-nombre="${nombreCompleto}">
+                <i class="bi bi-check-circle"></i> Seleccionar
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      // Event listeners para seleccionar cliente
+      document.querySelectorAll('.seleccionar-cliente').forEach(btn => {
+        btn.addEventListener('click', function() {
+          seleccionarCliente(this.getAttribute('data-id'), this.getAttribute('data-nombre'));
+        });
+      });
+      
+      // Click en toda la fila
+      document.querySelectorAll('.cliente-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+          if (!e.target.closest('button')) {
+            seleccionarCliente(this.getAttribute('data-id'), this.getAttribute('data-nombre'));
+          }
+        });
+      });
+      
+      // Renderizar info y paginación
+      renderizarInfoPaginacion();
+    }
+    
+    // Renderizar info de paginación
+    function renderizarInfoPaginacion() {
+      const inicio = (clientesPaginaActual - 1) * CLIENTES_POR_PAGINA + 1;
+      const fin = Math.min(clientesPaginaActual * CLIENTES_POR_PAGINA, clientesFiltrados.length);
+      const totalPaginas = Math.ceil(clientesFiltrados.length / CLIENTES_POR_PAGINA);
+      
+      document.getElementById('infoClientesModal').innerHTML = 
+        `Mostrando ${inicio} a ${fin} de ${clientesFiltrados.length} clientes`;
+      
+      // Botones de paginación
+      let paginacionHTML = '';
+      
+      // Anterior
+      paginacionHTML += `
+        <li class="page-item ${clientesPaginaActual === 1 ? 'disabled' : ''}">
+          <a class="page-link" href="#" onclick="cambiarPaginaModal(${clientesPaginaActual - 1}); return false;">
+            Anterior
+          </a>
+        </li>
+      `;
+      
+      // Páginas
+      for (let i = 1; i <= Math.min(totalPaginas, 5); i++) {
+        paginacionHTML += `
+          <li class="page-item ${i === clientesPaginaActual ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="cambiarPaginaModal(${i}); return false;">${i}</a>
+          </li>
+        `;
+      }
+      
+      if (totalPaginas > 5) {
+        paginacionHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        paginacionHTML += `
+          <li class="page-item ${totalPaginas === clientesPaginaActual ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="cambiarPaginaModal(${totalPaginas}); return false;">${totalPaginas}</a>
+          </li>
+        `;
+      }
+      
+      // Siguiente
+      paginacionHTML += `
+        <li class="page-item ${clientesPaginaActual === totalPaginas ? 'disabled' : ''}">
+          <a class="page-link" href="#" onclick="cambiarPaginaModal(${clientesPaginaActual + 1}); return false;">
+            Siguiente
+          </a>
+        </li>
+      `;
+      
+      document.getElementById('paginacionClientesModal').innerHTML = paginacionHTML;
+    }
+    
+    // Cambiar página del modal
+    window.cambiarPaginaModal = function(pagina) {
+      const totalPaginas = Math.ceil(clientesFiltrados.length / CLIENTES_POR_PAGINA);
+      if (pagina >= 1 && pagina <= totalPaginas) {
+        clientesPaginaActual = pagina;
+        renderizarClientesModal();
+      }
+    };
+    
+    // Búsqueda dentro del modal
+    document.getElementById('buscarClienteModal').addEventListener('input', function() {
+      const query = this.value.trim().toLowerCase();
+      
+      if (query === '') {
+        clientesFiltrados = clientesTotales;
+      } else {
+        clientesFiltrados = clientesTotales.filter(cliente => {
+          const nombre = (cliente.nombre || '').toLowerCase();
+          const apellido = (cliente.apellido || '').toLowerCase();
+          const cuit = (cliente.cuit || '').toLowerCase();
+          const email = (cliente.email || '').toLowerCase();
+          
+          return nombre.includes(query) || 
+                 apellido.includes(query) || 
+                 cuit.includes(query) || 
+                 email.includes(query);
+        });
+      }
+      
+      clientesPaginaActual = 1;
+      renderizarClientesModal();
+    });
+    
+    // Seleccionar cliente y cerrar modal
+    function seleccionarCliente(clienteId, clienteNombre) {
+      document.getElementById('cliente_search').value = clienteNombre;
+      document.getElementById('cliente_id').value = clienteId;
+      
+      // Cerrar modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('modalClientes'));
+      modal.hide();
+    }
+    
+    // Limpiar selección de cliente
+    window.limpiarCliente = function() {
+      document.getElementById('cliente_search').value = '';
+      document.getElementById('cliente_id').value = '';
     };
   });
 </script>

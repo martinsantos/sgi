@@ -1,0 +1,182 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Certificado N° {{certificado.numero}}</h1>
+  <div>
+    <a href="/certificados" class="btn btn-outline-secondary me-2">
+      <i class="bi bi-arrow-left"></i> Volver a Lista
+    </a>
+    <a href="/certificados/editar/{{certificado.id}}" class="btn btn-warning me-2">
+      <i class="bi bi-pencil"></i> Editar
+    </a>
+    <a href="/certificados/imprimir/{{certificado.id}}" class="btn btn-primary" target="_blank">
+      <i class="bi bi-printer"></i> Imprimir
+    </a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">Información del Certificado</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <strong>Número:</strong><br>
+            <span class="fs-4">{{certificado.numero}}</span>
+          </div>
+          <div class="col-md-6">
+            <strong>Estado:</strong><br>
+            <span class="badge {{getEstadoCertificadoBadge certificado.estado}} fs-6">
+              {{getEstadoCertificado certificado.estado}}
+            </span>
+          </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <strong>Descripción/Alcance:</strong><br>
+            <p>{{certificado.alcance}}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>Condiciones:</strong><br>
+            <p>{{#if certificado.condiciones}}{{certificado.condiciones}}{{else}}<em>No especificadas</em>{{/if}}</p>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <strong>Fecha de Emisión:</strong><br>
+            {{formatDate certificado.fecha}}
+          </div>
+          <div class="col-md-6 mb-3">
+            <strong>Fecha de Factura:</strong><br>
+            {{#if certificado.fecha_factura}}{{formatDate certificado.fecha_factura}}{{else}}<em>No facturado</em>{{/if}}
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <strong>Cantidad:</strong><br>
+            {{#if certificado.cantidad}}{{certificado.cantidad}}{{else}}1{{/if}}
+          </div>
+          <div class="col-md-4 mb-3">
+            <strong>Precio Unitario:</strong><br>
+            {{formatCurrency certificado.precio_unitario}}
+          </div>
+          <div class="col-md-4 mb-3">
+            <strong>Importe Total:</strong><br>
+            <span class="fs-5 fw-bold text-success">{{formatCurrency certificado.importe}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    {{#if proyecto}}
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Proyecto Asociado</h5>
+      </div>
+      <div class="card-body">
+        <h6><a href="/proyectos/ver/{{proyecto.id}}">{{proyecto.descripcion}}</a></h6>
+        <div class="row">
+          <div class="col-md-6">
+            <strong>Código:</strong> {{proyecto.codigo}}
+          </div>
+          <div class="col-md-6">
+            <strong>Cliente:</strong> {{certificado.cliente_nombre}}
+          </div>
+        </div>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+  
+  <div class="col-lg-4">
+    {{!-- Información del Cliente --}}
+    {{#if certificado.cliente_nombre}}
+    <div class="card mb-3">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-person-circle"></i> Cliente</h5>
+      </div>
+      <div class="card-body">
+        <h6>{{certificado.cliente_nombre}}</h6>
+        {{#if totalCertificadosCliente}}
+        <div class="mt-3">
+          <small class="text-muted">Estadísticas del Cliente:</small>
+          <ul class="list-unstyled mt-2">
+            <li><strong>Total Certificados:</strong> {{totalCertificadosCliente}}</li>
+            <li><strong>Monto Total:</strong> {{formatCurrency montoTotalCliente}}</li>
+          </ul>
+          <a href="/certificados?cliente_id={{certificado.cliente_id}}&cliente_display={{certificado.cliente_nombre}}" class="btn btn-sm btn-outline-primary w-100">
+            <i class="bi bi-search"></i> Ver todos sus certificados
+          </a>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+    {{/if}}
+    
+    {{!-- Otros Certificados del Proyecto --}}
+    {{#if otrosCertificadosProyecto}}
+    {{#if (gt otrosCertificadosProyecto.length 0)}}
+    <div class="card mb-3">
+      <div class="card-header bg-info text-white">
+        <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> Otros Certificados del Proyecto ({{otrosCertificadosProyecto.length}})</h6>
+      </div>
+      <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+        {{#each otrosCertificadosProyecto}}
+        <a href="/certificados/ver/{{this.id}}" class="list-group-item list-group-item-action">
+          <div class="d-flex justify-content-between">
+            <span><strong>N° {{this.numero}}</strong></span>
+            <span class="badge {{getEstadoCertificadoBadge this.estado}}">
+              {{getEstadoCertificado this.estado}}
+            </span>
+          </div>
+          <small class="text-muted">{{formatCurrency this.importe}}</small>
+        </a>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+    {{/if}}
+    
+    {{!-- Otros Proyectos del Cliente --}}
+    {{#if otrosProyectosCliente}}
+    {{#if (gt otrosProyectosCliente.length 0)}}
+    <div class="card mb-3">
+      <div class="card-header bg-secondary text-white">
+        <h6 class="mb-0"><i class="bi bi-briefcase"></i> Otros Proyectos del Cliente ({{otrosProyectosCliente.length}})</h6>
+      </div>
+      <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+        {{#each otrosProyectosCliente}}
+        <a href="/proyectos/ver/{{this.id}}" class="list-group-item list-group-item-action">
+          <div><strong>{{this.descripcion}}</strong></div>
+          <small class="text-muted">{{this.codigo}}</small>
+        </a>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+    {{/if}}
+    
+    {{!-- Acciones Rápidas --}}
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h6>
+      </div>
+      <div class="card-body">
+        <a href="/certificados/crear?proyecto_id={{certificado.proyecto_id}}" class="btn btn-success btn-sm w-100 mb-2">
+          <i class="bi bi-plus-circle"></i> Nuevo Certificado en este Proyecto
+        </a>
+        {{#if proyecto}}
+        <a href="/proyectos/ver/{{proyecto.id}}" class="btn btn-info btn-sm w-100">
+          <i class="bi bi-folder"></i> Ver Proyecto Completo
+        </a>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>

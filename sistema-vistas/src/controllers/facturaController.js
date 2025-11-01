@@ -1303,7 +1303,7 @@ class FacturaController {
       console.log(`💾 Actualizando factura emitida ID: ${id}`);
 
       const updateData = {
-        cliente_id: req.body.cliente_id,
+        persona_tercero_id: req.body.cliente_id, // El campo en BD es persona_tercero_id
         fecha_vto_pago: req.body.fecha_vto_pago,
         observaciones: req.body.observaciones,
         estado: req.body.estado || 1
@@ -1312,17 +1312,17 @@ class FacturaController {
       const success = await FacturaModel.updateFacturaField(id, updateData);
       
       if (success) {
-        req.flash('success', 'Factura actualizada correctamente');
+        console.log(`✅ Factura ${id} actualizada correctamente`);
+        // Usar res.redirect en lugar de req.flash (que no está disponible)
+        return res.redirect(`/facturas/emitidas/${id}?success=1`);
       } else {
-        req.flash('error', 'Error al actualizar la factura');
+        console.log(`⚠️ No se actualizó la factura ${id}`);
+        return res.redirect(`/facturas/emitidas/${id}?error=1`);
       }
-      
-      res.redirect(`/facturas/emitidas/${id}`);
 
     } catch (error) {
       console.error('❌ Error al actualizar factura:', error);
-      req.flash('error', 'Error al actualizar la factura: ' + error.message);
-      res.redirect(`/facturas/emitidas/${req.params.id}`);
+      res.redirect(`/facturas/emitidas/${req.params.id}?error=1`);
     }
   }
 

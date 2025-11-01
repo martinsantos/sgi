@@ -29,7 +29,7 @@ const prodConfig = {
   queueLimit: 0,
   multipleStatements: false,
   charset: 'utf8mb4',
-  timezone: '-03:00'
+  timezone: 'Z' // UTC - Las fechas se convierten en la capa de presentación
 };
 
 // Usar configuración según el entorno

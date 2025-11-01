@@ -1,0 +1,245 @@
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2">{{title}}</h1>
+        <p class="text-muted mb-0">Proyectos ordenados por fecha más reciente</p>
+    </div>
+    <div>
+        <a href="/proyectos/nuevo" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Nuevo Proyecto
+        </a>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form id="formBusqueda" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="descripcion" placeholder="Nombre del proyecto">
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="cliente" placeholder="Cliente">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="estado">
+                    <option value="">Todos los estados</option>
+                    <option value="1">Pendiente</option>
+                    <option value="2">En Progreso</option>
+                    <option value="3">Finalizado</option>
+                    <option value="4">Cancelado</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="location.href='/proyectos'">
+                    <i class="bi bi-x-circle"></i> Limpiar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Proyectos -->
+<div class="row">
+    {{#each proyectos}}
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <!-- Header del Proyecto -->
+            <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="d-flex justify-content-between align-items-start text-white">
+                    <div>
+                        <h5 class="mb-1">{{this.descripcion}}</h5>
+                        <small class="opacity-75">
+                            <i class="bi bi-person"></i> {{this.cliente_nombre}}
+                        </small>
+                    </div>
+                    <span class="badge {{#eq this.estado 1}}bg-warning{{/eq}}{{#eq this.estado 2}}bg-info{{/eq}}{{#eq this.estado 3}}bg-success{{/eq}}{{#eq this.estado 4}}bg-secondary{{/eq}}">
+                        {{this.estado_nombre}}
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Información Principal -->
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Inicio</small>
+                        <strong>{{this.fecha_inicio}}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Cierre</small>
+                        <strong>{{#if this.fecha_cierre}}{{this.fecha_cierre}}{{else}}<span class="text-danger">Sin fecha</span>{{/if}}</strong>
+                    </div>
+                </div>
+
+                <!-- Indicadores de Certificados -->
+                <div class="row mb-3 border-top pt-3">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-primary">{{this.certificados_activos}}</div>
+                            <small class="text-muted">Certificados Activos</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-success">{{formatCurrency this.monto_certificados}}</div>
+                            <small class="text-muted">Monto Total</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Indicadores Adicionales -->
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h5 mb-0 text-info">{{formatCurrency this.monto_facturado}}</div>
+                            <small class="text-muted">Facturado</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h5 mb-0 text-warning">{{formatCurrency this.precio_venta}}</div>
+                            <small class="text-muted">Presupuesto</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certificados Listados -->
+                {{#if this.certificados_detalle.activos}}
+                <div class="border-top pt-3 mt-3">
+                    <h6 class="mb-2">
+                        <i class="bi bi-award"></i> Certificados
+                        <span class="badge bg-light text-dark">{{this.certificados_detalle.total_activos}}</span>
+                    </h6>
+                    <div class="list-group list-group-sm">
+                        {{#each this.certificados_detalle.activos}}
+                        <div class="list-group-item py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>#{{this.numero}}</strong>
+                                    <small class="text-muted d-block">{{this.fecha}}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {{#eq this.estado 0}}bg-warning{{/eq}}{{#eq this.estado 1}}bg-info{{/eq}}{{#eq this.estado 2}}bg-success{{/eq}}{{#eq this.estado 3}}bg-primary{{/eq}}{{#eq this.estado 4}}bg-danger{{/eq}} small">
+                                        {{this.estado_nombre}}
+                                    </span>
+                                    <div class="text-success fw-bold small">${{this.importe}}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+                {{else}}
+                <div class="alert alert-info alert-sm mb-0 mt-3">
+                    <small><i class="bi bi-info-circle"></i> Sin certificados asociados</small>
+                </div>
+                {{/if}}
+            </div>
+
+            <!-- Footer con Acciones -->
+            <div class="card-footer bg-light">
+                <div class="btn-group btn-group-sm w-100" role="group">
+                    <a href="/proyectos/ver/{{this.id}}" class="btn btn-outline-primary flex-grow-1">
+                        <i class="bi bi-eye"></i> Ver
+                    </a>
+                    <a href="/proyectos/editar/{{this.id}}" class="btn btn-outline-warning flex-grow-1">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="/proyectos/{{this.id}}/editar#certificados" class="btn btn-outline-info flex-grow-1">
+                        <i class="bi bi-link"></i> Certificados
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="col-12">
+        <div class="alert alert-info text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
+            <p class="mt-3 mb-0">No se encontraron proyectos</p>
+        </div>
+    </div>
+    {{/each}}
+</div>
+
+<!-- Paginación -->
+{{#if pagination}}
+<nav aria-label="Paginación" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {{#if (gt pagination.page 1)}}
+        <li class="page-item">
+            <a class="page-link" href="?page=1">Primera</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{subtract pagination.page 1}}">Anterior</a>
+        </li>
+        {{/if}}
+
+        {{#loop pagination.page pagination.pages}}
+        <li class="page-item {{#eq this ../pagination.page}}active{{/eq}}">
+            <a class="page-link" href="?page={{this}}">{{this}}</a>
+        </li>
+        {{/loop}}
+
+        {{#if (lt pagination.page pagination.pages)}}
+        <li class="page-item">
+            <a class="page-link" href="?page={{add pagination.page 1}}">Siguiente</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{pagination.pages}}">Última</a>
+        </li>
+        {{/if}}
+    </ul>
+</nav>
+{{/if}}
+
+<style>
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+    
+    .bg-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .list-group-sm .list-group-item {
+        border-left: 3px solid #e9ecef;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .list-group-sm .list-group-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #667eea;
+    }
+    
+    .alert-sm {
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejar búsqueda
+        document.getElementById('formBusqueda').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const params = new URLSearchParams(formData);
+            window.location.href = `/proyectos?${params.toString()}`;
+        });
+    });
+</script>

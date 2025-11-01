@@ -7,23 +7,34 @@ const ClienteModel = require('../models/ClienteModel');
 class ProyectoController {
 
   /**
-   * Listar todos los proyectos con paginación
+   * Listar todos los proyectos con paginación y filtros
    */
   static async listar(req, res) {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
+      const sortBy = req.query.sortBy || 'fecha_inicio';
+      const sortOrder = req.query.sortOrder || 'DESC';
+      
+      // Filtros de búsqueda
+      const filtros = {
+        id: req.query.id || '',
+        descripcion: req.query.descripcion || '',
+        cliente: req.query.cliente || '',
+        estado: req.query.estado || ''
+      };
 
-      console.log(`📋 Listando proyectos - Página ${page}, Límite ${limit}`);
+      console.log(`📋 Listando proyectos - Página ${page}, Límite ${limit}, Ordenar por: ${sortBy} ${sortOrder}, Filtros:`, filtros);
 
-      const resultado = await ProyectoModel.getProyectos(page, limit);
+      const resultado = await ProyectoModel.getProyectos(page, limit, filtros, sortBy, sortOrder);
 
-      res.render('proyectos/listar', {
+      res.render('proyectos/listar-tabla', {
         title: 'Gestión de Proyectos',
         proyectos: resultado.data,
         pagination: resultado.pagination,
         currentPage: page,
         query: req.query,
+        filtros: filtros,
         formatCurrency: ProyectoModel.formatCurrency,
         formatDate: ProyectoModel.formatDate
       });
@@ -107,23 +118,27 @@ class ProyectoController {
       const id = req.params.id;
       console.log(`👁️ Visualizando proyecto ID: ${id}`);
 
-      const proyecto = await ProyectoModel.getProyectoById(id);
+      const proyectoCompleto = await ProyectoModel.getProyectoCompleto(id);
 
-      if (!proyecto) {
-        
+      if (!proyectoCompleto) {
+        console.log(`⚠️ Proyecto ${id} no encontrado`);
         return res.redirect('/proyectos');
       }
 
+      console.log(`📋 Proyecto cargado: ${proyectoCompleto.descripcion}`);
+      console.log(`🏆 Certificados: ${proyectoCompleto.certificados ? proyectoCompleto.certificados.total : 0} (${proyectoCompleto.certificados ? proyectoCompleto.certificados.total_activos : 0} activos, ${proyectoCompleto.certificados ? proyectoCompleto.certificados.total_inactivos : 0} inactivos)`);
+
       res.render('proyectos/ver', {
-        title: `Proyecto: ${proyecto.descripcion}`,
-        proyecto,
+        title: `Proyecto: ${proyectoCompleto.descripcion}`,
+        proyecto: proyectoCompleto,
+        certificados: proyectoCompleto.certificados || { activos: [], inactivos: [], total: 0, total_activos: 0, total_inactivos: 0 },
         formatCurrency: ProyectoModel.formatCurrency,
         formatDate: ProyectoModel.formatDate
       });
 
     } catch (error) {
       console.error('❌ Error al visualizar proyecto:', error);
-      
+      console.error(error.stack);
       res.redirect('/proyectos');
     }
   }
@@ -173,19 +188,30 @@ class ProyectoController {
       const id = req.params.id;
       console.log(`💾 Actualizando proyecto ID: ${id}`, req.body);
 
-      // Por simplicidad, usando updateEstadoProyecto como método base
-      // En un escenario real, se implementaría un método updateProyecto completo
-      const nuevoEstado = parseInt(req.body.estado);
-      const observaciones = req.body.observaciones;
+      const proyectoData = {
+        descripcion: req.body.descripcion || req.body.nombre,
+        estado: parseInt(req.body.estado) || 1,
+        fecha_inicio: req.body.fecha_inicio,
+        fecha_cierre: req.body.fecha_cierre,
+        precio_venta: parseFloat(req.body.precio_venta) || 0,
+        observaciones: req.body.observaciones || '',
+        cliente_id: req.body.cliente_id || req.body.personal_id
+      };
 
-      const actualizado = await ProyectoModel.updateEstadoProyecto(id, nuevoEstado, observaciones);
-
-      if (!actualizado) {
-        
+      // Validaciones básicas
+      if (!proyectoData.descripcion) {
+        console.warn('⚠️ Descripción vacía');
         return res.redirect(`/proyectos/${id}/editar`);
       }
 
-      
+      const actualizado = await ProyectoModel.updateProyecto(id, proyectoData);
+
+      if (!actualizado) {
+        console.warn('⚠️ Proyecto no encontrado o no se pudo actualizar');
+        return res.redirect(`/proyectos/${id}/editar`);
+      }
+
+      console.log(`✅ Proyecto ${id} actualizado exitosamente`);
       res.redirect(`/proyectos/${id}`);
 
     } catch (error) {
@@ -355,6 +381,177 @@ class ProyectoController {
       console.error('❌ Error al cargar dashboard de proyectos:', error);
       
       res.redirect('/dashboard');
+    }
+  }
+
+  /**
+   * API: Obtener certificados disponibles para asociar
+   */
+  static async getCertificadosDisponibles(req, res) {
+    try {
+      const proyectoId = req.params.id;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 50;
+      const offset = (page - 1) * limit;
+
+      console.log(`🔍 Obteniendo certificados disponibles para proyecto ${proyectoId}`);
+
+      const resultado = await ProyectoModel.getCertificadosDisponibles(proyectoId, limit, offset);
+
+      res.json({
+        success: true,
+        data: resultado.certificados,
+        pagination: {
+          total: resultado.total,
+          page,
+          limit,
+          pages: Math.ceil(resultado.total / limit)
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Error al obtener certificados disponibles:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * API: Asociar certificado a proyecto
+   */
+  static async asociarCertificado(req, res) {
+    try {
+      const proyectoId = req.params.id;
+      const { certificadoId } = req.body;
+
+      console.log(`🔗 Asociando certificado ${certificadoId} a proyecto ${proyectoId}`);
+
+      if (!certificadoId) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID de certificado requerido'
+        });
+      }
+
+      const asociado = await ProyectoModel.asociarCertificado(proyectoId, certificadoId);
+
+      if (!asociado) {
+        return res.status(404).json({
+          success: false,
+          error: 'No se pudo asociar el certificado'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Certificado asociado exitosamente'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al asociar certificado:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * API: Desasociar certificado de proyecto
+   */
+  static async desasociarCertificado(req, res) {
+    try {
+      const { certificadoId } = req.body;
+
+      console.log(`🔓 Desasociando certificado ${certificadoId}`);
+
+      if (!certificadoId) {
+        return res.status(400).json({
+          success: false,
+          error: 'ID de certificado requerido'
+        });
+      }
+
+      const desasociado = await ProyectoModel.desasociarCertificado(certificadoId);
+
+      if (!desasociado) {
+        return res.status(404).json({
+          success: false,
+          error: 'No se pudo desasociar el certificado'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Certificado desasociado exitosamente'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al desasociar certificado:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
+    }
+  }
+
+  /**
+   * Eliminar un proyecto
+   */
+  static async eliminar(req, res) {
+    try {
+      const id = req.params.id;
+      const { confirmacion } = req.body;
+
+      console.log(`🗑️ Eliminando proyecto ID: ${id}, Confirmación: ${confirmacion}`);
+
+      // Validar que se ingresó "ELIMINAR" como confirmación
+      if (confirmacion !== 'ELIMINAR') {
+        return res.status(400).json({
+          success: false,
+          error: 'Confirmación inválida. Debe escribir "ELIMINAR"'
+        });
+      }
+
+      // Verificar que el proyecto existe
+      const proyecto = await ProyectoModel.getProyectoById(id);
+      if (!proyecto) {
+        return res.status(404).json({
+          success: false,
+          error: 'Proyecto no encontrado'
+        });
+      }
+
+      // Eliminar el proyecto
+      const eliminado = await ProyectoModel.deleteProyecto(id);
+
+      if (!eliminado) {
+        return res.status(500).json({
+          success: false,
+          error: 'No se pudo eliminar el proyecto'
+        });
+      }
+
+      console.log(`✅ Proyecto ${id} (${proyecto.descripcion}) eliminado exitosamente`);
+
+      res.json({
+        success: true,
+        message: `Proyecto "${proyecto.descripcion}" eliminado exitosamente`,
+        redirect: '/proyectos'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al eliminar proyecto:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: error.message
+      });
     }
   }
 }

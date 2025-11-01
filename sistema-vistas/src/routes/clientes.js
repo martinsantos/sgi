@@ -2,16 +2,27 @@ const express = require('express');
 const router = express.Router();
 const ClienteController = require('../controllers/clientesController');
 
-// Endpoints API JSON
-router.get('/api/listado', ClienteController.getClientes);
-router.post('/api/crear', ClienteController.createCliente);
-// Route commented out until updateCliente is implemented
-// router.put('/api/update/:id', ClienteController.updateCliente);
-router.get('/api/:id', ClienteController.getClienteDetalle);  // Use getClienteDetalle which is implemented
+// ===== RUTAS ESPECÍFICAS (ANTES DE LAS RUTAS CON :id) =====
 
-// APIs específicas para datos relacionados del cliente
+// API para búsqueda JSON (DEBE ESTAR ANTES DE /api/:id)
+router.get('/api/search', ClienteController.buscarClientes);
+router.get('/api/search-json', ClienteController.buscarClientesAPI);
+
+// API para obtener clientes (JSON)
+router.get('/api', ClienteController.getClientesAPI);
+router.get('/api/listado', ClienteController.getClientes);
+
+// Crear cliente
+router.post('/api/crear', ClienteController.createCliente);
+
+// ===== RUTAS CON PARÁMETROS DINÁMICOS (DEBEN ESTAR AL FINAL) =====
+
+// APIs específicas para datos relacionados del cliente (DEBEN ESTAR ANTES DE /api/:id)
 router.get('/api/:id/proyectos', ClienteController.getProyectosCliente);
 router.get('/api/:id/facturas', ClienteController.getFacturasCliente);
+
+// Ver cliente específico por ID (DEBE ESTAR AL FINAL)
+router.get('/api/:id', ClienteController.getClienteDetalle);
 
 /**
  * Rutas de Clientes - CRM
@@ -34,13 +45,6 @@ router.post('/', ClienteController.createCliente);
 
 // Búsqueda con filtros
 router.get('/buscar', ClienteController.buscarClientes);
-
-// API para obtener clientes (JSON)
-router.get('/api', ClienteController.getClientesAPI);
-
-// API para búsqueda JSON
-router.get('/api/search', ClienteController.buscarClientes);
-router.get('/api/search-json', ClienteController.buscarClientesAPI);
 
 // Ruta específica para modal de facturas
 router.get('/modal/search', (req, res) => {

@@ -2,12 +2,50 @@ const pool = require('../config/database');
 
 class ProyectoModel {
   /**
-   * Obtiene todos los proyectos con paginación y información de cliente
+   * Obtiene todos los proyectos con paginación, cliente, certificados y filtros
    */
-  static async getProyectos(page = 1, limit = 20) {
+  static async getProyectos(page = 1, limit = 20, filtros = {}, sortBy = 'fecha_inicio', sortOrder = 'DESC') {
     const offset = (page - 1) * limit;
+    
+    // Validar parámetros de ordenamiento
+    const validSortFields = ['id', 'descripcion', 'cliente_nombre', 'estado', 'fecha_inicio', 'fecha_cierre', 'total_certificados', 'monto_certificados', 'monto_facturado', 'precio_venta'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'fecha_inicio';
+    const order = (sortOrder === 'ASC' || sortOrder === 'asc') ? 'ASC' : 'DESC';
+    
+    // Construir condiciones WHERE dinámicamente
+    let whereConditions = ['p.activo = 1'];
+    let queryParams = [];
+    
+    if (filtros.id && filtros.id.trim() !== '') {
+      whereConditions.push('p.id LIKE ?');
+      queryParams.push(`${filtros.id}%`);
+    }
+    
+    if (filtros.descripcion && filtros.descripcion.trim() !== '') {
+      whereConditions.push('LOWER(p.descripcion) LIKE LOWER(?)');
+      queryParams.push(`%${filtros.descripcion}%`);
+    }
+    
+    if (filtros.cliente && filtros.cliente.trim() !== '') {
+      whereConditions.push('(LOWER(pt.nombre) LIKE LOWER(?) OR LOWER(pt.apellido) LIKE LOWER(?) OR LOWER(pt.codigo) LIKE LOWER(?) OR LOWER(CONCAT(pt.apellido, ", ", pt.nombre)) LIKE LOWER(?) OR LOWER(CONCAT(pt.nombre, " ", pt.apellido)) LIKE LOWER(?) OR LOWER(p.descripcion) LIKE LOWER(?))');
+      const clienteTerm = `%${filtros.cliente}%`;
+      queryParams.push(clienteTerm, clienteTerm, clienteTerm, clienteTerm, clienteTerm, clienteTerm);
+    }
+    
+    if (filtros.estado && filtros.estado !== '') {
+      whereConditions.push('p.estado = ?');
+      queryParams.push(parseInt(filtros.estado));
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
+    console.log(`🔍 Búsqueda: id="${filtros.id}", descripcion="${filtros.descripcion}", cliente="${filtros.cliente}", estado="${filtros.estado}"`);
+    console.log(`📝 WHERE clause: ${whereClause}`);
+    console.log(`📊 Query params:`, queryParams);
+    
     const [rows] = await pool.query(`
       SELECT 
+        @row_num := @row_num + 1 as numero_secuencial,
         p.id,
         p.descripcion,
         p.estado,
@@ -25,7 +63,7 @@ class ProyectoModel {
           WHEN 4 THEN 'Cancelado'
           ELSE 'Desconocido'
         END as estado_nombre,
-        -- Información del cliente usando workaround para FK rota
+        -- Información del cliente
         COALESCE(
           CASE 
             WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
@@ -36,21 +74,49 @@ class ProyectoModel {
         pt.id as cliente_id,
         pt.codigo as cliente_codigo,
         pt.tipo_persona,
-        -- Información del presupuesto origen (si existe)
+        -- Información del presupuesto origen
         pres.numero as presupuesto_numero,
-        pres.precio_venta as presupuesto_valor
-      FROM proyectos p
+        pres.precio_venta as presupuesto_valor,
+        -- Estadísticas de certificados
+        COUNT(DISTINCT c.id) as total_certificados,
+        SUM(CASE WHEN c.activo = 1 THEN 1 ELSE 0 END) as certificados_activos,
+        SUM(CASE WHEN c.activo = 1 THEN c.importe ELSE 0 END) as monto_certificados,
+        SUM(CASE WHEN c.activo = 1 AND c.estado IN (2, 3) THEN c.importe ELSE 0 END) as monto_facturado
+      FROM (SELECT @row_num := 0) as init,
+           proyectos p
       LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
       LEFT JOIN presupuestos pres ON pres.cliente_id = p.personal_id AND pres.estado = 'Aprobado'
-      WHERE p.activo = 1
-      ORDER BY p.fecha_inicio DESC
+      LEFT JOIN certificacions c ON p.id = c.proyecto_id
+      WHERE ${whereClause}
+      GROUP BY p.id
+      ORDER BY ${sortField === 'cliente_nombre' ? 'cliente_nombre' : 'p.' + sortField} ${order}
       LIMIT ? OFFSET ?
-    `, [limit, offset]);
+    `, [...queryParams, limit, offset]);
     
-    const [count] = await pool.query('SELECT COUNT(*) as total FROM proyectos WHERE activo = 1');
+    console.log(`✅ Resultados encontrados: ${rows.length} proyectos`);
+    
+    // Obtener certificados para cada proyecto
+    const proyectosConCertificados = await Promise.all(
+      rows.map(async (proyecto) => {
+        const certificados = await this.getCertificadosProyecto(proyecto.id);
+        console.log(`📋 Proyecto ${proyecto.id} (${proyecto.descripcion}): ${certificados.total} certificados (${certificados.total_activos} activos, ${certificados.total_inactivos} inactivos)`);
+        return {
+          ...proyecto,
+          certificados_detalle: certificados
+        };
+      })
+    );
+    
+    // Contar total con filtros aplicados
+    const [count] = await pool.query(`
+      SELECT COUNT(DISTINCT p.id) as total 
+      FROM proyectos p
+      LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
+      WHERE ${whereClause}
+    `, queryParams);
     
     return {
-      data: rows,
+      data: proyectosConCertificados,
       pagination: {
         total: count[0].total,
         page: parseInt(page),
@@ -61,7 +127,7 @@ class ProyectoModel {
   }
 
   /**
-   * Obtiene un proyecto completo por ID con todas sus relaciones
+   * Obtiene un proyecto simple por ID (para edición)
    */
   static async getProyectoById(id) {
     const [rows] = await pool.query(`
@@ -74,22 +140,13 @@ class ProyectoModel {
           WHEN 4 THEN 'Cancelado'
           ELSE 'Desconocido'
         END as estado_nombre,
-        -- Cliente information
         pt.id as cliente_id,
         CASE 
           WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
           ELSE COALESCE(pt.nombre, pt.apellido, 'Sin cliente')
-        END as cliente_nombre,
-        pt.codigo as cliente_codigo,
-        pt.tipo_persona as cliente_tipo,
-        -- Información de contacto del cliente
-        pers.email as cliente_email,
-        pers.telefono as cliente_telefono,
-        CONCAT_WS(' ', d.calle, d.numero) as cliente_direccion
+        END as cliente_nombre
       FROM proyectos p
       LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
-      LEFT JOIN personas pers ON pt.id = pers.id
-      LEFT JOIN domicilios d ON pers.domicilio_id = d.id
       WHERE p.id = ? AND p.activo = 1
     `, [id]);
     
@@ -97,7 +154,18 @@ class ProyectoModel {
       return null;
     }
     
-    const proyecto = rows[0];
+    return rows[0];
+  }
+
+  /**
+   * Obtiene un proyecto completo por ID con todas sus relaciones (para vista)
+   */
+  static async getProyectoCompleto(id) {
+    const proyecto = await this.getProyectoById(id);
+    
+    if (!proyecto) {
+      return null;
+    }
     
     // Obtener certificados del proyecto
     const certificados = await this.getCertificadosProyecto(id);
@@ -125,7 +193,8 @@ class ProyectoModel {
   }
 
   /**
-   * Obtiene todos los certificados de un proyecto
+   * Obtiene todos los certificados de un proyecto (activos e inactivos)
+   * Retorna objeto con certificados activos e inactivos separados
    */
   static async getCertificadosProyecto(proyectoId) {
     const [rows] = await pool.query(`
@@ -140,20 +209,110 @@ class ProyectoModel {
         c.importe,
         c.estado,
         c.fecha_factura,
+        c.activo,
         CASE c.estado
           WHEN 0 THEN 'Pendiente'
           WHEN 1 THEN 'Aprobado'
           WHEN 2 THEN 'Facturado'
+          WHEN 3 THEN 'En Proceso'
+          WHEN 4 THEN 'Anulado'
           ELSE 'Desconocido'
         END as estado_nombre,
         c.created,
         c.modified
       FROM certificacions c
-      WHERE c.proyecto_id = ? AND c.activo = 1
-      ORDER BY c.numero DESC
+      WHERE c.proyecto_id = ?
+      ORDER BY c.fecha ASC, c.numero ASC
     `, [proyectoId]);
     
-    return rows;
+    // Separar certificados activos e inactivos
+    const activos = rows.filter(c => c.activo === 1);
+    const inactivos = rows.filter(c => c.activo === 0);
+    
+    return {
+      activos,
+      inactivos,
+      total: rows.length,
+      total_activos: activos.length,
+      total_inactivos: inactivos.length
+    };
+  }
+
+  /**
+   * Obtiene todos los certificados disponibles para asociar a un proyecto
+   * Excluye certificados ya asociados a otros proyectos
+   */
+  static async getCertificadosDisponibles(proyectoId, limit = 100, offset = 0) {
+    const [rows] = await pool.query(`
+      SELECT 
+        c.id,
+        c.numero,
+        c.fecha,
+        c.alcance,
+        c.cantidad,
+        c.precio_unitario,
+        c.importe,
+        c.estado,
+        CASE c.estado
+          WHEN 0 THEN 'Pendiente'
+          WHEN 1 THEN 'Aprobado'
+          WHEN 2 THEN 'Facturado'
+          WHEN 3 THEN 'En Proceso'
+          WHEN 4 THEN 'Anulado'
+          ELSE 'Desconocido'
+        END as estado_nombre,
+        c.created
+      FROM certificacions c
+      WHERE c.activo = 1 AND (c.proyecto_id IS NULL OR c.proyecto_id = ?)
+      ORDER BY c.fecha DESC, c.numero DESC
+      LIMIT ? OFFSET ?
+    `, [proyectoId, limit, offset]);
+    
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total FROM certificacions c
+      WHERE c.activo = 1 AND (c.proyecto_id IS NULL OR c.proyecto_id = ?)
+    `, [proyectoId]);
+    
+    return {
+      certificados: rows,
+      total: countResult[0]?.total || 0
+    };
+  }
+
+  /**
+   * Asocia un certificado a un proyecto
+   */
+  static async asociarCertificado(proyectoId, certificadoId) {
+    try {
+      const [result] = await pool.query(`
+        UPDATE certificacions 
+        SET proyecto_id = ?, modified = NOW()
+        WHERE id = ? AND activo = 1
+      `, [proyectoId, certificadoId]);
+      
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error al asociar certificado:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Desasocia un certificado de un proyecto
+   */
+  static async desasociarCertificado(certificadoId) {
+    try {
+      const [result] = await pool.query(`
+        UPDATE certificacions 
+        SET proyecto_id = NULL, modified = NOW()
+        WHERE id = ? AND activo = 1
+      `, [certificadoId]);
+      
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error al desasociar certificado:', error);
+      throw error;
+    }
   }
 
   /**
@@ -348,6 +507,41 @@ class ProyectoModel {
   }
 
   /**
+   * Actualiza todos los campos de un proyecto
+   */
+  static async updateProyecto(id, proyectoData) {
+    try {
+      const [result] = await pool.query(`
+        UPDATE proyectos 
+        SET 
+          descripcion = ?,
+          estado = ?,
+          fecha_inicio = ?,
+          fecha_cierre = ?,
+          precio_venta = ?,
+          observaciones = ?,
+          personal_id = ?,
+          modified = NOW()
+        WHERE id = ? AND activo = 1
+      `, [
+        proyectoData.descripcion,
+        parseInt(proyectoData.estado) || 1,
+        proyectoData.fecha_inicio,
+        proyectoData.fecha_cierre || null,
+        parseFloat(proyectoData.precio_venta) || 0,
+        proyectoData.observaciones || '',
+        proyectoData.cliente_id || proyectoData.personal_id,
+        id
+      ]);
+      
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error al actualizar proyecto:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Busca proyectos por diferentes criterios
    */
   static async searchProyectos(filters = {}, page = 1, limit = 20) {
@@ -451,14 +645,14 @@ class ProyectoModel {
           END as estado_nombre,
           COALESCE(
             CASE 
-              WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
-              ELSE COALESCE(pt.nombre, pt.apellido, 'Sin cliente')
+              WHEN pers.apellido IS NOT NULL AND pers.apellido != '' THEN CONCAT(pers.apellido, ', ', COALESCE(pers.nombre, ''))
+              ELSE COALESCE(pers.nombre, pers.apellido, 'Sin cliente')
             END,
             'Sin cliente'
           ) as cliente_nombre
         FROM proyectos p
-        LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
-        WHERE p.activo = 1 AND p.estado IN (1, 2)
+        LEFT JOIN personals pers ON p.personal_id = pers.id
+        WHERE p.activo = 1
         ORDER BY p.fecha_inicio DESC
         LIMIT ?
       `;
@@ -504,6 +698,54 @@ class ProyectoModel {
         valor_total_proyectos: 0,
         valor_promedio: 0
       };
+    }
+  }
+
+  /**
+   * Obtiene proyectos de un cliente específico
+   */
+  static async getProyectosByCliente(clienteId) {
+    try {
+      const [rows] = await pool.query(`
+        SELECT 
+          p.id,
+          p.descripcion as nombre,
+          p.descripcion,
+          p.estado,
+          p.precio_venta,
+          p.fecha_inicio,
+          p.fecha_cierre,
+          p.observaciones,
+          p.personal_id,
+          p.created,
+          p.modified
+        FROM proyectos p
+        WHERE p.personal_id = ? AND p.activo = 1
+        ORDER BY p.fecha_inicio DESC
+      `, [clienteId]);
+      
+      return rows || [];
+    } catch (error) {
+      console.error('Error al obtener proyectos del cliente:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Elimina un proyecto (soft delete - marca como inactivo)
+   */
+  static async deleteProyecto(id) {
+    try {
+      const [result] = await pool.query(`
+        UPDATE proyectos 
+        SET activo = 0, modified = NOW()
+        WHERE id = ? AND activo = 1
+      `, [id]);
+      
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error al eliminar proyecto:', error);
+      throw error;
     }
   }
 }

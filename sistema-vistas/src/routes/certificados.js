@@ -29,7 +29,8 @@ router.get("/ver/:id", CertificadoController.ver);
 router.get('/:id', CertificadoController.ver);
 
 // Formularios de edición
-router.get('/:id/editar', CertificadoController.mostrarEditar);
+router.get('/editar/:id', CertificadoController.mostrarEditar); // URL: /certificados/editar/ID
+router.get('/:id/editar', CertificadoController.mostrarEditar); // URL: /certificados/ID/editar
 router.post('/:id/editar', CertificadoController.actualizar);
 
 // API para cambiar estado

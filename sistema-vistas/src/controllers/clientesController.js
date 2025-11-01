@@ -261,7 +261,7 @@ class ClienteController {
   static async getProyectosCliente(req, res, next) {
     try {
       const { id } = req.params;
-      const proyectos = await ProyectoModel.getByClienteId(id);
+      const proyectos = await ProyectoModel.getProyectosByCliente(id);
       
       res.json({
         success: true,
@@ -409,8 +409,8 @@ class ClienteController {
    * Helper interno: obtiene listado de clientes con paginación, búsqueda y orden
    */
   static async fetchClientesList(page = 1, limit = 20, filters = {}, sortBy = 'nombre', sortOrder = 'ASC') {
-    // Validar columnas permitidas para orden (mapearemos 'nombre' a display_nombre)
-    const allowedSort = new Set(['nombre', 'codigo', 'created', 'modified']);
+    // Validar columnas permitidas para orden
+    const allowedSort = new Set(['nombre', 'codigo', 'created', 'modified', 'monto_total', 'total_facturas', 'total_proyectos', 'ultima_actividad']);
     const sortSel = allowedSort.has(String(sortBy).toLowerCase()) ? String(sortBy).toLowerCase() : 'nombre';
     const order = String(sortOrder).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
@@ -436,28 +436,50 @@ class ClienteController {
     const total = countRows[0]?.total || 0;
 
     // Definir expresión de orden
-    const orderExpr = (sortSel === 'nombre') ? "display_nombre" : `pt.${sortSel}`;
+    let orderExpr = 'pt.nombre';
+    if (sortSel === 'nombre') orderExpr = 'display_nombre';
+    else if (sortSel === 'codigo') orderExpr = 'pt.codigo';
+    else if (sortSel === 'created') orderExpr = 'pt.created';
+    else if (sortSel === 'modified') orderExpr = 'pt.modified';
+    else if (sortSel === 'monto_total') orderExpr = 'monto_total';
+    else if (sortSel === 'total_facturas') orderExpr = 'total_facturas';
+    else if (sortSel === 'total_proyectos') orderExpr = 'total_proyectos';
+    else if (sortSel === 'ultima_actividad') orderExpr = 'ultima_actividad';
 
-    // Datos
+    // Datos - con subconsultas para traer datos calculados
     const [rows] = await pool.query(`
       SELECT 
         pt.id,
+        pt.nombre,
+        pt.apellido,
         NULLIF(CONCAT_WS(' ', pt.nombre, pt.apellido), '') AS display_nombre,
         pt.codigo,
+        pt.cbu,
+        pt.tipo,
+        pt.tipo_persona,
+        pt.condicion_iva,
         pt.activo,
         pt.created,
-        pt.modified
+        pt.modified,
+        COALESCE((SELECT COUNT(*) FROM factura_ventas fv WHERE fv.persona_tercero_id = pt.id AND fv.activo = 1), 0) as total_facturas,
+        COALESCE((SELECT SUM(fv.total) FROM factura_ventas fv WHERE fv.persona_tercero_id = pt.id AND fv.activo = 1), 0) as monto_total,
+        COALESCE((SELECT SUM(CASE WHEN fv.estado IN (1,2) THEN fv.total ELSE 0 END) FROM factura_ventas fv WHERE fv.persona_tercero_id = pt.id AND fv.activo = 1), 0) as monto_pendiente,
+        0 as total_proyectos,
+        COALESCE((SELECT MAX(fv.fecha_emision) FROM factura_ventas fv WHERE fv.persona_tercero_id = pt.id AND fv.activo = 1), '1970-01-01') as ultima_actividad
       FROM persona_terceros pt
       ${whereSql}
       ORDER BY ${orderExpr} ${order}
       LIMIT ? OFFSET ?
     `, [...params, Number(limit), Number(offset)]);
 
+    const totalPages = Math.max(1, Math.ceil(total / limit));
     const pagination = {
       total,
       page,
       limit,
-      totalPages: Math.max(1, Math.ceil(total / limit))
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
     };
 
     return { data: rows, pagination };

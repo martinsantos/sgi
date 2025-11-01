@@ -6,7 +6,7 @@ require('dotenv').config();
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASS || '',
   database: process.env.DB_NAME || 'ultimami_sgi',
   port: parseInt(process.env.DB_PORT) || 3306,
   socketPath: process.env.DB_SOCKET,
@@ -135,29 +135,82 @@ class FacturaModel {
   }
 
   /**
-   * Actualiza un campo de una factura
+   * Actualizar múltiples campos de factura
    * @param {string} id - ID de la factura
-   * @param {string} campo - Nombre del campo a actualizar
-   * @param {any} valor - Nuevo valor
+   * @param {Object} updateData - Objeto con campos a actualizar
    * @returns {Promise<boolean>} - True si la actualización fue exitosa
    */
-  static async updateFacturaField(id, campo, valor) {
-    // Lista de campos permitidos para actualizar
+  static async updateFacturaField(id, updateData) {
+    // Si es el formato antiguo (id, campo, valor)
+    if (typeof updateData === 'string') {
+      const campo = updateData;
+      const valor = arguments[2];
+      
+      const camposPermitidos = [
+        'observaciones',
+        'estado',
+        'fecha_pago',
+        'numero_factura'
+      ];
+      
+      if (!camposPermitidos.includes(campo)) {
+        throw new Error(`El campo ${campo} no está permitido para actualización`);
+      }
+      
+      const [result] = await pool.query(
+        `UPDATE factura_ventas SET ${campo} = ?, modified = NOW() WHERE id = ?`,
+        [valor, id]
+      );
+      
+      return result.affectedRows > 0;
+    }
+    
+    // Nuevo formato: objeto con múltiples campos
     const camposPermitidos = [
+      'persona_tercero_id',
       'observaciones',
       'estado',
       'fecha_pago',
-      'numero_factura'
+      'fecha_vto_pago',
+      'numero_factura',
+      'porcentaje_iibb',
+      'neto_iibb',
+      'total_iva_10',
+      'total_iva_21',
+      'total_iva_27',
+      'cae',
+      'fecha_vto_cae',
+      'punto_venta',
+      'periodo_desde',
+      'periodo_hasta',
+      'condicion_venta',
+      'tipo_actividad_afip',
+      'tipo_actividad_iibb',
+      'cancelado',
+      'total',
+      'fecha_cobro'
     ];
     
-    if (!camposPermitidos.includes(campo)) {
-      throw new Error(`El campo ${campo} no está permitido para actualización`);
+    // Construir SET clause dinámicamente
+    const setClauses = [];
+    const values = [];
+    
+    for (const [campo, valor] of Object.entries(updateData)) {
+      if (camposPermitidos.includes(campo) && valor !== undefined) {
+        setClauses.push(`${campo} = ?`);
+        values.push(valor);
+      }
     }
     
-    const [result] = await pool.query(
-      `UPDATE factura_ventas SET ${campo} = ?, modified = NOW() WHERE id = ?`,
-      [valor, id]
-    );
+    if (setClauses.length === 0) {
+      return false;
+    }
+    
+    values.push(id);
+    
+    const query = `UPDATE factura_ventas SET ${setClauses.join(', ')}, modified = NOW() WHERE id = ?`;
+    
+    const [result] = await pool.query(query, values);
     
     return result.affectedRows > 0;
   }

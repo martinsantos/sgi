@@ -1,0 +1,158 @@
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2">Editar Proyecto</h1>
+        <p class="text-muted mb-0">{{proyecto.descripcion}}</p>
+    </div>
+    <div>
+        <a href="/proyectos/{{proyecto.id}}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pencil"></i> Información del Proyecto</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/proyectos/{{proyecto.id}}/editar" id="formEditar">
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label fw-bold">Descripción del Proyecto *</label>
+                        <input type="text" class="form-control" id="descripcion" name="descripcion" 
+                               value="{{proyecto.descripcion}}" required>
+                        <small class="text-muted">Nombre o descripción del proyecto</small>
+                    </div>
+
+                    <!-- Cliente -->
+                    <div class="mb-3">
+                        <label for="cliente_id" class="form-label fw-bold">Cliente *</label>
+                        <select class="form-select" id="cliente_id" name="cliente_id" required>
+                            <option value="">-- Seleccionar Cliente --</option>
+                            {{#each clientes}}
+                            <option value="{{this.id}}" {{#eq this.id ../proyecto.personal_id}}selected{{/eq}}>
+                                {{this.nombre}} {{this.apellido}}
+                            </option>
+                            {{/each}}
+                        </select>
+                    </div>
+
+                    <!-- Fechas -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_inicio" class="form-label fw-bold">Fecha de Inicio *</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" 
+                                   value="{{proyecto.fecha_inicio}}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_cierre" class="form-label fw-bold">Fecha de Cierre</label>
+                            <input type="date" class="form-control" id="fecha_cierre" name="fecha_cierre" 
+                                   value="{{proyecto.fecha_cierre}}">
+                            <small class="text-muted">Opcional - Dejar en blanco si aún está en progreso</small>
+                        </div>
+                    </div>
+
+                    <!-- Estado y Precio -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="estado" class="form-label fw-bold">Estado *</label>
+                            <select class="form-select" id="estado" name="estado" required>
+                                {{#each estados}}
+                                <option value="{{@key}}" {{#eq @key ../proyecto.estado}}selected{{/eq}}>
+                                    {{this}}
+                                </option>
+                                {{/each}}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="precio_venta" class="form-label fw-bold">Precio de Venta</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="precio_venta" name="precio_venta" 
+                                       value="{{proyecto.precio_venta}}" step="0.01" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label fw-bold">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="4">{{proyecto.observaciones}}</textarea>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                        <a href="/proyectos/{{proyecto.id}}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Información Adicional -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="fw-bold text-muted">ID del Proyecto:</label>
+                    <p class="mb-0 font-monospace small">{{proyecto.id}}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold text-muted">Creado:</label>
+                    <p class="mb-0">{{proyecto.created}}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold text-muted">Última modificación:</label>
+                    <p class="mb-0">{{proyecto.modified}}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado Actual -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-status"></i> Estado Actual</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <span class="badge {{#eq proyecto.estado 1}}bg-warning{{/eq}}{{#eq proyecto.estado 2}}bg-info{{/eq}}{{#eq proyecto.estado 3}}bg-success{{/eq}}{{#eq proyecto.estado 4}}bg-danger{{/eq}} fs-6">
+                        {{#eq proyecto.estado 1}}Pendiente{{/eq}}
+                        {{#eq proyecto.estado 2}}En Progreso{{/eq}}
+                        {{#eq proyecto.estado 3}}Finalizado{{/eq}}
+                        {{#eq proyecto.estado 4}}Cancelado{{/eq}}
+                    </span>
+                </div>
+                <div class="mt-3">
+                    <p class="text-muted small mb-0">
+                        <i class="bi bi-calendar-event"></i>
+                        Inicio: {{proyecto.fecha_inicio}}
+                    </p>
+                    {{#if proyecto.fecha_cierre}}
+                    <p class="text-muted small mb-0">
+                        <i class="bi bi-calendar-check"></i>
+                        Cierre: {{proyecto.fecha_cierre}}
+                    </p>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .font-monospace {
+        font-family: 'Courier New', monospace;
+    }
+</style>

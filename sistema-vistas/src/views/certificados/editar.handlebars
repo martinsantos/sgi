@@ -1,0 +1,113 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Editar Certificado N° {{certificado.numero}}</h1>
+  <div>
+    <a href="{{returnUrl}}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Datos del Certificado</h5>
+  </div>
+  <div class="card-body">
+    <form action="/certificados/{{certificado.id}}/editar" method="POST">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="numero" class="form-label">Número de Certificado</label>
+          <input type="number" class="form-control" id="numero" name="numero" value="{{certificado.numero}}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="fecha" class="form-label">Fecha de Emisión</label>
+          <input type="date" class="form-control" id="fecha" name="fecha" value="{{formatDateInput certificado.fecha}}" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label for="proyecto_id" class="form-label">Proyecto Asociado</label>
+          <select class="form-select" id="proyecto_id" name="proyecto_id" required>
+            <option value="">Seleccione un proyecto</option>
+            {{#each proyectos}}
+            <option value="{{this.id}}" {{#if (eq this.id ../certificado.proyecto_id)}}selected{{/if}}>
+              {{this.descripcion}}
+            </option>
+            {{/each}}
+          </select>
+          {{#if certificado.proyecto_nombre}}
+          <small class="form-text text-muted">Proyecto actual: <strong>{{certificado.proyecto_nombre}}</strong></small>
+          {{/if}}
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label for="alcance" class="form-label">Descripción/Alcance del Trabajo</label>
+          <textarea class="form-control" id="alcance" name="alcance" rows="4" required>{{certificado.alcance}}</textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label for="condiciones" class="form-label">Condiciones/Observaciones</label>
+          <textarea class="form-control" id="condiciones" name="condiciones" rows="3">{{certificado.observacion}}</textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label for="cantidad" class="form-label">Cantidad</label>
+          <input type="number" step="0.01" class="form-control" id="cantidad" name="cantidad" value="{{certificado.cantidad}}" required>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="precio_unitario" class="form-label">Precio Unitario</label>
+          <input type="number" step="0.01" class="form-control" id="precio_unitario" name="precio_unitario" value="{{certificado.precio_unitario}}" required>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="importe" class="form-label">Importe Total</label>
+          <input type="number" step="0.01" class="form-control" id="importe" name="importe" value="{{certificado.importe}}" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="estado" class="form-label">Estado</label>
+          <select class="form-select" id="estado" name="estado" required>
+            {{#each estados}}
+            <option value="{{@key}}" {{#eq @key ../certificado.estado}}selected{{/eq}}>{{this}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="fecha_factura" class="form-label">Fecha de Factura (opcional)</label>
+          <input type="date" class="form-control" id="fecha_factura" name="fecha_factura" value="{{formatDateInput certificado.fecha_factura}}">
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="d-flex justify-content-between">
+        <a href="{{returnUrl}}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-save"></i> Guardar Cambios
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Auto-calcular importe al cambiar cantidad o precio unitario
+document.getElementById('cantidad').addEventListener('input', calcularImporte);
+document.getElementById('precio_unitario').addEventListener('input', calcularImporte);
+
+function calcularImporte() {
+  const cantidad = parseFloat(document.getElementById('cantidad').value) || 0;
+  const precioUnitario = parseFloat(document.getElementById('precio_unitario').value) || 0;
+  const importe = cantidad * precioUnitario;
+  document.getElementById('importe').value = importe.toFixed(2);
+}
+</script>

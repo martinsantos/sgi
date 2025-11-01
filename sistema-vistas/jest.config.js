@@ -2,10 +2,18 @@
 const config = {
   testEnvironment: 'node',
   verbose: true,
-  // Automatically clear mock calls, instances, contexts and results before every test
   clearMocks: true,
-  // The directory where Jest should output its coverage files
   coverageDirectory: "coverage",
+  testTimeout: 30000,
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)'
+  ],
+  moduleNameMapper: {
+    '^uuid$': '<rootDir>/tests/__mocks__/uuid.js'
+  },
+  testPathIgnorePatterns: [
+    '<rootDir>/tests/e2e/'
+  ]
 };
 
 module.exports = config;

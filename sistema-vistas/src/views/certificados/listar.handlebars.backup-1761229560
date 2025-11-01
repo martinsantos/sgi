@@ -1,0 +1,314 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>{{title}}</h1>
+  <div>
+    <a href="/" class="btn btn-outline-secondary me-2">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <a href="/api/certificados/exportar" class="btn btn-info me-2">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
+    <a href="/certificados/nuevo" class="btn btn-success">
+      <i class="bi bi-plus-circle"></i> Nuevo Certificado
+    </a>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Filtros de Búsqueda</h5>
+  </div>
+  <div class="card-body">
+    <form id="formBusqueda" class="row g-3" method="GET" action="/certificados">
+      <div class="col-md-2">
+        <label for="numero" class="form-label">N° Certificado</label>
+        <input type="number" class="form-control" id="numero" name="numero" placeholder="Número" value="{{query.numero}}">
+      </div>
+      <div class="col-md-3">
+        <label for="cliente_nombre" class="form-label">Cliente</label>
+        <input type="text" class="form-control" id="cliente_nombre" name="cliente_nombre" placeholder="Nombre del cliente" value="{{query.cliente_nombre}}">
+      </div>
+      <div class="col-md-2">
+        <label for="estado" class="form-label">Estado</label>
+        <select class="form-select" id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="0" {{#if (eq query.estado '0')}}selected{{/if}}>Pendiente</option>
+          <option value="1" {{#if (eq query.estado '1')}}selected{{/if}}>Aprobado</option>
+          <option value="2" {{#if (eq query.estado '2')}}selected{{/if}}>Facturado</option>
+          <option value="3" {{#if (eq query.estado '3')}}selected{{/if}}>En Proceso</option>
+          <option value="4" {{#if (eq query.estado '4')}}selected{{/if}}>Anulado</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="fecha" class="form-label">Fecha Emisión</label>
+        <input type="date" class="form-control" id="fecha" name="fecha" value="{{query.fecha}}">
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm table-sortable" id="tablaCertificados" style="width: 100%; table-layout: fixed;">
+        <thead class="table-dark">
+          <tr>
+            <th style="width: 8%; cursor: pointer;" onclick="sortTable(0)" title="Click para ordenar">
+              N° Cert. <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th style="width: 18%; cursor: pointer;" onclick="sortTable(1)" title="Click para ordenar">
+              Cliente/Proyecto <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th style="width: 20%; cursor: pointer;" onclick="sortTable(2)" title="Click para ordenar">
+              Descripción <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th style="width: 10%; cursor: pointer;" onclick="sortTable(3)" title="Click para ordenar">
+              F. Emisión <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th style="width: 10%; cursor: pointer;" onclick="sortTable(4)" title="Click para ordenar">
+              F. Factura <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th style="width: 6%; cursor: pointer;" onclick="sortTable(5)" title="Click para ordenar">
+              Cant. <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th class="text-end" style="width: 10%; cursor: pointer;" onclick="sortTable(6)" title="Click para ordenar">
+              P. Unit. <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th class="text-end" style="width: 10%; cursor: pointer;" onclick="sortTable(7)" title="Click para ordenar">
+              Monto <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th style="width: 8%; cursor: pointer;" onclick="sortTable(8)" title="Click para ordenar">
+              Estado <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th style="width: 10%;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each certificados}}
+          <tr>
+            <td>
+              <strong>{{this.numero}}</strong>
+            </td>
+            <td style="word-wrap: break-word; overflow: hidden;">
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <strong title="{{this.cliente_nombre}}">{{this.cliente_nombre}}</strong>
+                {{#if this.proyecto_nombre}}
+                <small class="text-muted d-block" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.proyecto_nombre}}">{{this.proyecto_nombre}}</small>
+                {{/if}}
+              </div>
+            </td>
+            <td style="word-wrap: break-word; overflow: hidden;">
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.alcance}}">
+                {{#if this.alcance}}
+                <strong>{{this.alcance}}</strong>
+                {{/if}}
+                {{#if this.condiciones}}
+                <small class="text-muted d-block" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{this.condiciones}}">{{this.condiciones}}</small>
+                {{/if}}
+              </div>
+            </td>
+            <td>{{formatDate this.fecha}}</td>
+            <td>{{formatDate this.fecha_factura}}</td>
+            <td class="text-center">{{this.cantidad}}</td>
+            <td class="text-end">{{formatCurrency this.precio_unitario}}</td>
+            <td class="text-end">{{formatCurrency this.importe}}</td>
+            <td class="text-center">
+              <span class="badge {{getEstadoCertificadoBadge this.estado}}">
+                {{getEstadoCertificado this.estado}}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/certificados/ver/{{this.id}}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="/certificados/editar/{{this.id}}" class="btn btn-outline-warning btn-sm" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr>
+            <td colspan="10" class="text-center py-4">
+              <div class="text-muted">No se encontraron certificados</div>
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    {{#if pagination}}
+    <div class="card-footer">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="text-muted">
+          Mostrando {{pagination.from}} a {{pagination.to}} de {{pagination.total}} certificados
+        </div>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <!-- Anterior -->
+            <li class="page-item {{#if pagination.isFirstPage}}disabled{{/if}}">
+              <a class="page-link" href="?page={{pagination.previousPage}}" {{#if pagination.isFirstPage}}tabindex="-1"{{/if}}>
+                <i class="bi bi-chevron-left"></i> Anterior
+              </a>
+            </li>
+
+            <!-- Primera página -->
+            {{#unless pagination.isFirstPage}}
+            <li class="page-item">
+              <a class="page-link" href="?page=1">1</a>
+            </li>
+            {{#if pagination.showStartDots}}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {{/if}}
+            {{/unless}}
+
+            <!-- Páginas cercanas -->
+            {{#each pagination.pages}}
+            <li class="page-item {{#if this.active}}active{{/if}}">
+              <a class="page-link" href="?page={{this.number}}">{{this.number}}</a>
+            </li>
+            {{/each}}
+
+            <!-- Última página -->
+            {{#unless pagination.isLastPage}}
+            {{#if pagination.showEndDots}}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {{/if}}
+            <li class="page-item">
+              <a class="page-link" href="?page={{pagination.totalPages}}">{{pagination.totalPages}}</a>
+            </li>
+            {{/unless}}
+
+            <!-- Siguiente -->
+            <li class="page-item {{#if pagination.isLastPage}}disabled{{/if}}">
+              <a class="page-link" href="?page={{pagination.nextPage}}" {{#if pagination.isLastPage}}tabindex="-1"{{/if}}>
+                Siguiente <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Manejar búsqueda
+    $('#formBusqueda').on('submit', function(e) {
+      e.preventDefault();
+      const formData = $(this).serialize();
+      window.location.href = `${window.location.pathname}?${formData}`;
+    });
+
+    // Manejar botón limpiar
+    $('#btnLimpiar').on('click', function() {
+      $('#formBusqueda')[0].reset();
+      window.location.href = window.location.pathname;
+    });
+
+    // Export function
+    window.exportarCertificados = function() {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = `/api/certificados/exportar?${params.toString()}`;
+    };
+
+    // Función para ordenar tabla
+    let sortDirection = {};
+    window.sortTable = function(columnIndex) {
+      const table = document.getElementById('tablaCertificados');
+      const tbody = table.getElementsByTagName('tbody')[0];
+      const rows = Array.from(tbody.getElementsByTagName('tr'));
+      
+      // Ignorar fila de "no hay datos"
+      if (rows.length === 1 && rows[0].cells.length === 1) return;
+      
+      // Determinar dirección de ordenamiento
+      sortDirection[columnIndex] = sortDirection[columnIndex] === 'asc' ? 'desc' : 'asc';
+      const isAsc = sortDirection[columnIndex] === 'asc';
+      
+      rows.sort((a, b) => {
+        // Obtener contenido de la celda, manejando elementos anidados
+        let aCell = a.cells[columnIndex];
+        let bCell = b.cells[columnIndex];
+        
+        if (!aCell || !bCell) return 0;
+        
+        let aValue = aCell.textContent.trim();
+        let bValue = bCell.textContent.trim();
+        
+        // Para la columna de estado, usar solo la primera línea (el badge)
+        if (columnIndex === 8) {
+          aValue = aCell.querySelector('.badge')?.textContent.trim() || aValue;
+          bValue = bCell.querySelector('.badge')?.textContent.trim() || bValue;
+        }
+        
+        // Para cliente/proyecto, usar solo el nombre (en negrita)
+        if (columnIndex === 1) {
+          const aStrong = aCell.querySelector('strong');
+          const bStrong = bCell.querySelector('strong');
+          if (aStrong) aValue = aStrong.textContent.trim();
+          if (bStrong) bValue = bStrong.textContent.trim();
+        }
+        
+        // Intentar convertir a número
+        const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
+        const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return isAsc ? aNum - bNum : bNum - aNum;
+        }
+        
+        // Para fechas en formato dd/mm/yyyy
+        const dateRegex = /\d{1,2}\/\d{1,2}\/\d{4}/;
+        if (dateRegex.test(aValue) && dateRegex.test(bValue)) {
+          const aDate = parseDateDMY(aValue);
+          const bDate = parseDateDMY(bValue);
+          if (aDate && bDate) {
+            return isAsc ? aDate - bDate : bDate - aDate;
+          }
+        }
+        
+        // Ordenar como texto
+        return isAsc ? 
+          aValue.localeCompare(bValue, 'es', {numeric: true}) : 
+          bValue.localeCompare(aValue, 'es', {numeric: true});
+      });
+      
+      function parseDateDMY(dateStr) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          return new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+        return null;
+      }
+      
+      // Re-insertar filas ordenadas
+      rows.forEach(row => tbody.appendChild(row));
+      
+      // Actualizar iconos de ordenamiento
+      const headers = table.querySelectorAll('thead th[onclick]');
+      headers.forEach((header, idx) => {
+        const icon = header.querySelector('i');
+        if (icon) {
+          icon.className = idx === columnIndex ? 
+            (isAsc ? 'bi bi-arrow-up' : 'bi bi-arrow-down') : 
+            'bi bi-arrow-down-up';
+        }
+      });
+    };
+  });
+</script>
+{{/section}}

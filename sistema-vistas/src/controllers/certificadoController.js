@@ -13,15 +13,48 @@ class CertificadoController {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
+      const sort = req.query.sort || 'numero';  // Campo por el que ordenar
+      const order = req.query.order || 'desc';  // Dirección: asc o desc
 
-      console.log(`📋 Listando certificados - Página ${page}, Límite ${limit}`);
+      console.log(`📋 Listando certificados - Página ${page}, Límite ${limit}, Sort: ${sort} ${order}`);
 
-      const resultado = await CertificadoModel.getCertificados(page, limit);
+      const { certificados, total } = await CertificadoModel.getCertificados(page, limit, sort, order);
+      
+      console.log(`✅ Certificados obtenidos: ${certificados?.length || 0}, Total: ${total}`);
+
+      const totalPages = Math.ceil(total / limit);
+      const from = (page - 1) * limit + 1;
+      const to = Math.min(page * limit, total);
+
+      // Generar páginas para mostrar (máximo 5 páginas visibles)
+      const pages = [];
+      const range = 2; // Páginas antes y después de la actual
+      for (let i = Math.max(1, page - range); i <= Math.min(totalPages, page + range); i++) {
+        pages.push({
+          number: i,
+          active: i === page
+        });
+      }
+
+      const pagination = {
+        currentPage: page,
+        totalPages,
+        total,
+        from,
+        to,
+        previousPage: Math.max(1, page - 1),
+        nextPage: Math.min(totalPages, page + 1),
+        isFirstPage: page === 1,
+        isLastPage: page === totalPages,
+        showStartDots: page > range + 1,
+        showEndDots: page < totalPages - range,
+        pages
+      };
 
       res.render('certificados/listar', {
         title: 'Gestión de Certificados',
-        certificados: resultado.data,
-        pagination: resultado.pagination,
+        certificados,
+        pagination,
         currentPage: page,
         query: req.query,
         estados: CertificadoModel.ESTADO_NOMBRES,
@@ -32,7 +65,12 @@ class CertificadoController {
     } catch (error) {
       console.error('❌ Error al listar certificados:', error);
       console.log('error', 'Error al cargar la lista de certificados');
-      res.redirect('/dashboard');
+      res.render('certificados/listar', {
+        title: 'Gestión de Certificados',
+        certificados: [],
+        pagination: null,
+        error: 'Error al cargar certificados'
+      });
     }
   }
 
@@ -117,9 +155,50 @@ class CertificadoController {
         return res.redirect('/certificados');
       }
 
+      // Obtener información del proyecto si existe
+      let proyecto = null;
+      let otrosCertificadosProyecto = [];
+      let otrosProyectosCliente = [];
+      let totalCertificadosCliente = 0;
+      let montoTotalCliente = 0;
+      
+      if (certificado.proyecto_id) {
+        proyecto = await ProyectoModel.getProyectoById(certificado.proyecto_id);
+        
+        // Obtener otros certificados del mismo proyecto
+        otrosCertificadosProyecto = await CertificadoModel.getCertificadosByProyecto(certificado.proyecto_id);
+        // Excluir el certificado actual
+        otrosCertificadosProyecto = otrosCertificadosProyecto.filter(c => c.id !== id);
+      }
+      
+      // Si hay cliente, obtener sus otros proyectos y estadísticas
+      if (certificado.cliente_id) {
+        try {
+          otrosProyectosCliente = await ProyectoModel.getProyectosByCliente(certificado.cliente_id);
+          // Excluir el proyecto actual si existe
+          if (certificado.proyecto_id) {
+            otrosProyectosCliente = otrosProyectosCliente.filter(p => p.id !== certificado.proyecto_id);
+          }
+          
+          // Obtener total de certificados y monto del cliente
+          const statsCliente = await CertificadoModel.getStatsCliente(certificado.cliente_id);
+          totalCertificadosCliente = statsCliente.totalCertificados;
+          montoTotalCliente = statsCliente.montoTotal;
+        } catch (error) {
+          console.error('Error al obtener datos del cliente:', error);
+          // Continuar sin datos de cliente relacionados
+        }
+      }
+
       res.render('certificados/ver', {
         title: `Certificado N° ${certificado.numero}`,
         certificado,
+        proyecto,
+        otrosCertificadosProyecto,
+        otrosProyectosCliente,
+        totalCertificadosCliente,
+        montoTotalCliente,
+        returnUrl: req.query.return || '/certificados',
         formatCurrency: CertificadoModel.formatCurrency,
         formatDate: CertificadoModel.formatDate
       });
@@ -141,7 +220,7 @@ class CertificadoController {
 
       const [certificado, proyectosActivos] = await Promise.all([
         CertificadoModel.getCertificadoById(id),
-        ProyectoModel.getProyectosActivos(100)
+        ProyectoModel.getProyectosActivos(500) // Incrementado a 500 para incluir más proyectos
       ]);
 
       if (!certificado) {
@@ -149,11 +228,22 @@ class CertificadoController {
         return res.redirect('/certificados');
       }
 
+      // Asegurar que el proyecto del certificado esté en la lista
+      let proyectos = proyectosActivos;
+      if (certificado.proyecto_id && !proyectos.find(p => p.id === certificado.proyecto_id)) {
+        // Si el proyecto del certificado no está en la lista, agregarlo
+        const proyectoActual = await ProyectoModel.getProyectoById(certificado.proyecto_id);
+        if (proyectoActual) {
+          proyectos = [proyectoActual, ...proyectos];
+        }
+      }
+
       res.render('certificados/editar', {
         title: `Editar Certificado N° ${certificado.numero}`,
         certificado,
-        proyectos: proyectosActivos,
-        estados: CertificadoModel.ESTADO_NOMBRES
+        proyectos: proyectos,
+        estados: CertificadoModel.ESTADO_NOMBRES,
+        returnUrl: req.query.return || '/certificados'
       });
 
     } catch (error) {
@@ -200,13 +290,18 @@ class CertificadoController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
 
+      console.log('🔍 Búsqueda con filtros:', req.query);
+
       const filters = {
         numero: req.query.numero ? parseInt(req.query.numero) : null,
-        alcance: req.query.alcance,
-        estado: req.query.estado !== undefined ? parseInt(req.query.estado) : null,
-        proyecto_id: req.query.proyecto_id,
-        fecha_desde: req.query.fecha_desde,
-        fecha_hasta: req.query.fecha_hasta
+        cliente_id: req.query.cliente_id || null,  // ✅ NUEVO: Filtro por ID de cliente
+        cliente_nombre: req.query.cliente_nombre || null,
+        alcance: req.query.alcance || null,
+        estado: req.query.estado !== '' && req.query.estado !== undefined ? parseInt(req.query.estado) : null,
+        proyecto_id: req.query.proyecto_id || null,
+        fecha: req.query.fecha || null,
+        fecha_desde: req.query.fecha_desde || null,
+        fecha_hasta: req.query.fecha_hasta || null
       };
 
       // Remover filtros vacíos
@@ -216,20 +311,51 @@ class CertificadoController {
         }
       });
 
-      console.log('🔍 Buscando certificados con filtros:', filters);
+      const { certificados, total } = await CertificadoModel.buscarCertificados(filters, page, limit);
+      
+      const totalPages = Math.ceil(total / limit);
+      const from = (page - 1) * limit + 1;
+      const to = Math.min(page * limit, total);
 
-      const resultado = await CertificadoModel.searchCertificados(filters, page, limit);
+      // Generar páginas para mostrar
+      const pages = [];
+      const range = 2;
+      for (let i = Math.max(1, page - range); i <= Math.min(totalPages, page + range); i++) {
+        pages.push({
+          number: i,
+          active: i === page
+        });
+      }
+
+      const pagination = {
+        currentPage: page,
+        totalPages,
+        total,
+        from,
+        to,
+        previousPage: Math.max(1, page - 1),
+        nextPage: Math.min(totalPages, page + 1),
+        isFirstPage: page === 1,
+        isLastPage: page === totalPages,
+        showStartDots: page > range + 1,
+        showEndDots: page < totalPages - range,
+        pages
+      };
+
+      // Obtener nombre del cliente si se filtró por cliente_id
+      let cliente_display = req.query.cliente_display || '';
+      if (req.query.cliente_id && !cliente_display && certificados.length > 0) {
+        cliente_display = certificados[0].cliente_nombre;
+      }
 
       res.render('certificados/listar', {
-        title: 'Búsqueda de Certificados',
-        certificados: resultado.data,
-        pagination: resultado.pagination,
-        currentPage: page,
-        query: req.query,
-        filters: filters,
-        estados: CertificadoModel.ESTADO_NOMBRES,
-        formatCurrency: CertificadoModel.formatCurrency,
-        formatDate: CertificadoModel.formatDate
+        title: total > 0 ? `Búsqueda: ${total} certificados encontrados` : 'Sin resultados',
+        certificados,
+        pagination,
+        query: {
+          ...req.query,
+          cliente_display
+        }
       });
 
     } catch (error) {

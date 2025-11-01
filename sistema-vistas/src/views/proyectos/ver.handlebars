@@ -110,97 +110,164 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-award"></i> Certificados del Proyecto</h5>
-                <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-sm btn-success">
-                    <i class="bi bi-plus"></i> Nuevo Certificado
-                </a>
+                <div class="btn-group btn-group-sm">
+                    <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-success">
+                        <i class="bi bi-plus"></i> Nuevo Certificado
+                    </a>
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#asociarCertificadoModal">
+                        <i class="bi bi-link"></i> Asociar Existentes
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                {{#if certificados}}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Certificado</th>
-                                <th>Descripción</th>
-                                <th>Fecha</th>
-                                <th>Monto</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{#each certificados}}
-                            <tr>
-                                <td>
-                                    <strong>#{{this.numero}}</strong>
-                                </td>
-                                <td>
-                                    <div class="fw-bold">{{this.descripcion}}</div>
-                                    {{#if this.condiciones}}
-                                        <small class="text-muted">{{this.condiciones}}</small>
-                                    {{/if}}
-                                </td>
-                                <td>
-                                    <div>{{formatDate this.fecha}}</div>
-                                    {{#if this.fecha_factura}}
-                                        <small class="text-muted">Fact: {{formatDate this.fecha_factura}}</small>
-                                    {{/if}}
-                                </td>
-                                <td>
-                                    <span class="fw-bold text-success">{{formatCurrency this.monto}}</span>
-                                </td>
-                                <td>
-                                    <span class="badge {{#eq this.estado 0}}bg-secondary{{/eq}}{{#eq this.estado 1}}bg-warning{{/eq}}{{#eq this.estado 2}}bg-success{{/eq}}{{#eq this.estado 3}}bg-info{{/eq}}{{#eq this.estado 4}}bg-danger{{/eq}}">
-                                        {{#eq this.estado 0}}Borrador{{/eq}}
-                                        {{#eq this.estado 1}}Pendiente{{/eq}}
-                                        {{#eq this.estado 2}}Aprobado{{/eq}}
-                                        {{#eq this.estado 3}}Facturado{{/eq}}
-                                        {{#eq this.estado 4}}Rechazado{{/eq}}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="/certificados/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a href="/certificados/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {{/each}}
-                        </tbody>
-                    </table>
+                {{#if certificados.activos}}
+                <!-- CERTIFICADOS ACTIVOS -->
+                <div class="mb-4">
+                    <h6 class="text-success fw-bold mb-3">
+                        <i class="bi bi-check-circle"></i> Certificados Activos ({{certificados.total_activos}})
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Certificado</th>
+                                    <th>Descripción</th>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each certificados.activos}}
+                                <tr>
+                                    <td>
+                                        <strong>#{{this.numero}}</strong>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{this.alcance}}</div>
+                                        {{#if this.condiciones}}
+                                            <small class="text-muted">{{this.condiciones}}</small>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        <small>{{formatDate this.fecha}}</small>
+                                        {{#if this.fecha_factura}}
+                                            <small class="text-muted d-block">Fact: {{formatDate this.fecha_factura}}</small>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">${{this.importe}}</span>
+                                    </td>
+                                    <td>
+                                        {{#if (eq this.estado 0)}}
+                                            <span class="badge bg-warning text-dark" style="padding: 0.6rem 0.85rem; font-weight: 700; font-size: 0.9rem;">Pendiente</span>
+                                        {{else if (eq this.estado 1)}}
+                                            <span class="badge bg-primary text-white" style="padding: 0.6rem 0.85rem; font-weight: 700; font-size: 0.9rem;">Aprobado</span>
+                                        {{else if (eq this.estado 2)}}
+                                            <span class="badge bg-success text-white" style="padding: 0.6rem 0.85rem; font-weight: 700; font-size: 0.9rem;">Facturado</span>
+                                        {{else if (eq this.estado 3)}}
+                                            <span class="badge bg-info text-white" style="padding: 0.6rem 0.85rem; font-weight: 700; font-size: 0.9rem;">En Proceso</span>
+                                        {{else if (eq this.estado 4)}}
+                                            <span class="badge bg-danger text-white" style="padding: 0.6rem 0.85rem; font-weight: 700; font-size: 0.9rem;">Anulado</span>
+                                        {{else}}
+                                            <span class="badge bg-secondary text-white" style="padding: 0.6rem 0.85rem; font-weight: 700; font-size: 0.9rem;">Desconocido</span>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="/certificados/ver/{{this.id}}?return=/proyectos/ver/{{../proyecto.id}}" class="btn btn-outline-primary" title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/certificados/editar/{{this.id}}?return=/proyectos/ver/{{../proyecto.id}}" class="btn btn-outline-warning" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-desasociar" data-cert-id="{{this.id}}" title="Desasociar">
+                                                <i class="bi bi-unlink"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                
+                {{/if}}
+
+                {{#if certificados.inactivos}}
+                <!-- CERTIFICADOS INACTIVOS -->
+                <div class="mb-4">
+                    <h6 class="text-danger fw-bold mb-3">
+                        <i class="bi bi-x-circle"></i> Certificados Inactivos ({{certificados.total_inactivos}})
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm opacity-75">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Certificado</th>
+                                    <th>Descripción</th>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each certificados.inactivos}}
+                                <tr>
+                                    <td>
+                                        <strong>#{{this.numero}}</strong>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{this.alcance}}</div>
+                                    </td>
+                                    <td><small>{{formatDate this.fecha}}</small></td>
+                                    <td>
+                                        <span class="fw-bold text-success">${{this.importe}}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {{/if}}
+
+                {{#if certificados.activos}}
                 <!-- Certificates Summary -->
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <div class="card bg-light">
                             <div class="card-body text-center">
                                 <h6 class="card-title">Total Certificados</h6>
-                                <h4 class="mb-0">{{certificados.length}}</h4>
+                                <h4 class="mb-0">{{certificados.total}}</h4>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="card bg-light">
                             <div class="card-body text-center">
-                                <h6 class="card-title">Monto Total</h6>
-                                <h4 class="mb-0 text-success">{{formatCurrency totalCertificados}}</h4>
+                                <h6 class="card-title">Activos</h6>
+                                <h4 class="mb-0 text-success">{{certificados.total_activos}}</h4>
                             </div>
                         </div>
                     </div>
                 </div>
-                
                 {{else}}
                 <div class="text-center py-4">
                     <i class="bi bi-award" style="font-size: 3rem; opacity: 0.3;"></i>
                     <p class="text-muted mt-2 mb-3">No hay certificados asociados a este proyecto</p>
-                    <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-primary">
-                        <i class="bi bi-plus"></i> Crear Primer Certificado
-                    </a>
+                    <div class="btn-group">
+                        <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-primary">
+                            <i class="bi bi-plus"></i> Crear Primer Certificado
+                        </a>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#asociarCertificadoModal">
+                            <i class="bi bi-link"></i> Asociar Existentes
+                        </button>
+                    </div>
                 </div>
                 {{/if}}
             </div>
@@ -253,17 +320,27 @@
                         </div>
                     </div>
                     
-                    {{#if certificados}}
-                    {{#each certificados}}
+                    {{#if certificados.activos}}
+                    {{#each certificados.activos}}
                     <div class="timeline-item">
                         <div class="timeline-marker {{#eq this.estado 2}}bg-success{{else}}bg-warning{{/eq}}"></div>
                         <div class="timeline-content">
                             <h6 class="mb-1">Certificado #{{this.numero}}</h6>
                             <small class="text-muted">{{formatDate this.fecha}}</small>
                             <div class="mt-1">
-                                <span class="badge badge-sm {{#eq this.estado 2}}bg-success{{else}}bg-warning{{/eq}}">
-                                    {{#eq this.estado 2}}Aprobado{{else}}Pendiente{{/eq}}
-                                </span>
+                                {{#if (eq this.estado 0)}}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                {{else if (eq this.estado 1)}}
+                                    <span class="badge bg-primary text-white">Aprobado</span>
+                                {{else if (eq this.estado 2)}}
+                                    <span class="badge bg-success text-white">Facturado</span>
+                                {{else if (eq this.estado 3)}}
+                                    <span class="badge bg-info text-white">En Proceso</span>
+                                {{else if (eq this.estado 4)}}
+                                    <span class="badge bg-danger text-white">Anulado</span>
+                                {{else}}
+                                    <span class="badge bg-secondary text-white">Desconocido</span>
+                                {{/if}}
                             </div>
                         </div>
                     </div>
@@ -280,6 +357,33 @@
                     </div>
                     {{/if}}
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Asociar Certificados -->
+<div class="modal fade" id="asociarCertificadoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asociar Certificados Existentes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="buscarCertificado" placeholder="Buscar por número o descripción...">
+                </div>
+                <div id="certificadosDisponibles" style="max-height: 400px; overflow-y: auto;">
+                    <div class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -324,4 +428,156 @@
 .timeline-content {
     padding-left: 0.5rem;
 }
+
+.cert-item {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cert-item:hover {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+}
+
+.cert-item.selected {
+    background-color: #e7f1ff;
+    border-color: #0d6efd;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const proyectoId = '{{proyecto.id}}';
+    const modal = document.getElementById('asociarCertificadoModal');
+    const buscarInput = document.getElementById('buscarCertificado');
+    const certificadosDiv = document.getElementById('certificadosDisponibles');
+    let certificadosCache = [];
+
+    // Cargar certificados cuando se abre el modal
+    modal.addEventListener('show.bs.modal', function() {
+        cargarCertificadosDisponibles();
+    });
+
+    // Buscar mientras se escribe
+    buscarInput.addEventListener('input', function() {
+        filtrarCertificados(this.value);
+    });
+
+    async function cargarCertificadosDisponibles() {
+        try {
+            const response = await fetch(`/proyectos/${proyectoId}/certificados-disponibles?limit=100`);
+            const data = await response.json();
+            
+            if (data.success) {
+                certificadosCache = data.data;
+                mostrarCertificados(certificadosCache);
+            }
+        } catch (error) {
+            console.error('Error cargando certificados:', error);
+            certificadosDiv.innerHTML = '<div class="alert alert-danger">Error al cargar certificados</div>';
+        }
+    }
+
+    function mostrarCertificados(certificados) {
+        if (certificados.length === 0) {
+            certificadosDiv.innerHTML = '<div class="alert alert-info">No hay certificados disponibles para asociar</div>';
+            return;
+        }
+
+        certificadosDiv.innerHTML = certificados.map(cert => `
+            <div class="cert-item" data-cert-id="${cert.id}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>#${cert.numero}</strong>
+                        <div class="small text-muted">${cert.alcance || 'Sin descripción'}</div>
+                        <div class="small">
+                            <span class="badge bg-secondary">${cert.estado_nombre}</span>
+                            <span class="text-muted ms-2">${cert.fecha}</span>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-success">$${parseFloat(cert.importe).toLocaleString('es-AR')}</div>
+                        <button class="btn btn-sm btn-primary mt-2 btn-asociar" data-cert-id="${cert.id}">
+                            <i class="bi bi-link"></i> Asociar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Agregar event listeners a los botones
+        document.querySelectorAll('.btn-asociar').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                asociarCertificado(this.dataset.certId);
+            });
+        });
+    }
+
+    function filtrarCertificados(texto) {
+        const filtrados = certificadosCache.filter(cert => 
+            cert.numero.toString().includes(texto) ||
+            (cert.alcance && cert.alcance.toLowerCase().includes(texto.toLowerCase()))
+        );
+        mostrarCertificados(filtrados);
+    }
+
+    async function asociarCertificado(certificadoId) {
+        try {
+            const response = await fetch(`/proyectos/${proyectoId}/asociar-certificado`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ certificadoId })
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('Certificado asociado exitosamente');
+                // Recargar la página para ver los cambios
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error asociando certificado:', error);
+            alert('Error al asociar el certificado');
+        }
+    }
+
+    // Desasociar certificado
+    document.querySelectorAll('.btn-desasociar').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (!confirm('¿Desasociar este certificado del proyecto?')) return;
+
+            try {
+                const response = await fetch(`/proyectos/${proyectoId}/desasociar-certificado`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ certificadoId: this.dataset.certId })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Certificado desasociado exitosamente');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error desasociando certificado:', error);
+                alert('Error al desasociar el certificado');
+            }
+        });
+    });
+});
+</script>

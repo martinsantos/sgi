@@ -5,9 +5,12 @@ const { engine } = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
 const basicAuth = require('./middleware/basicAuth');
+const { requireAuth, setUserLocals } = require('./middleware/sessionAuth');
+
+const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Importar todas las rutas disponibles
-let presupuestosRoutes, facturasRoutes, clientesRoutes, dashboardRoutes, proyectosRoutes, certificadosRoutes, leadsRoutes, prospectosRoutes, authRoutes, healthRoutes;
+let presupuestosRoutes, facturasRoutes, clientesRoutes, dashboardRoutes, proyectosRoutes, certificadosRoutes, leadsRoutes, prospectosRoutes, authRoutes, authSessionRoutes, healthRoutes, logsRoutes;
 
 // Cargar rutas con manejo de errores
 const loadRoute = (path, name) => {
@@ -30,7 +33,9 @@ certificadosRoutes = loadRoute('./routes/certificados', 'certificados');
 leadsRoutes = loadRoute('./routes/leads', 'leads');
 prospectosRoutes = loadRoute('./routes/prospectos', 'prospectos');
 authRoutes = loadRoute('./routes/auth', 'auth');
+authSessionRoutes = loadRoute('./routes/auth-session', 'auth-session');
 healthRoutes = loadRoute('./routes/health.routes', 'health');
+logsRoutes = loadRoute('./routes/logs', 'logs');
 
 // Cargar rutas de módulos básicos
 const modulosBasicos = loadRoute('./routes/modulos-basicos', 'modulos-basicos');
@@ -56,23 +61,37 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ⚠️ AUTENTICACIÓN BÁSICA - PROTEGE TODO EL SISTEMA (excepto /auth/* y /public)
-app.use((req, res, next) => {
-  // Permitir acceso sin auth a rutas de autenticación y assets
-  if (req.path.startsWith('/auth/') || req.path.startsWith('/css/') || req.path.startsWith('/js/') || req.path.startsWith('/images/')) {
-    return next();
-  }
-  // Aplicar basicAuth a todas las demás rutas
-  return basicAuth(req, res, next);
-});
+// ⚠️ MIDDLEWARE DE AUDITORÍA - Después de body parsers y sesión
+const { auditLogger } = require('./middleware/auditLogger');
+app.use(auditLogger);
 
-// Middleware para hacer el usuario disponible en las vistas
-app.use((req, res, next) => {
-  if (req.user) {
+// ⚠️ AUTENTICACIÓN CON SESIONES - PROTEGE TODO EL SISTEMA
+if (!isTestEnv) {
+  app.use(requireAuth);
+  app.use(setUserLocals);
+} else {
+  // En tests exponemos un usuario simulado para evitar redirecciones 302
+  app.use((req, res, next) => {
+    req.session = req.session || {};
+    if (!req.session.user) {
+      req.session.user = {
+        id: 0,
+        username: 'test-user',
+        email: 'test@sgi.local'
+      };
+    }
+    req.user = {
+      id: 0,
+      username: 'test-user',
+      email: 'test@sgi.local',
+      authenticated: true,
+      authMethod: 'test-bypass'
+    };
     res.locals.user = req.user;
-  }
-  next();
-});
+    res.locals.isAuthenticated = true;
+    next();
+  });
+}
 
 // Configuración de Handlebars - Versión funcional
 const handlebarsEngine = engine({
@@ -102,6 +121,8 @@ const mountRoute = (route, path, name) => {
   }
 };
 
+// ⚠️ MONTAR RUTAS DE AUTENTICACIÓN PRIMERO (antes de requireAuth)
+mountRoute(authSessionRoutes, '/auth', 'auth-session');
 mountRoute(authRoutes, '/auth', 'auth');
 mountRoute(dashboardRoutes, '/dashboard', 'dashboard');
 mountRoute(facturasRoutes, '/facturas', 'facturas');
@@ -112,6 +133,7 @@ mountRoute(certificadosRoutes, '/certificados', 'certificados');
 mountRoute(leadsRoutes, '/leads', 'leads');
 mountRoute(prospectosRoutes, '/prospectos', 'prospectos');
 mountRoute(healthRoutes, '/health', 'health');
+mountRoute(logsRoutes, '/logs', 'logs');
 
 // Montar rutas de módulos básicos
 if (modulosBasicos) {

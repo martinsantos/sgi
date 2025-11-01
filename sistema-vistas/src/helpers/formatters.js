@@ -46,7 +46,8 @@ function formatDate(date) {
   return dateObj.toLocaleDateString('es-AR', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: 'America/Argentina/Buenos_Aires'
   });
 }
 
@@ -58,7 +59,16 @@ function formatDate(date) {
 function formatDateTime(date) {
   if (!date) return '';
   
-  const dateObj = new Date(date);
+  // Asegurar que la fecha se interprete como UTC
+  let dateObj;
+  if (typeof date === 'string') {
+    // Si es string sin 'Z', agregarlo para indicar UTC
+    const dateStr = date.includes('Z') || date.includes('+') || date.includes('-') ? date : date + 'Z';
+    dateObj = new Date(dateStr);
+  } else {
+    dateObj = new Date(date);
+  }
+  
   if (isNaN(dateObj.getTime())) return '';
   
   return dateObj.toLocaleString('es-AR', {
@@ -66,7 +76,8 @@ function formatDateTime(date) {
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'America/Argentina/Buenos_Aires'
   });
 }
 
