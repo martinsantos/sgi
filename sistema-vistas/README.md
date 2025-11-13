@@ -393,6 +393,55 @@ systemctl reload nginx
 
 ---
 
-**Última actualización:** 29 de Octubre 2025, 17:45 UTC-3  
-**Versión:** 1.0.0  
+## 🗓️ Registro de Cambios Recientes
+
+### 📋 Registro Detallado de Tareas (Log)
+
+| Fecha/Hora (UTC-3) | Tarea | Descripción | Estado |
+| --- | --- | --- | --- |
+| 13/11/2025 17:35 | Badges vacíos en Presupuestos | Ajuste en `index.handlebars` para mostrar estado/tipo sólo cuando hay datos y fallback textual. | ✅ Completo |
+| 13/11/2025 17:40 | Cliente en Certificados | Se añadió `getStatsCliente` en `CertificadoModel` y se validó la visualización lateral en `certificados/ver`. | ✅ Completo |
+| 13/11/2025 17:45 | Flujo Aprobación → Facturación | Reorganización de acciones en la vista para estados 0→1→2 y alerta cuando está facturado. | 🔄 En curso |
+| 13/11/2025 17:50 | Pruebas y Documentación | Ejecutar `npm test`, validar flujo manual y documentar resultados posteriores. | ⏳ Pendiente |
+
+### 13 de Noviembre 2025 – Limpieza de handles abiertos en Jest
+
+- **Correcciones implementadas**
+  - Se deshabilitó el intervalo de limpieza del caché cuando `NODE_ENV === 'test'` para evitar handles abiertos al ejecutar suites de Jest.
+  - Se verificó que no se crean efectos secundarios en otros entornos: el limpiador sigue activo en desarrollo y producción para mantener el caché consistente.
+
+- **Pruebas ejecutadas**
+  - `npx jest --runInBand --detectOpenHandles`
+    - ✅ 5 suites ejecutadas / 0 fallos.
+    - ✅ Sin advertencias de handles abiertos, Jest finaliza correctamente.
+
+- **Notas de verificación**
+  1. La suite completa mantiene el mismo tiempo de ejecución estimado (~18s) sin variaciones relevantes.
+  2. El caché sigue expurgando entradas en entornos no test, por lo que no se requiere mantenimiento manual adicional.
+  3. No se observaron regresiones en módulos dependientes del caché.
+
+### 12 de Noviembre 2025 – Ajustes módulo Certificados y estabilidad de pruebas
+
+- **Correcciones implementadas**
+  - Se normalizaron los JOIN del modelo de certificados para obtener los datos del cliente únicamente desde `persona_terceros` (`proyectos.personal_id` → `persona_terceros.id`), eliminando dependencias impropias con `personals`.
+  - Se validó contra la documentación vigente que la relación oficial Proyecto → Cliente continúa siendo `personal_id`.
+  - Se incorporó un mock de base de datos y modelo de auditoría en `tests/integration/audit.test.js` para evitar dependencias con `/tmp/mysql.sock` y habilitar un store en memoria para recrear escenarios completos.
+  - Se actualizó la vista mockeada en `tests/integration/facturas-editar.test.js` para incluir `numero_factura` y `tipo_factura`, replicando los campos visibles en la UI real.
+  - Se reescribió `auditLogger` para registrar eventos tras finalizar la respuesta (suscripción a `finish/close`) y mejorar la extracción de entidad, restaurando la persistencia real de logs y la generación de estadísticas en producción.
+
+- **Pruebas ejecutadas**
+  - `npm test --runInBand`
+    - ✅ 5 suites ejecutadas / 0 fallos.
+    - ⚠️ Advertencia: Jest reporta handles abiertos tras finalizar (pendiente revisar timers en suites extensas), pero el exit code fue 0.
+
+- **Notas de verificación**
+  1. El mock de auditoría resetea el store en memoria entre ejecuciones, permitiendo repetir las pruebas sin efectos secundarios.
+  2. El formulario de facturas refleja correctamente número y tipo, asegurando que los asserts de contenido coincidan con la UI esperada.
+  3. El middleware de auditoría vuelve a registrar acciones CRUD/VIEW y las vistas de estadísticas (`/logs/statistics`, API) reflejan los datos almacenados en MySQL.
+  4. Se recomienda mantener `--runInBand` en entornos CI hasta analizar la advertencia de handles abiertos.
+
+---
+
+**Última actualización:** 13 de Noviembre 2025, 08:10 UTC-3  
+**Versión:** 1.0.1  
 **Mantenedor:** Equipo Última Milla
