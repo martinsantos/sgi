@@ -52,44 +52,20 @@ class FacturaController {
   }
 
   /**
-   * Listar facturas emitidas
+   * Listar facturas emitidas (vista con carga dinámica via JavaScript)
    */
   static async emitidas(req, res) {
     try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 20;
+      console.log(`📋 Renderizando vista de facturas emitidas`);
 
-      console.log(`📋 Listando facturas emitidas - Página ${page}, Límite ${limit}`);
-
-      const resultado = await FacturaModel.getFacturasEmitidas(page, limit);
-
+      // Solo renderizar la vista, los datos se cargan dinámicamente via API
       res.render('facturas/emitidas', {
-        title: 'Facturas Emitidas',
-        facturas: resultado.data,
-        pagination: resultado.pagination,
-        currentPage: page,
-        query: req.query,
-        formatCurrency: (amount) => {
-          if (!amount || isNaN(amount)) return '$0.00';
-          return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: 'ARS',
-            minimumFractionDigits: 2
-          }).format(amount);
-        },
-        formatDate: (date) => {
-          if (!date) return 'N/A';
-          try {
-            return new Date(date).toLocaleDateString('es-AR');
-          } catch (error) {
-            return 'N/A';
-          }
-        }
+        title: 'Facturas Emitidas'
       });
 
     } catch (error) {
-      console.error('❌ Error al listar facturas emitidas:', error);
-      req.flash('error', 'Error al cargar facturas emitidas');
+      console.error('❌ Error al renderizar vista de facturas emitidas:', error);
+      req.flash('error', 'Error al cargar la página de facturas emitidas');
       res.redirect('/dashboard');
     }
   }
