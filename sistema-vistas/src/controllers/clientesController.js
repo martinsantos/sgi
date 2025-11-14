@@ -554,9 +554,15 @@ class ClienteController {
       } = req.body;
 
       // Validaciones básicas - solo nombre es obligatorio
-      if (!nombre || nombre.trim() === '') {
+      console.log('🔵 [createCliente] Validando nombre...');
+      console.log('🔵 [createCliente] nombre:', nombre);
+      console.log('🔵 [createCliente] typeof nombre:', typeof nombre);
+      console.log('🔵 [createCliente] nombre truthy:', !!nombre);
+      
+      if (!nombre || (typeof nombre === 'string' && nombre.trim() === '')) {
         const errorMsg = 'El nombre es obligatorio';
         console.warn('❌ Validación fallida:', errorMsg);
+        console.warn('❌ nombre:', nombre);
         
         // Siempre devolver JSON para AJAX
         return res.status(400).json({
@@ -564,6 +570,8 @@ class ClienteController {
           message: errorMsg
         });
       }
+      
+      console.log('✅ Validación pasada');
 
       const id = uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
