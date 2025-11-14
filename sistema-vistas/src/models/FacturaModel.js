@@ -298,6 +298,16 @@ class FacturaModel {
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'fecha_emision';
     const sortDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
     
+    // Construir el ORDER BY correctamente
+    let orderByClause = 'fv.fecha_emision DESC';
+    if (sortColumn === 'cliente_nombre') {
+      orderByClause = `CASE WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, '')) ELSE COALESCE(pt.nombre, pt.apellido, 'Sin nombre') END ${sortDirection}`;
+    } else if (sortColumn === 'estado') {
+      orderByClause = `fv.estado ${sortDirection}`;
+    } else {
+      orderByClause = `fv.${sortColumn} ${sortDirection}`;
+    }
+    
     const queryParams = [...params, limit, offset];
     
     const [rows] = await pool.query(`
@@ -348,7 +358,7 @@ class FacturaModel {
       FROM factura_ventas fv
       INNER JOIN persona_terceros pt ON fv.persona_tercero_id = pt.id
       ${whereClause}
-      ORDER BY ${sortColumn === 'cliente_nombre' ? 'cliente_nombre' : 'fv.' + sortColumn} ${sortDirection}
+      ORDER BY ${orderByClause}
       LIMIT ? OFFSET ?
     `, queryParams);
     
@@ -766,6 +776,16 @@ class FacturaModel {
       const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'fecha_compra';
       const sortDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
       
+      // Construir el ORDER BY correctamente
+      let orderByClause = 'fc.fecha_compra DESC';
+      if (sortColumn === 'proveedor_nombre') {
+        orderByClause = `CASE WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, '')) ELSE COALESCE(pt.nombre, pt.apellido, 'Sin nombre') END ${sortDirection}`;
+      } else if (sortColumn === 'estado') {
+        orderByClause = `fc.estado ${sortDirection}`;
+      } else {
+        orderByClause = `fc.${sortColumn} ${sortDirection}`;
+      }
+      
       const queryParams = [...params, limit, offset];
       
       const [rows] = await pool.query(`
@@ -807,7 +827,7 @@ class FacturaModel {
         FROM factura_compras fc
         INNER JOIN persona_terceros pt ON fc.persona_tercero_id = pt.id
         ${whereClause}
-        ORDER BY ${sortColumn === 'proveedor_nombre' ? 'proveedor_nombre' : 'fc.' + sortColumn} ${sortDirection}
+        ORDER BY ${orderByClause}
         LIMIT ? OFFSET ?
       `, queryParams);
       
