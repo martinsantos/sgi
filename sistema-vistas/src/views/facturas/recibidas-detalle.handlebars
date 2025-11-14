@@ -197,6 +197,27 @@
             </div>
         </div>
     </div>
+
+    <!-- Sección de Adjuntos -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-paperclip me-2"></i>
+                Adjuntos
+            </h5>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadAdjuntoModalRecibida">
+                <i class="bi bi-plus-circle me-1"></i>Agregar Adjunto
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="adjuntosContainerRecibida">
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mt-2">Cargando adjuntos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{else}}
@@ -205,6 +226,35 @@
     No se encontraron datos de la factura
 </div>
 {{/if}}
+
+<!-- Modal para subir adjunto (Facturas Recibidas) -->
+<div class="modal fade" id="uploadAdjuntoModalRecibida" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar Adjunto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="uploadAdjuntoFormRecibida">
+          <div class="mb-3">
+            <label for="archivoInputRecibida" class="form-label">Seleccionar archivo</label>
+            <input type="file" class="form-control" id="archivoInputRecibida" required accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
+            <small class="text-muted">Máximo 50MB. Formatos: PDF, Word, Excel, Imágenes</small>
+          </div>
+          <div class="mb-3">
+            <label for="descripcionInputRecibida" class="form-label">Descripción (opcional)</label>
+            <input type="text" class="form-control" id="descripcionInputRecibida" placeholder="Ej: Comprobante de pago, Orden de compra...">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="subirAdjuntoBtnRecibida">Subir Archivo</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal para Marcar como Pagada -->
 <div class="modal fade" id="modalPagarFactura" tabindex="-1">
@@ -343,6 +393,146 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fechaPago) {
         const today = new Date().toISOString().split('T')[0];
         fechaPago.value = today;
+    }
+
+    // Cargar adjuntos para facturas recibidas
+    const facturaId = '{{factura.id}}';
+    if (facturaId) {
+        cargarAdjuntosRecibida();
+
+        // Subir adjunto
+        document.getElementById('subirAdjuntoBtnRecibida')?.addEventListener('click', function() {
+            const archivo = document.getElementById('archivoInputRecibida').files[0];
+            const descripcion = document.getElementById('descripcionInputRecibida').value;
+
+            if (!archivo) {
+                alert('Por favor selecciona un archivo');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('archivo', archivo);
+            formData.append('facturaCompraId', facturaId);
+            formData.append('descripcion', descripcion);
+
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Subiendo...';
+
+            fetch('/facturas/adjuntos/subir', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Archivo subido correctamente');
+                    document.getElementById('uploadAdjuntoFormRecibida').reset();
+                    bootstrap.Modal.getInstance(document.getElementById('uploadAdjuntoModalRecibida')).hide();
+                    cargarAdjuntosRecibida();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al subir el archivo');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-upload me-1"></i>Subir Archivo';
+            });
+        });
+    }
+
+    function cargarAdjuntosRecibida() {
+        fetch(`/facturas/adjuntos/factura-compra/${facturaId}`)
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('adjuntosContainerRecibida');
+                
+                if (!data.adjuntos || data.adjuntos.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2">No hay adjuntos</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Archivo</th>
+                                    <th>Descripción</th>
+                                    <th>Fecha</th>
+                                    <th>Tamaño</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.adjuntos.map(adj => `
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-file-earmark"></i>
+                                            ${adj.nombre_archivo}
+                                        </td>
+                                        <td>${adj.descripcion || '-'}</td>
+                                        <td><small>${new Date(adj.fecha_subida).toLocaleDateString('es-AR')}</small></td>
+                                        <td><small>${formatBytesRecibida(adj.tamaño_bytes)}</small></td>
+                                        <td>
+                                            <a href="/facturas/adjuntos/descargar/${adj.id}" class="btn btn-sm btn-outline-primary" title="Descargar">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarAdjuntoRecibida('${adj.id}')" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                console.error('Error al cargar adjuntos:', error);
+                document.getElementById('adjuntosContainerRecibida').innerHTML = `
+                    <div class="alert alert-danger">Error al cargar adjuntos</div>
+                `;
+            });
+    }
+
+    window.eliminarAdjuntoRecibida = function(adjuntoId) {
+        if (confirm('¿Deseas eliminar este adjunto?')) {
+            fetch(`/facturas/adjuntos/${adjuntoId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Adjunto eliminado');
+                    cargarAdjuntosRecibida();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar adjunto');
+            });
+        }
+    };
+
+    function formatBytesRecibida(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
 });
 </script>
