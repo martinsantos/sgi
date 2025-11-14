@@ -19,7 +19,9 @@ router.get('/dashboard', FacturaController.dashboard);
 router.get('/emitidas', FacturaController.emitidas);
 router.get('/emitidas/:id', FacturaController.ver);
 router.get("/ver/:id", FacturaController.ver);
+router.get('/editar/:id', FacturaController.editarEmitida);
 router.get('/emitidas/:id/editar', FacturaController.editarEmitida);
+router.post('/editar/:id', FacturaController.actualizarEmitida);
 router.post('/emitidas/:id/editar', FacturaController.actualizarEmitida);
 
 // Facturas recibidas (módulo de compras)
