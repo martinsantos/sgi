@@ -16,7 +16,7 @@
               </div>
               <div class="card-body">
                 <div class="row">
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <div class="mb-3">
                       <label for="tipo_factura" class="form-label">Tipo de Factura</label>
                       <select class="form-select" id="tipo_factura" name="tipo_factura" required>
@@ -27,10 +27,16 @@
                       </select>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <div class="mb-3">
-                      <label for="punto_venta" class="form-label">Punto de Venta</label>
+                      <label for="punto_venta" class="form-label">Punto de Venta <span class="text-danger">*</span></label>
                       <input type="number" class="form-control" id="punto_venta" name="punto_venta" value="1" required>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="numero_factura" class="form-label">Número de Factura <span class="text-danger">*</span></label>
+                      <input type="number" class="form-control" id="numero_factura" name="numero_factura" placeholder="Ej: 00001" required>
                     </div>
                   </div>
                 </div>
@@ -679,6 +685,106 @@ document.addEventListener('DOMContentLoaded', function() {
         .finally(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
+        });
+    });
+    
+    // Form submission
+    document.getElementById('nuevaFacturaForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const items = [];
+        
+        // Collect items data
+        document.querySelectorAll('#itemsTable tbody tr').forEach((row, index) => {
+            const descripcion = row.querySelector('[name*="[descripcion]"]')?.value;
+            const cantidad = row.querySelector('[name*="[cantidad]"]')?.value;
+            const precio_unitario = row.querySelector('[name*="[precio_unitario]"]')?.value;
+            const iva_porcentaje = row.querySelector('[name*="[iva_porcentaje]"]')?.value;
+            
+            if (descripcion && cantidad && precio_unitario) {
+                items.push({
+                    descripcion,
+                    cantidad: parseFloat(cantidad),
+                    precio_unitario: parseFloat(precio_unitario),
+                    iva_porcentaje: parseFloat(iva_porcentaje)
+                });
+            }
+        });
+        
+        const formData = {
+            cliente_id: document.getElementById('clienteId').value,
+            proyecto_id: document.getElementById('proyecto').value || null,
+            tipo_factura: document.getElementById('tipo_factura').value,
+            punto_venta: document.getElementById('punto_venta').value,
+            numero_factura: document.getElementById('numero_factura').value,
+            fecha_emision: document.getElementById('fecha_emision').value,
+            fecha_vencimiento: document.getElementById('fecha_vencimiento').value || null,
+            observaciones: document.getElementById('observaciones').value || null,
+            items: items
+        };
+        
+        // Validations
+        if (!formData.cliente_id) {
+            alert('Debe seleccionar un cliente');
+            return;
+        }
+        
+        if (!formData.tipo_factura) {
+            alert('Debe seleccionar un tipo de factura');
+            return;
+        }
+        
+        if (!formData.punto_venta) {
+            alert('Punto de venta es obligatorio');
+            return;
+        }
+        
+        if (!formData.numero_factura) {
+            alert('Número de factura es obligatorio');
+            return;
+        }
+        
+        if (!formData.fecha_emision) {
+            alert('Fecha de emisión es obligatoria');
+            return;
+        }
+        
+        if (items.length === 0) {
+            alert('Debe agregar al menos un item');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+        submitBtn.disabled = true;
+        
+        fetch('/facturas/crear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Factura creada exitosamente');
+                window.location.href = '/facturas/ver/' + data.data.id;
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al crear factura: ' + error.message);
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         });
     });
     
