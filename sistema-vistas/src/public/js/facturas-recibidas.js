@@ -120,7 +120,12 @@ class FacturasRecibidasManager {
 
       const url = `/facturas/api/facturas/recibidas?${params.toString()}`;
       console.log('🌐 Fetching:', url);
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

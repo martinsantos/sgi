@@ -122,7 +122,12 @@ class FacturasManager {
       const url = `/facturas/api/facturas/emitidas?${params.toString()}`;
       console.log('🌐 Fetching:', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
       console.log('📡 Response status:', response.status);
       
       if (!response.ok) {

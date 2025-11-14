@@ -80,7 +80,10 @@
     const table = $('#tablaFacturas').DataTable({
       ajax: {
         url: '/facturas/api/recibidas',
-        dataSrc: 'data'
+        dataSrc: 'data',
+        xhrFields: {
+          withCredentials: true
+        }
       },
       columns: [
         { data: 'numero_factura' },
