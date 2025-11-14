@@ -30,13 +30,27 @@ class PresupuestoModel {
   };
 
   /**
-   * Obtener lista de presupuestos con paginación y filtros
+   * Obtener lista de presupuestos con paginación, filtros y ordenamiento
    */
-  static async getPresupuestos(page = 1, limit = 20, filters = {}) {
+  static async getPresupuestos(page = 1, limit = 20, filters = {}, sortBy = 'numero_presupuesto', sortOrder = 'DESC') {
     const offset = (page - 1) * limit;
     
     try {
       const connection = await pool.getConnection();
+      
+      // Mapear campos de ordenamiento
+      const sortFieldMap = {
+        'numero_presupuesto': 'p.numero',
+        'cliente_nombre': 'pt.nombre',
+        'descripcion': 'p.descripcion',
+        'fecha_emision': 'p.created',
+        'fecha_validez': 'p.fecha_cierre',
+        'estado_nombre': 'p.estado',
+        'importe_total': 'p.precio_venta'
+      };
+      
+      const sortField = sortFieldMap[sortBy] || 'p.numero';
+      const orderClause = ['ASC', 'DESC'].includes(sortOrder) ? sortOrder : 'DESC';
       
       // Consulta simplificada sin parámetros problemáticos
       const query = `
@@ -66,7 +80,7 @@ class PresupuestoModel {
         FROM presupuestos p
         LEFT JOIN persona_terceros pt ON p.cliente_id = pt.id
         WHERE p.activo = 1
-        ORDER BY p.created DESC
+        ORDER BY ${sortField} ${orderClause}
         LIMIT ${limit} OFFSET ${offset}
       `;
       

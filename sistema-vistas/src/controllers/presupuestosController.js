@@ -36,8 +36,25 @@ class PresupuestosController {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
+      const sort = req.query.sort || 'numero_presupuesto';
+      const order = (req.query.order || 'desc').toUpperCase();
       
-      const result = await PresupuestoModel.getPresupuestos(page, limit);
+      // Filtros
+      const filters = {
+        estado: req.query.estado,
+        cliente: req.query.cliente,
+        fecha: req.query.fecha,
+        search: req.query.search
+      };
+      
+      // Limpiar filtros vacíos
+      Object.keys(filters).forEach(key => {
+        if (!filters[key] || filters[key] === '') {
+          delete filters[key];
+        }
+      });
+      
+      const result = await PresupuestoModel.getPresupuestos(page, limit, filters, sort, order);
       const estadisticas = await PresupuestoModel.getEstadisticas();
       
       // DEBUG removido - usar template debug

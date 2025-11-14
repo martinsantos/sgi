@@ -124,24 +124,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize DataTable with sorting
-    if (typeof $ !== 'undefined' && $.fn.DataTable) {
-        $('#presupuestos-table').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
-            },
-            order: [[0, 'desc']],
-            pageLength: 25,
-            columnDefs: [
-                { orderable: true, targets: [0, 1, 2, 3, 4, 5, 6] },
-                { orderable: false, targets: [7] }
-            ]
-        });
-    }
-
-    // Sortable headers
+    // Sortable headers - Ordenamiento personalizado
     document.querySelectorAll('.sortable').forEach(header => {
-        header.addEventListener('click', function() {
+        header.addEventListener('click', function(e) {
+            e.preventDefault();
             const sortField = this.dataset.sort;
             const currentSort = new URLSearchParams(window.location.search).get('sort');
             const currentOrder = new URLSearchParams(window.location.search).get('order');
@@ -154,6 +140,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const params = new URLSearchParams(window.location.search);
             params.set('sort', sortField);
             params.set('order', newOrder);
+            // Remover página para volver a la primera
+            params.delete('page');
             window.location.href = window.location.pathname + '?' + params.toString();
         });
     });
@@ -162,6 +150,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('filtros-form').addEventListener('change', function() {
         const formData = new FormData(this);
         const params = new URLSearchParams(formData);
+        // Remover página para volver a la primera al filtrar
+        params.delete('page');
         window.location.href = window.location.pathname + '?' + params.toString();
     });
 });
