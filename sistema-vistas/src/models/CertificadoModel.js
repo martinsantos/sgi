@@ -204,7 +204,7 @@ class CertificadoModel {
             ELSE 'Desconocido'
           END as estado_nombre,
           p.descripcion as proyecto_nombre,
-          p.codigo as proyecto_codigo,
+          p.id as proyecto_codigo,
           COALESCE(
             CASE 
               WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
@@ -480,7 +480,7 @@ class CertificadoModel {
             ELSE 'Desconocido'
           END as estado_nombre,
           p.descripcion as proyecto_nombre,
-          p.codigo as proyecto_codigo,
+          p.id as proyecto_codigo,
           p.id as proyecto_id,
           COALESCE(
             CASE 
@@ -609,7 +609,7 @@ class CertificadoModel {
             ELSE 'Desconocido'
           END as estado_nombre,
           p.descripcion as proyecto_nombre,
-          p.codigo as proyecto_codigo,
+          p.id as proyecto_codigo,
           p.id as proyecto_id,
           COALESCE(
             CASE 

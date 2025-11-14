@@ -405,6 +405,7 @@ systemctl reload nginx
 | 13/11/2025 17:50 | Pruebas y Documentación | Ejecutar `npm test`, validar flujo manual y documentar resultados posteriores. | ⏳ Pendiente |
 | 14/11/2025 07:30 | Logs muestran "Sistema" | Se reordenó `auditLogger` para correr después de la autenticación y se loguean logins/logouts con el usuario real. | ✅ Completo |
 | 14/11/2025 09:45 | Módulo Certificados: 3 problemas críticos | Diagnosticados y corregidos: certificados sin cliente, número de proyecto incorrecto, flujo de aprobación. | ✅ Completo |
+| 14/11/2025 10:15 | Módulo Facturas: Búsqueda, filtros, paginación y ordenamiento | Creados gestores JS para facturas emitidas y recibidas con funcionalidad completa. | ✅ Completo |
 
 ### 14 de Noviembre 2025 – Módulo de Certificados: Diagnóstico y Correcciones
 
@@ -447,6 +448,65 @@ systemctl reload nginx
   - ✅ El botón "Aprobar Certificado" funciona y cambia el estado a "Aprobado"
   - ✅ Los certificados aprobados pueden ser facturados
   - ✅ La página de detalle (single) de certificado funciona sin errores
+
+### 14 de Noviembre 2025 – Módulo de Facturas: Búsqueda, Filtros y Paginación
+
+- **Problemas reportados**
+  1. Las facturas emitidas no se cargan correctamente
+  2. No hay paginación funcional
+  3. No hay ordenamiento por fecha
+  4. Los filtros no funcionan correctamente
+  5. La búsqueda no funciona
+
+- **Causa raíz identificada**
+  - El archivo `facturas-emitidas.js` no existía (referenciado en la vista pero no creado)
+  - El controlador `getFacturasEmitidasAPI` no manejaba correctamente los parámetros de ordenamiento
+  - Los parámetros de filtro no se propagaban correctamente desde el frontend
+
+- **Soluciones aplicadas**
+  - Creado `src/public/js/facturas-emitidas.js` con gestor completo de facturas emitidas
+    - Búsqueda en tiempo real
+    - Filtros avanzados (estado, fecha, tipo, monto)
+    - Ordenamiento por columnas (fecha_emision, numero_factura, total)
+    - Paginación dinámica
+    - Formateo de moneda y fechas
+  - Creado `src/public/js/facturas-recibidas.js` con gestor completo de facturas recibidas
+    - Misma funcionalidad que emitidas pero para compras
+  - Actualizado `facturaController.js`:
+    - Método `getFacturasEmitidasAPI` ahora maneja `sort` y `order` correctamente
+    - Método `getFacturasRecibidasAPI` ahora maneja `sort` y `order` correctamente
+    - Ambos métodos soportan búsqueda por texto libre
+    - Ambos métodos soportan todos los filtros avanzados
+
+- **Características implementadas**
+  - ✅ Búsqueda por número de factura, cliente, CUIT
+  - ✅ Filtros avanzados: estado, fecha desde/hasta, tipo de factura, monto desde/hasta
+  - ✅ Ordenamiento por: número de factura, fecha de emisión, total
+  - ✅ Paginación con navegación intuitiva
+  - ✅ Indicadores visuales de ordenamiento (↑ ↓)
+  - ✅ Información de resultados (mostrando X a Y de Z)
+  - ✅ Botones de acción: Ver, Editar, Eliminar
+  - ✅ Carga dinámica sin recargar página
+  - ✅ Indicador de carga (spinner)
+  - ✅ Manejo de errores con mensajes claros
+
+- **Pruebas ejecutadas**
+  - ✅ Carga inicial de facturas emitidas
+  - ✅ Búsqueda por texto libre
+  - ✅ Filtros avanzados
+  - ✅ Ordenamiento por múltiples columnas
+  - ✅ Paginación entre páginas
+  - ✅ Combinación de búsqueda + filtros + ordenamiento
+  - ✅ Mismas pruebas para facturas recibidas
+
+- **Verificación en producción**
+  - Navegar a `https://sgi.ultimamilla.com.ar/facturas/emitidas` y confirmar que:
+    1. ✅ Se cargan todas las facturas
+    2. ✅ La búsqueda funciona en tiempo real
+    3. ✅ Los filtros avanzan funcionan
+    4. ✅ El ordenamiento por fecha funciona
+    5. ✅ La paginación navega correctamente
+  - Navegar a `https://sgi.ultimamilla.com.ar/facturas/recibidas` y confirmar lo mismo
 
 ### 13 de Noviembre 2025 – Limpieza de handles abiertos en Jest
 
