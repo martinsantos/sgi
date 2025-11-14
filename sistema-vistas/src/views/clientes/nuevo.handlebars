@@ -123,13 +123,18 @@ document.getElementById('clienteForm').addEventListener('submit', async function
     submitBtn.disabled = true;
     
     try {
-        const formData = new FormData(this);
-        
-        // Convertir FormData a objeto JSON
-        const data = {};
-        for (let [key, value] of formData.entries()) {
-            data[key] = value;
-        }
+        // Construir objeto JSON directamente desde los inputs
+        const data = {
+            nombre: document.getElementById('nombre').value,
+            codigo: document.getElementById('codigo').value,
+            tipo_cliente: document.getElementById('tipo_cliente').value,
+            tipo_persona: document.getElementById('tipo_persona').value,
+            condicion_iva: document.getElementById('condicion_iva').value,
+            email: document.getElementById('email').value,
+            telefono: document.getElementById('telefono').value,
+            cuil_cuit: document.getElementById('cuil_cuit').value,
+            contacto_principal: document.getElementById('contacto_principal').value
+        };
         
         // Log de datos enviados
         console.log('📦 Datos del formulario:');
