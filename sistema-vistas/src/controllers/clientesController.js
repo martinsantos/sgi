@@ -543,6 +543,10 @@ class ClienteController {
    */
   static async createCliente(req, res, next) {
     try {
+      console.log('🔵 [createCliente] Iniciando...');
+      console.log('🔵 [createCliente] Content-Type:', req.headers['content-type']);
+      console.log('🔵 [createCliente] Body:', req.body);
+      
       const { 
         nombre, codigo, tipo_persona, cuil_cuit, 
         contacto_principal, email, telefono,
@@ -554,19 +558,10 @@ class ClienteController {
         const errorMsg = 'El nombre es obligatorio';
         console.warn('❌ Validación fallida:', errorMsg);
         
-        if (req.xhr || req.headers.accept.includes('application/json')) {
-          return res.status(400).json({
-            success: false,
-            message: errorMsg
-          });
-        }
-        
-        return res.status(400).render('clientes/nuevo', {
-          title: 'Nuevo Cliente',
-          layout: 'main',
-          user: req.user,
-          error: errorMsg,
-          cliente: req.body
+        // Siempre devolver JSON para AJAX
+        return res.status(400).json({
+          success: false,
+          message: errorMsg
         });
       }
 
@@ -580,7 +575,7 @@ class ClienteController {
         tipo_cliente: tipo_cliente || 'N/A'
       });
 
-      await pool.query(
+      const [result] = await pool.query(
         `INSERT INTO clientes (
           id, nombre, codigo, tipo_persona, cuil_cuit,
           contacto_principal, email, telefono,
@@ -594,38 +589,29 @@ class ClienteController {
       );
 
       console.log('✅ Cliente creado exitosamente:', id);
+      console.log('✅ Insert result:', result);
 
-      // Si es una petición API, devolver JSON
-      if (req.xhr || req.headers.accept.includes('application/json')) {
-        const [cliente] = await pool.query(
-          'SELECT * FROM clientes WHERE id = ?',
-          [id]
-        );
-        
-        return res.status(201).json({
-          success: true,
-          data: cliente[0]
-        });
-      }
+      // Siempre devolver JSON
+      return res.status(201).json({
+        success: true,
+        message: 'Cliente creado correctamente',
+        data: {
+          id,
+          nombre,
+          codigo,
+          tipo_cliente,
+          created: now
+        }
+      });
       
-      // Si es un formulario, redirigir
-      res.redirect('/clientes');
     } catch (error) {
       console.error('❌ Error al crear cliente:', error);
+      console.error('❌ Error stack:', error.stack);
       
-      if (req.xhr || req.headers.accept.includes('application/json')) {
-        return res.status(500).json({
-          success: false,
-          message: 'Error al crear cliente: ' + error.message
-        });
-      }
-      
-      res.status(500).render('clientes/nuevo', {
-        title: 'Nuevo Cliente',
-        layout: 'main',
-        user: req.user,
-        error: 'Error al crear el cliente: ' + error.message,
-        cliente: req.body
+      // Siempre devolver JSON
+      return res.status(500).json({
+        success: false,
+        message: 'Error al crear cliente: ' + error.message
       });
     }
   }
