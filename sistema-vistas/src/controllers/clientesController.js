@@ -197,7 +197,7 @@ class ClienteController {
         queryTime: dataToRender._debug.queryTime
       });
 
-      res.render('clientes/ver', dataToRender);
+      res.render('clientes/detalle', dataToRender);
     } catch (error) {
       console.error('Error al obtener detalle del cliente:', error);
       next(new AppError('Error al cargar el detalle del cliente', 500));
