@@ -807,6 +807,57 @@ class ClienteController {
   }
 
   /**
+   * Eliminar cliente
+   */
+  static async eliminarCliente(req, res, next) {
+    try {
+      const { id } = req.params;
+
+      if (!id || id === 'undefined') {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de cliente no proporcionado'
+        });
+      }
+
+      // Validar que el cliente existe
+      const [existing] = await pool.query(
+        'SELECT id FROM persona_terceros WHERE id = ?',
+        [id]
+      );
+
+      if (existing.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Cliente no encontrado'
+        });
+      }
+
+      console.log('🗑️ Eliminando cliente:', id);
+
+      // Marcar como inactivo en lugar de eliminar (soft delete)
+      await pool.query(
+        `UPDATE persona_terceros SET activo = 0, modified = NOW() WHERE id = ?`,
+        [id]
+      );
+
+      console.log('✅ Cliente eliminado exitosamente:', id);
+
+      return res.json({
+        success: true,
+        message: 'Cliente eliminado correctamente'
+      });
+    } catch (error) {
+      console.error('❌ Error al eliminar cliente:', error);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Error al eliminar cliente: ' + error.message
+      });
+    }
+  }
+
+  /**
    * Actualizar cliente
    */
   static async actualizarCliente(req, res, next) {
