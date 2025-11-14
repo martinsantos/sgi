@@ -74,121 +74,51 @@
 </div>
 
 {{#section 'scripts'}}
+<script src="/js/facturas-recibidas.js?v=20251114-1100"></script>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar DataTable
-    const table = $('#tablaFacturas').DataTable({
-      ajax: {
-        url: '/facturas/api/recibidas',
-        dataSrc: 'data',
-        xhrFields: {
-          withCredentials: true
-        }
-      },
-      columns: [
-        { data: 'numero_factura' },
-        { 
-          data: 'fecha_compra',
-          render: function(data) {
-            return data ? new Date(data).toLocaleDateString('es-AR') : '';
-          }
-        },
-        { data: 'proveedor_nombre' },
-        { 
-          data: 'total',
-          className: 'text-end',
-          render: function(data) {
-            return data ? new Intl.NumberFormat('es-AR', { 
-              style: 'currency', 
-              currency: 'ARS' 
-            }).format(data) : '$ 0,00';
-          }
-        },
-        {
-          data: 'estado',
-          render: function(data) {
-            const estados = {
-              1: { text: 'Pendiente', class: 'bg-warning' },
-              2: { text: 'Parcialmente Pagada', class: 'bg-info' },
-              3: { text: 'Pagada', class: 'bg-success' },
-              4: { text: 'Anulada', class: 'bg-secondary' }
-            };
-            const estado = estados[data] || { text: 'Desconocido', class: 'bg-secondary' };
-            return `<span class="badge ${estado.class}">${estado.text}</span>`;
-          }
-        },
-        {
-          data: 'id',
-          orderable: false,
-          render: function(data) {
-            return `
-              <a href="/facturas/recibidas/${data}" class="btn btn-sm btn-primary" title="Ver detalle">
-                <i class="bi bi-eye"></i>
-              </a>
-            `;
-          }
-        }
-      ],
-      order: [[1, 'desc']], // Ordenar por fecha descendente por defecto
-      language: {
-        processing: "Procesando...",
-        search: "Buscar:",
-        lengthMenu: "Mostrar _MENU_ entradas",
-        info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
-        infoEmpty: "Mostrando 0 a 0 de 0 entradas",
-        infoFiltered: "(filtrado de _MAX_ entradas totales)",
-        infoPostFix: "",
-        loadingRecords: "Cargando...",
-        zeroRecords: "No se encontraron datos",
-        emptyTable: "No hay datos disponibles en la tabla",
-        paginate: {
-          first: "Primero",
-          previous: "Anterior",
-          next: "Siguiente",
-          last: "Último"
-        },
-        aria: {
-          sortAscending: ": activar para ordenar la columna de manera ascendente",
-          sortDescending: ": activar para ordenar la columna de manera descendente"
-        }
-      },
-      responsive: true,
-      processing: true,
-      serverSide: true
-    });
-
+    // Inicializar el gestor de facturas recibidas
+    window.facturasRecibidasManager = new FacturasRecibidasManager();
+    
     // Manejar búsqueda
     $('#formBusqueda').on('submit', function(e) {
       e.preventDefault();
-      const formData = $(this).serialize();
-      const params = new URLSearchParams(formData);
-      
-      // Actualizar la URL con los parámetros de búsqueda
-      const newUrl = `${window.location.pathname}?${params.toString()}`;
-      window.history.pushState({}, '', newUrl);
-      
-      // Realizar la búsqueda
-      table.ajax.url(`/facturas/api/recibidas?${params.toString()}`).load();
+      if (window.facturasRecibidasManager) {
+        window.facturasRecibidasManager.currentPage = 1;
+        window.facturasRecibidasManager.applyAdvancedFilters();
+        window.facturasRecibidasManager.loadData();
+      }
     });
 
     // Manejar botón limpiar
     $('#btnLimpiar').on('click', function() {
       $('#formBusqueda')[0].reset();
-      window.history.pushState({}, '', window.location.pathname);
-      table.ajax.url('/facturas/api/recibidas').load();
-    });
-
-    // Manejar exportación a Excel
-    $('#btnExportar').on('click', function() {
-      const params = new URLSearchParams(window.location.search);
-      window.location.href = `/facturas/api/facturas/recibidas/exportar?${params.toString()}`;
+      if (window.facturasRecibidasManager) {
+        window.facturasRecibidasManager.currentPage = 1;
+        window.facturasRecibidasManager.currentFilters = {};
+        window.facturasRecibidasManager.loadData();
+      }
     });
 
     // Export function
     window.exportarFacturasRecibidas = function() {
-      const params = new URLSearchParams(window.location.search);
-      window.location.href = `/facturas/api/facturas/recibidas/exportar?${params.toString()}`;
+      if (window.facturasRecibidasManager) {
+        const params = new URLSearchParams({
+          page: window.facturasRecibidasManager.currentPage,
+          limit: window.facturasRecibidasManager.limit,
+          ...window.facturasRecibidasManager.currentFilters
+        });
+        window.location.href = `/facturas/api/facturas/recibidas/exportar?${params.toString()}`;
+      }
     };
+    
+    // Auto-cargar datos
+    setTimeout(() => {
+      if (window.facturasRecibidasManager) {
+        window.facturasRecibidasManager.loadData();
+      }
+    }, 100);
   });
 </script>
 {{/section}}
