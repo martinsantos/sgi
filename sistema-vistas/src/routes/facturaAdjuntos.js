@@ -32,12 +32,13 @@ const upload = multer({
 });
 
 // Rutas de adjuntos
-router.post('/subir', requireAuth, upload.single('archivo'), FacturaAdjuntoController.subirAdjunto);
-router.get('/descargar/:adjuntoId', requireAuth, FacturaAdjuntoController.descargarAdjunto);
-router.get('/factura-venta/:facturaVentaId', requireAuth, FacturaAdjuntoController.getAdjuntosFacturaVenta);
-router.get('/factura-compra/:facturaCompraId', requireAuth, FacturaAdjuntoController.getAdjuntosFacturaCompra);
-router.delete('/:adjuntoId', requireAuth, FacturaAdjuntoController.eliminarAdjunto);
-router.put('/:adjuntoId/descripcion', requireAuth, FacturaAdjuntoController.actualizarDescripcion);
-router.get('/estadisticas', requireAuth, FacturaAdjuntoController.getEstadisticas);
+// Nota: requireAuth ya está aplicado globalmente en app.js para todas las rutas
+router.post('/subir', upload.single('archivo'), FacturaAdjuntoController.subirAdjunto);
+router.get('/descargar/:adjuntoId', FacturaAdjuntoController.descargarAdjunto);
+router.get('/factura-venta/:facturaVentaId', FacturaAdjuntoController.getAdjuntosFacturaVenta);
+router.get('/factura-compra/:facturaCompraId', FacturaAdjuntoController.getAdjuntosFacturaCompra);
+router.delete('/:adjuntoId', FacturaAdjuntoController.eliminarAdjunto);
+router.put('/:adjuntoId/descripcion', FacturaAdjuntoController.actualizarDescripcion);
+router.get('/estadisticas', FacturaAdjuntoController.getEstadisticas);
 
 module.exports = router;
