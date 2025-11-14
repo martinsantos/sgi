@@ -360,50 +360,6 @@ class ClienteController {
     }
   }
   
-  /**
-   * Muestra el listado de clientes
-   */
-  static async getClientes(req, res, next) {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 20;
-      const search = req.query.search || '';
-      const sortBy = req.query.sort_by || 'nombre';
-      const sortOrder = req.query.sort_order || 'ASC';
-      
-      const filters = { search };
-      
-      const { data: clientes, pagination } = await ClienteController.fetchClientesList(
-        page, limit, filters, sortBy, sortOrder
-      );
-      
-      res.render('clientes/listar', {
-        title: 'Clientes',
-        clientes,
-        pagination,
-        currentPage: page,
-        search,
-        sort_by: sortBy,
-        sort_order: sortOrder,
-        layout: 'main',
-        helpers: {
-          formatDate: date => date ? new Date(date).toLocaleDateString('es-AR') : '',
-          formatCurrency: amount => new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: 'ARS'
-          }).format(amount || 0),
-          getBadgeClass: tipo_persona => tipo_persona === 'Física' ? 'bg-info' : 'bg-success'
-        }
-      });
-    } catch (error) {
-      console.error('Error al obtener clientes:', error);
-      res.status(500).render('error', {
-        title: 'Error',
-        message: 'Ocurrió un error al obtener el listado de clientes',
-        layout: 'main'
-      });
-    }
-  }
 
   /**
    * Helper interno: obtiene listado de clientes con paginación, búsqueda y orden
