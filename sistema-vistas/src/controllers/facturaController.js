@@ -910,21 +910,23 @@ class FacturaController {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.length) || parseInt(req.query.limit) || 20;
-      const sortBy = req.query.sortBy || 'fecha_compra';
-      const sortOrder = req.query.sortOrder || 'DESC';
+      const sortBy = req.query.sort || 'fecha_compra';
+      const sortOrder = (req.query.order || 'desc').toUpperCase();
       
-      console.log(`📥 API: Obteniendo facturas recibidas - Página ${page}, Límite ${limit}`);
+      console.log(`📥 API: Obteniendo facturas recibidas - Página ${page}, Límite ${limit}, Sort: ${sortBy} ${sortOrder}`);
       
       // Obtener filtros del query string
       const filters = {
         numero_factura: req.query.numero_factura,
         proveedor_id: req.query.proveedor_id,
-        proveedor_nombre: req.query.proveedor,
+        proveedor_nombre: req.query.proveedor || req.query.search,
         estado: req.query.estado,
         fecha_desde: req.query.fecha_desde,
         fecha_hasta: req.query.fecha_hasta,
         monto_desde: req.query.monto_desde,
-        monto_hasta: req.query.monto_hasta
+        monto_hasta: req.query.monto_hasta,
+        tipo_factura: req.query.tipo_factura,
+        texto_libre: req.query.search
       };
       
       // Limpiar filtros vacíos
