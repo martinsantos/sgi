@@ -421,7 +421,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             fetch('/facturas/adjuntos/subir', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             })
             .then(response => response.json())
             .then(data => {
@@ -447,7 +448,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function cargarAdjuntosRecibida() {
         console.log('🔄 Cargando adjuntos para factura recibida:', facturaId);
-        fetch(`/facturas/adjuntos/factura-compra/${facturaId}`)
+        fetch(`/facturas/adjuntos/factura-compra/${facturaId}`, {
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
             .then(response => {
                 console.log('📡 Response status:', response.status);
                 if (!response.ok) {
@@ -518,7 +524,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.eliminarAdjuntoRecibida = function(adjuntoId) {
         if (confirm('¿Deseas eliminar este adjunto?')) {
             fetch(`/facturas/adjuntos/${adjuntoId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'include'
             })
             .then(response => response.json())
             .then(data => {
