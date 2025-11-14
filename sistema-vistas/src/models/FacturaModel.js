@@ -34,6 +34,8 @@ class FacturaModel {
         fv.numero_operacion,
         fv.tipo_factura,
         fv.numero_factura,
+        fv.numero_factura_completo,
+        fv.punto_venta,
         fv.fecha_emision,
         fv.total,
         fv.cancelado,

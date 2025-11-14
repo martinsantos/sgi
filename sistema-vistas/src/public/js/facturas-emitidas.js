@@ -171,7 +171,7 @@ class FacturasManager {
     tbody.innerHTML = this.allFacturas.map(factura => `
       <tr>
         <td>
-          <strong>${factura.numero_factura || 'N/A'}</strong>
+          <strong>${factura.numero_factura_completo || factura.numero_factura || 'N/A'}</strong>
           <br>
           <small class="text-muted">${factura.tipo_factura || ''}</small>
         </td>
