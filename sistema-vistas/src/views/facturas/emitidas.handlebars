@@ -170,11 +170,15 @@
     // Obtener filtros actuales del manager
     if (window.facturasManager) {
       const params = new URLSearchParams({
+        page: window.facturasManager.currentPage,
+        limit: window.facturasManager.limit,
+        sort: window.facturasManager.currentSort,
+        order: window.facturasManager.currentOrder,
         ...window.facturasManager.currentFilters
       });
-      window.open(`/facturas/export/excel?${params.toString()}`, '_blank');
+      window.open(`/facturas/api/facturas/emitidas/exportar?${params.toString()}`, '_blank');
     } else {
-      window.open('/facturas/export/excel', '_blank');
+      window.open('/facturas/api/facturas/emitidas/exportar', '_blank');
     }
   }
 

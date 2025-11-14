@@ -183,14 +183,14 @@ class FacturasRecibidasManager {
         <td class="text-center">
           <div class="btn-group btn-group-sm" role="group">
             <a href="/facturas/recibidas/${factura.id}" class="btn btn-outline-primary" title="Ver">
-              <i class="fas fa-eye"></i>
+              <i class="bi bi-eye"></i>
             </a>
             <a href="/facturas/recibidas/editar/${factura.id}" class="btn btn-outline-warning" title="Editar">
-              <i class="fas fa-edit"></i>
+              <i class="bi bi-pencil"></i>
             </a>
-            <button class="btn btn-outline-danger" onclick="confirmarEliminar('${factura.id}')" title="Eliminar">
-              <i class="fas fa-trash"></i>
-            </button>
+            <a href="/facturas/${factura.id}/pdf" class="btn btn-outline-info" title="PDF">
+              <i class="bi bi-file-pdf"></i>
+            </a>
           </div>
         </td>
       </tr>
