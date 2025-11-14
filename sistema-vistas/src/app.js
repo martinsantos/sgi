@@ -10,7 +10,7 @@ const { requireAuth, setUserLocals } = require('./middleware/sessionAuth');
 const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Importar todas las rutas disponibles
-let presupuestosRoutes, facturasRoutes, clientesRoutes, dashboardRoutes, proyectosRoutes, certificadosRoutes, leadsRoutes, prospectosRoutes, authRoutes, authSessionRoutes, healthRoutes, logsRoutes;
+let presupuestosRoutes, facturasRoutes, facturaAdjuntosRoutes, clientesRoutes, dashboardRoutes, proyectosRoutes, certificadosRoutes, leadsRoutes, prospectosRoutes, authRoutes, authSessionRoutes, healthRoutes, logsRoutes;
 
 // Cargar rutas con manejo de errores
 const loadRoute = (path, name) => {
@@ -26,6 +26,7 @@ const loadRoute = (path, name) => {
 
 presupuestosRoutes = loadRoute('./routes/presupuestos', 'presupuestos');
 facturasRoutes = loadRoute('./routes/facturas', 'facturas');
+facturaAdjuntosRoutes = loadRoute('./routes/facturaAdjuntos', 'facturaAdjuntos');
 clientesRoutes = loadRoute('./routes/clientes', 'clientes');
 dashboardRoutes = loadRoute('./routes/dashboard', 'dashboard');
 proyectosRoutes = loadRoute('./routes/proyectos', 'proyectos');
@@ -126,6 +127,7 @@ mountRoute(authSessionRoutes, '/auth', 'auth-session');
 mountRoute(authRoutes, '/auth', 'auth');
 mountRoute(dashboardRoutes, '/dashboard', 'dashboard');
 mountRoute(facturasRoutes, '/facturas', 'facturas');
+mountRoute(facturaAdjuntosRoutes, '/facturas/adjuntos', 'facturaAdjuntos');
 mountRoute(clientesRoutes, '/clientes', 'clientes');
 mountRoute(presupuestosRoutes, '/presupuestos', 'presupuestos');
 mountRoute(proyectosRoutes, '/proyectos', 'proyectos');
