@@ -65,16 +65,16 @@ router.get('/nuevo', ClienteController.nuevoCliente); // Alias para crear
 router.post('/crear', ClienteController.createCliente);
 router.post('/nuevo', ClienteController.createCliente); // Alias para crear
 
+// Formularios de edición (DEBEN ESTAR ANTES DE /:id)
+router.get('/editar/:id', ClienteController.mostrarEditar);
+router.post('/editar/:id', ClienteController.actualizarCliente);
+
 // Ver cliente específico
 router.get('/ver/:id', ClienteController.getClienteDetalle);
 router.get('/:id', ClienteController.getClienteDetalle);
 
 // Historial comercial del cliente (GC.2) - COMENTADO TEMPORALMENTE
 // router.get('/:id/historial', ClienteController.historialComercial);
-
-// Formularios de edición
-router.get('/editar/:id', ClienteController.mostrarEditar);
-router.post('/editar/:id', ClienteController.actualizarCliente);
 
 // Generar lead desde cliente (GC.4) - COMENTADO TEMPORALMENTE
 // router.post('/:id/generar-lead', ClienteController.generarLead);
