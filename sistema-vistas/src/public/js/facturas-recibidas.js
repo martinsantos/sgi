@@ -118,7 +118,9 @@ class FacturasRecibidasManager {
         ...this.currentFilters
       });
 
-      const response = await fetch(`/api/facturas/recibidas?${params.toString()}`);
+      const url = `/facturas/api/facturas/recibidas?${params.toString()}`;
+      console.log('🌐 Fetching:', url);
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

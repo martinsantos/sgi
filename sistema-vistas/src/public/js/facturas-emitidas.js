@@ -107,6 +107,7 @@ class FacturasManager {
 
   async loadData() {
     try {
+      console.log('📊 Cargando datos de facturas...');
       this.showLoading(true);
 
       // Construir parámetros de búsqueda
@@ -118,19 +119,28 @@ class FacturasManager {
         ...this.currentFilters
       });
 
-      const response = await fetch(`/api/facturas/emitidas?${params.toString()}`);
+      const url = `/facturas/api/facturas/emitidas?${params.toString()}`;
+      console.log('🌐 Fetching:', url);
+      
+      const response = await fetch(url);
+      console.log('📡 Response status:', response.status);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
+      console.log('📦 Datos recibidos:', result);
+      
       this.allFacturas = result.data || [];
+      console.log(`✅ ${this.allFacturas.length} facturas cargadas`);
+      
       this.renderTable();
       this.renderPagination(result.pagination);
       this.updateResultsInfo(result.pagination);
 
     } catch (error) {
-      console.error('Error al cargar facturas:', error);
+      console.error('❌ Error al cargar facturas:', error);
       this.showError('Error al cargar las facturas. Por favor, intenta nuevamente.');
     } finally {
       this.showLoading(false);
@@ -333,7 +343,9 @@ class FacturasManager {
 
 // Inicializar el gestor cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Inicializando FacturasManager...');
   window.facturasManager = new FacturasManager();
+  console.log('✅ FacturasManager creado, cargando datos...');
   window.facturasManager.loadData();
 });
 
