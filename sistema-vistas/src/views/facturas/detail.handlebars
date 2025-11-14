@@ -667,12 +667,21 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function cargarAdjuntos() {
+    console.log('🔄 Cargando adjuntos para factura:', facturaId);
     fetch(`/facturas/adjuntos/factura-venta/${facturaId}`)
-      .then(response => response.json())
+      .then(response => {
+        console.log('📡 Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
+        console.log('📦 Datos recibidos:', data);
         const container = document.getElementById('adjuntosContainer');
         
         if (!data.adjuntos || data.adjuntos.length === 0) {
+          console.log('ℹ️ No hay adjuntos');
           container.innerHTML = `
             <div class="text-center text-muted py-4">
               <i class="bi bi-inbox" style="font-size: 2rem;"></i>
