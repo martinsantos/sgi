@@ -583,17 +583,21 @@ class ClienteController {
         tipo_cliente: tipo_cliente || 'N/A'
       });
 
+      // Normalizar tipo_persona a valores cortos
+      let tipo_persona_normalized = 'J'; // Jurídica por defecto
+      if (tipo_persona && tipo_persona.toLowerCase().includes('física')) {
+        tipo_persona_normalized = 'F';
+      }
+
+      console.log('📝 tipo_persona normalizado:', tipo_persona_normalized);
+
       const [result] = await pool.query(
-        `INSERT INTO clientes (
-          id, nombre, codigo, tipo_persona, cuil_cuit,
-          contacto_principal, email, telefono,
-          condicion_iva, tipo_cliente,
-          created, modified, activo
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-        [id, nombre, codigo || null, tipo_persona || null, cuil_cuit || null, 
-         contacto_principal || null, email || null, telefono || null,
-         condicion_iva || null, tipo_cliente || null,
-         now, now]
+        `INSERT INTO persona_terceros (
+          id, nombre, codigo, tipo, tipo_persona,
+          condicion_iva, activo, created, modified
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+        [id, nombre, codigo || null, tipo_cliente || '1', tipo_persona_normalized,
+         condicion_iva || null, now, now]
       );
 
       console.log('✅ Cliente creado exitosamente:', id);
