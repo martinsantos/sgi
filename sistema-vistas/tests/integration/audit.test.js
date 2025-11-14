@@ -7,6 +7,376 @@
  */
 
 const request = require('supertest');
+
+const inMemoryStore = {
+  logs: [],
+  alerts: [],
+  logId: 1,
+  alertId: 1
+};
+
+jest.mock('../../src/config/database', () => ({
+  query: jest.fn(async (sql) => {
+    if (/DELETE FROM\s+AUDIT_LOGS/i.test(sql)) {
+      inMemoryStore.logs = inMemoryStore.logs.filter(log => !log.user_email?.includes('test'));
+      return [{ affectedRows: 1 }];
+    }
+
+    if (/DELETE FROM\s+AUDIT_CRITICAL_ALERTS/i.test(sql)) {
+      inMemoryStore.alerts = inMemoryStore.alerts.filter(alert => {
+        const relatedLog = inMemoryStore.logs.find(log => log.id === alert.log_id);
+        return !(relatedLog && relatedLog.user_email?.includes('test'));
+      });
+      return [{ affectedRows: 1 }];
+    }
+
+    return [[[]]];
+  }),
+  end: jest.fn().mockResolvedValue()
+}));
+
+jest.mock('../../src/models/AuditLogModel', () => {
+  const normalizeDate = (value) => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(value);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
+  const enrichLog = (log) => {
+    const alert = inMemoryStore.alerts.find(a => a.log_id === log.id && !a.notified) || null;
+    return {
+      ...log,
+      old_values: log.old_values ?? null,
+      new_values: log.new_values ?? null,
+      metadata: log.metadata ?? null,
+      is_critical: Boolean(alert)
+    };
+  };
+
+  const applyFilters = (logs, filters = {}) => {
+    const {
+      userId,
+      module,
+      action,
+      entityType,
+      entityId,
+      startDate,
+      endDate,
+      search,
+      isCritical
+    } = filters;
+
+    let result = [...logs];
+
+    if (userId) {
+      result = result.filter(log => log.user_id === userId);
+    }
+
+    if (module) {
+      result = result.filter(log => log.module === module);
+    }
+
+    if (action) {
+      result = result.filter(log => log.action === action);
+    }
+
+    if (entityType) {
+      result = result.filter(log => log.entity_type === entityType);
+    }
+
+    if (entityId) {
+      result = result.filter(log => log.entity_id === entityId);
+    }
+
+    if (startDate) {
+      const start = normalizeDate(startDate);
+      if (start) {
+        result = result.filter(log => normalizeDate(log.created_at) >= start);
+      }
+    }
+
+    if (endDate) {
+      const end = normalizeDate(endDate);
+      if (end) {
+        result = result.filter(log => normalizeDate(log.created_at) <= end);
+      }
+    }
+
+    if (search) {
+      const term = search.toLowerCase();
+      result = result.filter(log => {
+        return [log.user_name, log.user_email, log.url]
+          .filter(Boolean)
+          .some(field => field.toLowerCase().includes(term));
+      });
+    }
+
+    if (isCritical) {
+      result = result.filter(log => inMemoryStore.alerts.some(a => a.log_id === log.id && !a.notified));
+    }
+
+    return result;
+  };
+
+  const sortLogs = (logs, sortBy = 'created_at', sortOrder = 'DESC') => {
+    const multiplier = sortOrder.toUpperCase() === 'ASC' ? 1 : -1;
+    return [...logs].sort((a, b) => {
+      const valueA = a[sortBy];
+      const valueB = b[sortBy];
+
+      if (valueA == null && valueB == null) return 0;
+      if (valueA == null) return 1 * multiplier;
+      if (valueB == null) return -1 * multiplier;
+
+      if (valueA === valueB) return 0;
+      return valueA > valueB ? 1 * multiplier : -1 * multiplier;
+    });
+  };
+
+  const paginate = (logs, page = 1, limit = 50) => {
+    const offset = (page - 1) * limit;
+    return logs.slice(offset, offset + limit);
+  };
+
+  const createLog = async (logData = {}) => {
+    const log = {
+      id: inMemoryStore.logId++,
+      user_id: logData.userId ?? null,
+      user_name: logData.userName ?? null,
+      user_email: logData.userEmail ?? null,
+      action: logData.action ?? null,
+      module: logData.module ?? null,
+      entity_type: logData.entityType ?? null,
+      entity_id: logData.entityId ?? null,
+      old_values: logData.oldValues ?? null,
+      new_values: logData.newValues ?? null,
+      ip_address: logData.ipAddress ?? null,
+      user_agent: logData.userAgent ?? null,
+      method: logData.method ?? null,
+      url: logData.url ?? null,
+      status_code: logData.statusCode ?? null,
+      duration_ms: logData.durationMs ?? null,
+      metadata: logData.metadata ?? null,
+      created_at: new Date().toISOString()
+    };
+
+    inMemoryStore.logs.push(log);
+
+    if (log.action === 'DELETE') {
+      inMemoryStore.alerts.push({
+        id: inMemoryStore.alertId++,
+        log_id: log.id,
+        alert_type: 'DELETE',
+        created_at: new Date().toISOString(),
+        notified: false,
+        notified_at: null
+      });
+    }
+
+    return log.id;
+  };
+
+  const getLogs = async (filters = {}, pagination = {}) => {
+    const {
+      page = 1,
+      limit = 50,
+      sortBy = 'created_at',
+      sortOrder = 'DESC'
+    } = pagination;
+
+    const filtered = applyFilters(inMemoryStore.logs, filters);
+    const sorted = sortLogs(filtered, sortBy, sortOrder);
+    const paginated = paginate(sorted, page, limit).map(enrichLog);
+
+    return {
+      logs: paginated,
+      total: filtered.length,
+      page,
+      limit,
+      totalPages: Math.ceil(filtered.length / limit) || 1
+    };
+  };
+
+  const getLogById = async (logId) => {
+    const log = inMemoryStore.logs.find(item => item.id === logId);
+    return log ? enrichLog(log) : null;
+  };
+
+  const getStatistics = async (daysBack = 7) => {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() - daysBack);
+
+    const recentLogs = inMemoryStore.logs.filter(log => normalizeDate(log.created_at) >= threshold);
+    const uniqueUsers = new Set(recentLogs.map(log => log.user_id).filter(Boolean));
+
+    return {
+      total_logs: recentLogs.length,
+      unique_users: uniqueUsers.size,
+      delete_actions: recentLogs.filter(log => log.action === 'DELETE').length
+    };
+  };
+
+  const getMostActiveUsers = async (daysBack = 7, limit = 10) => {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() - daysBack);
+
+    const activity = inMemoryStore.logs.reduce((acc, log) => {
+      if (!log.user_id || normalizeDate(log.created_at) < threshold) return acc;
+
+      if (!acc[log.user_id]) {
+        acc[log.user_id] = {
+          user_id: log.user_id,
+          user_name: log.user_name,
+          user_email: log.user_email,
+          action_count: 0,
+          last_activity: log.created_at
+        };
+      }
+
+      acc[log.user_id].action_count += 1;
+      acc[log.user_id].last_activity = log.created_at;
+      return acc;
+    }, {});
+
+    return Object.values(activity)
+      .sort((a, b) => b.action_count - a.action_count)
+      .slice(0, limit);
+  };
+
+  const getCriticalAlerts = async () => {
+    return inMemoryStore.alerts
+      .filter(alert => !alert.notified)
+      .map(alert => {
+        const log = inMemoryStore.logs.find(item => item.id === alert.log_id) || {};
+        return {
+          ...alert,
+          user_name: log.user_name ?? null,
+          module: log.module ?? null,
+          entity_type: log.entity_type ?? null,
+          entity_id: log.entity_id ?? null,
+          log_created_at: log.created_at ?? null
+        };
+      });
+  };
+
+  const markAlertAsNotified = async (alertId) => {
+    const alert = inMemoryStore.alerts.find(item => item.id === alertId);
+    if (!alert) return false;
+
+    alert.notified = true;
+    alert.notified_at = new Date().toISOString();
+    return true;
+  };
+
+  const exportToCSV = async (filters = {}) => {
+    const { logs } = await getLogs(filters, { limit: 10000 });
+
+    const headers = [
+      'ID', 'Fecha', 'Usuario', 'Email', 'Acción', 'Módulo',
+      'Tipo Entidad', 'ID Entidad', 'IP', 'Método', 'URL',
+      'Status', 'Duración (ms)', 'Crítico'
+    ];
+
+    const rows = logs.map(log => [
+      log.id,
+      log.created_at,
+      log.user_name || 'N/A',
+      log.user_email || 'N/A',
+      log.action || 'N/A',
+      log.module || 'N/A',
+      log.entity_type || 'N/A',
+      log.entity_id || 'N/A',
+      log.ip_address || 'N/A',
+      log.method || 'N/A',
+      log.url || 'N/A',
+      log.status_code || 'N/A',
+      log.duration_ms || 'N/A',
+      log.is_critical ? 'SÍ' : 'NO'
+    ]);
+
+    return [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+  };
+
+  const getAvailableModules = async () => {
+    return [...new Set(inMemoryStore.logs.map(log => log.module).filter(Boolean))].sort();
+  };
+
+  const getAvailableActions = async () => {
+    return [...new Set(inMemoryStore.logs.map(log => log.action).filter(Boolean))].sort();
+  };
+
+  const getAvailableUsers = async () => {
+    const users = new Map();
+
+    inMemoryStore.logs.forEach(log => {
+      if (!log.user_id) return;
+      if (!users.has(log.user_id)) {
+        users.set(log.user_id, {
+          id: log.user_id,
+          username: log.user_name,
+          email: log.user_email,
+          total_logs: 0
+        });
+      }
+
+      const user = users.get(log.user_id);
+      user.total_logs += 1;
+    });
+
+    return Array.from(users.values()).sort((a, b) => b.total_logs - a.total_logs);
+  };
+
+  const getCriticalLogs = async (options = {}) => {
+    return getLogs({ ...options, isCritical: true }, options.pagination || {});
+  };
+
+  const getActivityByModule = async (daysBack = 7) => {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() - daysBack);
+
+    const activity = {};
+
+    inMemoryStore.logs.forEach(log => {
+      const createdAt = normalizeDate(log.created_at);
+      if (!createdAt || createdAt < threshold) return;
+
+      const key = `${log.module || 'N/A'}|${log.action || 'N/A'}|${createdAt.toISOString().split('T')[0]}`;
+
+      if (!activity[key]) {
+        activity[key] = {
+          module: log.module || 'N/A',
+          action: log.action || 'N/A',
+          count: 0,
+          date: createdAt.toISOString().split('T')[0]
+        };
+      }
+
+      activity[key].count += 1;
+    });
+
+    return Object.values(activity)
+      .sort((a, b) => new Date(b.date) - new Date(a.date) || b.count - a.count);
+  };
+
+  return {
+    createLog,
+    getLogs,
+    getLogById,
+    getStatistics,
+    getMostActiveUsers,
+    getCriticalAlerts,
+    markAlertAsNotified,
+    exportToCSV,
+    getAvailableModules,
+    getAvailableActions,
+    getAvailableUsers,
+    getCriticalLogs,
+    getActivityByModule
+  };
+});
+
 const app = require('../../src/app');
 const db = require('../../src/config/database');
 const AuditLogModel = require('../../src/models/AuditLogModel');

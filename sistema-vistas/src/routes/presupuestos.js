@@ -3,13 +3,6 @@ const router = express.Router();
 const { body, param, query, validationResult } = require('express-validator');
 const PresupuestosController = require('../controllers/presupuestosController');
 
-// API endpoints
-router.post('/api/presupuestos', PresupuestosController.crearPresupuesto);
-router.put('/api/presupuestos/:id/aprobar', PresupuestosController.aprobarPresupuesto);
-router.put('/api/presupuestos/:id/rechazar', PresupuestosController.rechazarPresupuesto);
-router.get('/api/presupuestos/:id', PresupuestosController.getPresupuesto);
-router.get('/api/presupuestos', PresupuestosController.getPresupuestos);
-
 // === MIDDLEWARES DE VALIDACIÓN ===
 
 // Validaciones para crear/actualizar presupuesto
@@ -215,5 +208,32 @@ router.get('/export/excel', validarFiltrosBusqueda, PresupuestosController.expor
  * GET /presupuestos/:id/pdf - Exportar presupuesto individual a PDF
  */
 router.get('/:id/pdf', validarId, manejarErroresValidacion, PresupuestosController.exportPDF);
+
+// === RUTAS DE API (AL FINAL PARA EVITAR CONFLICTOS) ===
+
+/**
+ * POST /presupuestos/api/presupuestos - Crear presupuesto vía API
+ */
+router.post('/api/presupuestos', PresupuestosController.crearPresupuesto);
+
+/**
+ * PUT /presupuestos/api/presupuestos/:id/aprobar - Aprobar presupuesto vía API
+ */
+router.put('/api/presupuestos/:id/aprobar', PresupuestosController.aprobarPresupuesto);
+
+/**
+ * PUT /presupuestos/api/presupuestos/:id/rechazar - Rechazar presupuesto vía API
+ */
+router.put('/api/presupuestos/:id/rechazar', PresupuestosController.rechazarPresupuesto);
+
+/**
+ * GET /presupuestos/api/presupuestos/:id - Obtener presupuesto vía API
+ */
+router.get('/api/presupuestos/:id', PresupuestosController.getPresupuesto);
+
+/**
+ * GET /presupuestos/api/presupuestos - Listar presupuestos vía API
+ */
+router.get('/api/presupuestos', PresupuestosController.getPresupuestos);
 
 module.exports = router;

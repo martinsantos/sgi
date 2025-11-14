@@ -187,26 +187,29 @@
       </div>
       <div class="card-body d-grid gap-2">
         {{#eq certificado.estado 0}}
-        <button type="button" class="btn btn-primary" onclick="cambiarEstado(1)">
-          <i class="bi bi-check-circle"></i> Enviar para Aprobación
+        <button type="button" class="btn btn-success" onclick="cambiarEstado(1)">
+          <i class="bi bi-check-circle"></i> Aprobar Certificado
+        </button>
+        <button type="button" class="btn btn-outline-danger" onclick="cambiarEstado(4)">
+          <i class="bi bi-x-circle"></i> Anular Certificado
         </button>
         {{/eq}}
-        
+
         {{#eq certificado.estado 1}}
-        <button type="button" class="btn btn-success" onclick="cambiarEstado(2)">
-          <i class="bi bi-check2-circle"></i> Aprobar Certificado
-        </button>
-        <button type="button" class="btn btn-danger" onclick="cambiarEstado(4)">
-          <i class="bi bi-x-circle"></i> Rechazar Certificado
-        </button>
-        {{/eq}}
-        
-        {{#eq certificado.estado 2}}
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#facturarModal">
           <i class="bi bi-receipt"></i> Facturar Certificado
         </button>
+        <button type="button" class="btn btn-outline-danger" onclick="cambiarEstado(4)">
+          <i class="bi bi-x-circle"></i> Anular Certificado
+        </button>
         {{/eq}}
-        
+
+        {{#eq certificado.estado 2}}
+        <div class="alert alert-success" role="alert">
+          <i class="bi bi-check2-circle"></i> Certificado facturado {{#if certificado.fecha_factura}}el {{formatDate certificado.fecha_factura}}{{/if}}
+        </div>
+        {{/eq}}
+
         {{#if (ne certificado.estado 4)}}
         <a href="/certificados/editar/{{certificado.id}}?return={{returnUrl}}" class="btn btn-warning">
           <i class="bi bi-pencil"></i> Editar
@@ -274,50 +277,55 @@
 <script>
 function cambiarEstado(nuevoEstado) {
   const estadoTexto = {
-    1: 'Borrador',
-    2: 'Pendiente de Aprobación', 
-    3: 'Aprobado',
-    4: 'Facturado',
-    5: 'Rechazado'
+    0: 'Pendiente',
+    1: 'Aprobado',
+    2: 'Facturado',
+    3: 'En Proceso',
+    4: 'Anulado'
   };
   
-  if (confirm(`¿Está seguro de cambiar el estado del certificado a "${estadoTexto[nuevoEstado]}"?`)) {
-    // Show loading state
-    const buttons = document.querySelectorAll('button[onclick*="cambiarEstado"]');
-    buttons.forEach(btn => {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
-    });
-    
-    fetch(`/api/certificados/{{certificado.id}}/estado`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: nuevoEstado })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert(data.message || 'Estado actualizado correctamente');
-        location.reload();
-      } else {
-        alert('Error: ' + (data.message || 'Error desconocido'));
-        // Re-enable buttons
-        buttons.forEach(btn => {
-          btn.disabled = false;
-          btn.innerHTML = btn.getAttribute('data-original-text');
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Error de conexión al actualizar el estado');
-      // Re-enable buttons
+  if (!confirm(`¿Está seguro de cambiar el estado del certificado a "${estadoTexto[nuevoEstado]}"?`)) {
+    return;
+  }
+
+  const buttons = document.querySelectorAll('button[onclick*="cambiarEstado"]');
+  buttons.forEach(btn => {
+    btn.dataset.originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
+  });
+
+  const formData = new URLSearchParams();
+  formData.append('estado', nuevoEstado);
+
+  fetch('/certificados/{{certificado.id}}/cambiar-estado', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: formData.toString()
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message || 'Estado actualizado correctamente');
+      location.reload();
+    } else {
+      alert('Error: ' + (data.message || 'Error desconocido'));
       buttons.forEach(btn => {
         btn.disabled = false;
-        btn.innerHTML = btn.getAttribute('data-original-text');
+        btn.innerHTML = btn.dataset.originalText;
       });
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error de conexión al actualizar el estado');
+    buttons.forEach(btn => {
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.originalText;
     });
-  }
+  });
 }
 
 document.getElementById('facturarForm').addEventListener('submit', function(e) {
@@ -326,19 +334,25 @@ document.getElementById('facturarForm').addEventListener('submit', function(e) {
   const data = Object.fromEntries(formData.entries());
   data.certificado_id = '{{certificado.id}}';
   
-  fetch('/api/facturas/generar-desde-certificado', {
+  fetch('/certificados/{{certificado.id}}/marcar-facturado', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(data)
   })
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      alert('Factura generada exitosamente');
-      window.location.href = `/facturas/ver/${data.factura_id}`;
+      alert(data.message || 'Certificado marcado como facturado');
+      location.reload();
     } else {
-      alert('Error: ' + data.message);
+      alert('Error: ' + (data.message || 'No se pudo marcar como facturado'));
     }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error al marcar como facturado');
   });
 });
 </script>

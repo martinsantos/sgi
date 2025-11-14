@@ -124,14 +124,16 @@ class SimpleCache {
 // Instancia global del cache
 const globalCache = new SimpleCache();
 
-// Limpiar cache expirado cada 10 minutos
+// Limpiar cache expirado cada 10 minutos (excepto en entorno de pruebas)
 const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10 minutos
-setInterval(() => {
-  const cleaned = globalCache.cleanExpired();
-  if (process.env.NODE_ENV === 'development' && cleaned > 0) {
-    console.log(`🧹 Cache cleanup: ${cleaned} expired entries removed`);
-  }
-}, CLEANUP_INTERVAL);
+if (process.env.NODE_ENV !== 'test') {
+  setInterval(() => {
+    const cleaned = globalCache.cleanExpired();
+    if (process.env.NODE_ENV === 'development' && cleaned > 0) {
+      console.log(`🧹 Cache cleanup: ${cleaned} expired entries removed`);
+    }
+  }, CLEANUP_INTERVAL);
+}
 
 module.exports = {
   cache: globalCache,

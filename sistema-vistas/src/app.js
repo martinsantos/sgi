@@ -61,10 +61,6 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ⚠️ MIDDLEWARE DE AUDITORÍA - Después de body parsers y sesión
-const { auditLogger } = require('./middleware/auditLogger');
-app.use(auditLogger);
-
 // ⚠️ AUTENTICACIÓN CON SESIONES - PROTEGE TODO EL SISTEMA
 if (!isTestEnv) {
   app.use(requireAuth);
@@ -92,6 +88,10 @@ if (!isTestEnv) {
     next();
   });
 }
+
+// ⚠️ MIDDLEWARE DE AUDITORÍA - Después de tener usuario disponible
+const { auditLogger } = require('./middleware/auditLogger');
+app.use(auditLogger);
 
 // Configuración de Handlebars - Versión funcional
 const handlebarsEngine = engine({

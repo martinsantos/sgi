@@ -82,18 +82,8 @@
                         <h6 class="mb-0">Estado y Fechas Críticas</h6>
                     </div>
                     <div class="d-flex align-items-center">
-                        <span class="badge 
-                            {{#eq presupuesto.estado 'borrador'}}bg-secondary{{/eq}}
-                            {{#eq presupuesto.estado 'enviado'}}bg-primary{{/eq}}
-                            {{#eq presupuesto.estado 'aprobado'}}bg-success{{/eq}}
-                            {{#eq presupuesto.estado 'rechazado'}}bg-danger{{/eq}}
-                            {{#eq presupuesto.estado 'vencido'}}bg-warning text-dark{{/eq}}
-                            me-2 fs-6">
-                            {{#eq presupuesto.estado 'borrador'}}Borrador{{/eq}}
-                            {{#eq presupuesto.estado 'enviado'}}Enviado{{/eq}}
-                            {{#eq presupuesto.estado 'aprobado'}}Aprobado{{/eq}}
-                            {{#eq presupuesto.estado 'rechazado'}}Rechazado{{/eq}}
-                            {{#eq presupuesto.estado 'vencido'}}Vencido{{/eq}}
+                        <span class="badge {{default presupuesto.estado_badge_class 'bg-secondary'}} me-2 fs-6">
+                            {{default presupuesto.estado_nombre 'Sin estado'}}
                         </span>
                         {{#if presupuesto.is_expired}}
                             <span class="badge bg-danger"><i class="fas fa-exclamation-triangle"></i> VENCIDO</span>
@@ -138,19 +128,19 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-2">
-                        {{#unless (eq presupuesto.estado 'enviado')}}
+                        {{#unless (eq presupuesto.estado '1')}}
                             <button type="button" class="btn btn-primary" onclick="enviarPresupuesto('{{presupuesto.id}}')">
                                 <i class="fas fa-paper-plane me-1"></i> Enviar
                             </button>
                         {{/unless}}
-                        {{#eq presupuesto.estado 'enviado'}}
+                        {{#if (eq presupuesto.estado '1')}}
                             <button type="button" class="btn btn-success" onclick="aprobarPresupuesto('{{presupuesto.id}}')">
                                 <i class="fas fa-check me-1"></i> Aprobar
                             </button>
                             <button type="button" class="btn btn-danger" onclick="rechazarPresupuesto('{{presupuesto.id}}')">
                                 <i class="fas fa-times me-1"></i> Rechazar
                             </button>
-                        {{/eq}}
+                        {{/if}}
                         <button type="button" class="btn btn-info" onclick="imprimirPresupuesto('{{presupuesto.id}}')">
                             <i class="fas fa-print me-1"></i> Imprimir
                         </button>
@@ -160,6 +150,83 @@
                     </div>
                 </div>
             </div>
+
+            {{!-- Resumen del Cliente --}}
+            {{#if resumenCliente}}
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-briefcase me-2"></i>Relacionados con el Cliente</h6>
+                    </div>
+                    <div class="card-body">
+                        {{#if proyectosCliente.length}}
+                            <h6 class="text-success">Proyectos del Cliente ({{proyectosCliente.length}})</h6>
+                            <ul class="list-group list-group-flush mb-3">
+                                {{#each proyectosCliente}}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <a href="/proyectos/ver/{{this.id}}" class="fw-semibold text-decoration-none">{{this.nombre}}</a>
+                                            {{#if this.fecha_inicio}}
+                                                <br><small class="text-muted">Inicio: {{formatDate this.fecha_inicio}}</small>
+                                            {{/if}}
+                                        </div>
+                                        <span class="badge bg-secondary">{{formatCurrency this.precio_venta}}</span>
+                                    </li>
+                                {{/each}}
+                            </ul>
+                        {{/if}}
+
+                        {{#if otrosPresupuestos.length}}
+                            <h6 class="text-info">Otros Presupuestos ({{otrosPresupuestos.length}})</h6>
+                            <ul class="list-group list-group-flush mb-3">
+                                {{#each otrosPresupuestos}}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <a href="/presupuestos/ver/{{this.id}}" class="fw-semibold text-decoration-none">#{{this.numero}}</a>
+                                            <br><small class="text-muted">{{formatDate this.fecha_emision}} · {{this.estado_nombre}}</small>
+                                        </div>
+                                        <span class="badge bg-light text-dark">{{formatCurrency this.importe_total}}</span>
+                                    </li>
+                                {{/each}}
+                            </ul>
+                        {{/if}}
+
+                        {{#if facturasCliente.length}}
+                            <h6 class="text-warning">Facturas del Cliente ({{facturasCliente.length}})</h6>
+                            <ul class="list-group list-group-flush">
+                                {{#each facturasCliente}}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="fw-semibold">Factura {{this.numero_factura}}</span>
+                                            <br><small class="text-muted">{{formatDate this.fecha_emision}}</small>
+                                        </div>
+                                        <span class="badge bg-warning text-dark">{{formatCurrency this.total}}</span>
+                                    </li>
+                                {{/each}}
+                            </ul>
+                        {{/if}}
+
+                        {{#unless (or proyectosCliente.length (or otrosPresupuestos.length facturasCliente.length))}}
+                            <p class="text-muted mb-0">No hay operaciones registradas con este cliente.</p>
+                        {{/unless}}
+                    </div>
+                </div>
+            {{/if}}
+
+            {{#if proyectosCliente.length}}
+                <div class="alert alert-secondary">
+                    <i class="fas fa-link me-2"></i>
+                    <strong>Operaciones con el cliente:</strong>
+                    {{#each proyectosCliente}}
+                        <a href="/proyectos/ver/{{this.id}}" class="badge bg-secondary text-decoration-none me-1">Proyecto</a>
+                    {{/each}}
+                    {{#each otrosPresupuestos}}
+                        <a href="/presupuestos/ver/{{this.id}}" class="badge bg-info text-decoration-none me-1">Presupuesto</a>
+                    {{/each}}
+                    {{#each facturasCliente}}
+                        <span class="badge bg-warning text-dark me-1">Factura {{this.numero_factura}}</span>
+                    {{/each}}
+                </div>
+            {{/if}}
 
             <div class="row">
                 <div class="col-md-8">
@@ -218,10 +285,7 @@
                                         <p class="mb-1"><i class="fas fa-list text-muted me-2"></i><strong>Alcance:</strong> {{presupuesto.alcance}}</p>
                                         <p class="mb-1"><i class="fas fa-tag text-muted me-2"></i><strong>Tipo:</strong> 
                                             <span class="badge bg-info">
-                                                {{#eq presupuesto.tipo 'general'}}General{{/eq}}
-                                                {{#eq presupuesto.tipo 'comercial'}}Comercial{{/eq}}
-                                                {{#eq presupuesto.tipo 'licitacion'}}Licitación{{/eq}}
-                                                {{#eq presupuesto.tipo 'cotizacion'}}Cotización{{/eq}}
+                                                {{default presupuesto.tipo_nombre 'Sin tipo definido'}}
                                             </span>
                                         </p>
                                         <p class="mb-0"><i class="fas fa-money-bill text-muted me-2"></i><strong>Moneda:</strong> {{default presupuesto.moneda_nombre 'ARS'}}</p>
@@ -441,9 +505,9 @@
                                 <div class="d-flex justify-content-between mb-2">
                                     <span><i class="fas fa-flag text-muted me-1"></i>Prioridad:</span>
                                     <span class="badge 
-                                        {{#eq presupuesto.prioridad 'alta'}}bg-danger{{/eq}}
-                                        {{#eq presupuesto.prioridad 'media'}}bg-warning text-dark{{/eq}}
-                                        {{#eq presupuesto.prioridad 'baja'}}bg-secondary{{/eq}}
+                                        {{#if (eq presupuesto.prioridad 'alta')}}bg-danger{{/if}}
+                                        {{#if (eq presupuesto.prioridad 'media')}}bg-warning text-dark{{/if}}
+                                        {{#if (eq presupuesto.prioridad 'baja')}}bg-secondary{{/if}}
                                         ">{{presupuesto.prioridad}}</span>
                                 </div>
                             {{/if}}

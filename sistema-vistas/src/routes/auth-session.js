@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const sessionAuth = require('../middleware/sessionAuth');
+const { logLogin, logLogout } = require('../middleware/auditLogger');
 
 /**
  * GET /auth/login - Mostrar formulario de login
@@ -83,6 +84,9 @@ router.post('/login', async (req, res) => {
 
     console.log(`✅ Login exitoso para ${email}`);
 
+    // Registrar log en auditoría
+    await logLogin(user.id, user.nombre_completo || user.username, user.email, req, true);
+
     // Obtener URL de retorno
     const returnTo = req.session.returnTo || '/dashboard';
     delete req.session.returnTo; // Limpiar la URL guardada
@@ -110,6 +114,13 @@ router.get('/logout', async (req, res) => {
     if (req.session && req.session.userId) {
       await sessionAuth.updateLogout(req.session.userId);
       console.log(`🚪 Logout para ${req.session.email}`);
+
+      await logLogout(
+        req.session.user?.id || req.session.userId,
+        req.session.user?.nombre || req.session.username,
+        req.session.user?.email || req.session.email,
+        req
+      );
     }
 
     // Destruir sesión

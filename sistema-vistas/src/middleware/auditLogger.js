@@ -83,6 +83,52 @@ function extractModule(path) {
   return moduleMap[module] || module;
 }
 
+
+/**
+ * Obtiene el usuario almacenado en sesión, incluso si solo hay campos sueltos
+ * @param {Object} req - Request de Express
+ */
+function getUserFromSession(req) {
+  if (req?.session?.user) {
+    return req.session.user;
+  }
+
+  if (req?.session?.userId) {
+    return {
+      id: req.session.userId,
+      username: req.session.username,
+      email: req.session.email,
+      nombre: req.session.nombre_completo || req.session.username
+    };
+  }
+
+  return null;
+}
+
+const IGNORED_SEGMENTS_FOR_ENTITY = new Set([
+  'ver',
+  'editar',
+  'edit',
+  'nuevo',
+  'nuevo',
+  'crear',
+  'create',
+  'detalle',
+  'detalle',
+  'index',
+  'listado',
+  'timeline',
+  'export',
+  'download',
+  'api',
+  'logs',
+  'statistics',
+  'alerts'
+]);
+
+const UUID_SEGMENT_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+const GENERIC_ID_REGEX = /^[A-Za-z0-9_-]{6,}$/;
+
 /**
  * Extrae información de la entidad de la URL o body
  * @param {string} path - Path de la request
@@ -94,15 +140,26 @@ function extractEntity(path, body = {}) {
   
   let entityType = null;
   let entityId = null;
-  
-  // Si hay un ID numérico en la URL
-  const numericSegment = segments.find(s => /^\d+$/.test(s));
-  if (numericSegment) {
-    entityId = numericSegment;
-    // El tipo de entidad es el segmento anterior al ID
-    const idIndex = segments.indexOf(numericSegment);
-    if (idIndex > 0) {
-      entityType = segments[idIndex - 1].replace(/s$/, ''); // Singular
+
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const segment = segments[i];
+    if (!segment) continue;
+
+    const segmentLower = segment.toLowerCase();
+    if (IGNORED_SEGMENTS_FOR_ENTITY.has(segmentLower)) {
+      continue;
+    }
+
+    const isNumeric = /^\d+$/.test(segment);
+    const isUuid = UUID_SEGMENT_REGEX.test(segment);
+    const isGenericId = GENERIC_ID_REGEX.test(segment);
+
+    if (isNumeric || isUuid || isGenericId) {
+      entityId = segment;
+      if (i > 0) {
+        entityType = segments[i - 1].replace(/s$/, '');
+      }
+      break;
     }
   }
   
@@ -161,61 +218,51 @@ function isSensitivePath(path) {
  * Middleware principal de auditoría
  */
 function auditLogger(req, res, next) {
-  // Excluir paths que no necesitan auditoría
   if (shouldExcludePath(req.path)) {
     return next();
   }
-  
-  // Solo registrar acciones importantes (no VIEW de listados)
+
   const isListView = req.method === 'GET' && !req.path.includes('/ver/') && !req.path.includes('/edit') && !req.path.includes('/detalle');
   if (isListView && !req.path.includes('/export') && !req.path.includes('/download')) {
     return next();
   }
-  
-  // Guardar el timestamp de inicio para medir duración
+
   const startTime = Date.now();
-  
-  // Capturar el método original de res.send para interceptar la respuesta
-  const originalSend = res.send;
-  
-  res.send = function(data) {
-    // Restaurar el método original
-    res.send = originalSend;
-    
-    // Calcular duración
+  let finished = false;
+
+  const finalizeLog = () => {
+    if (finished) return;
+    finished = true;
+
     const durationMs = Date.now() - startTime;
-    
-    // Crear el log de auditoría de forma asíncrona (no bloquea la respuesta)
+
     setImmediate(async () => {
       try {
-        const user = req.session?.user || null;
+        const user = getUserFromSession(req) || req.user || null;
         const action = METHOD_TO_ACTION[req.method] || req.method;
         const module = extractModule(req.path);
         const { entityType, entityId } = extractEntity(req.path, req.body);
-        
-        // Determinar si es una acción especial
+
         let finalAction = action;
         if (req.path.includes('/login')) finalAction = 'LOGIN';
         if (req.path.includes('/logout')) finalAction = 'LOGOUT';
         if (req.path.includes('/export')) finalAction = 'EXPORT';
         if (req.path.includes('/download')) finalAction = 'DOWNLOAD';
         if (req.path.includes('/import')) finalAction = 'IMPORT';
-        
-        // Preparar valores old/new para UPDATE
+
         let oldValues = null;
         let newValues = null;
-        
+
         if (req.method === 'PUT' || req.method === 'PATCH') {
-          oldValues = req.body._oldValues || null; // Si se pasó el estado anterior
+          oldValues = req.body?._oldValues || null;
           newValues = isSensitivePath(req.path) ? null : sanitizeData(req.body);
         } else if (req.method === 'POST') {
           newValues = isSensitivePath(req.path) ? null : sanitizeData(req.body);
         }
-        
-        // Crear el log
+
         await AuditLogModel.createLog({
           userId: user?.id || null,
-          userName: user?.nombre || null,
+          userName: user?.nombre || user?.username || null,
           userEmail: user?.email || null,
           action: finalAction,
           module,
@@ -235,15 +282,14 @@ function auditLogger(req, res, next) {
           }
         });
       } catch (error) {
-        // No mostrar error para no afectar la experiencia del usuario
         console.error('⚠️  Error al registrar log de auditoría:', error.message);
       }
     });
-    
-    // Enviar la respuesta original
-    return originalSend.call(this, data);
   };
-  
+
+  res.on('finish', finalizeLog);
+  res.on('close', finalizeLog);
+
   next();
 }
 

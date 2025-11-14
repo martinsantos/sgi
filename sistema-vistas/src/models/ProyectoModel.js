@@ -48,6 +48,7 @@ class ProyectoModel {
         @row_num := @row_num + 1 as numero_secuencial,
         p.id,
         p.descripcion,
+        p.codigo as proyecto_codigo,
         p.estado,
         p.fecha_inicio,
         p.fecha_cierre,
@@ -144,7 +145,8 @@ class ProyectoModel {
         CASE 
           WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
           ELSE COALESCE(pt.nombre, pt.apellido, 'Sin cliente')
-        END as cliente_nombre
+        END as cliente_nombre,
+        p.codigo as proyecto_codigo
       FROM proyectos p
       LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
       WHERE p.id = ? AND p.activo = 1

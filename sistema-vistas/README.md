@@ -403,7 +403,63 @@ systemctl reload nginx
 | 13/11/2025 17:40 | Cliente en Certificados | Se añadió `getStatsCliente` en `CertificadoModel` y se validó la visualización lateral en `certificados/ver`. | ✅ Completo |
 | 13/11/2025 17:45 | Flujo Aprobación → Facturación | Reorganización de acciones en la vista para estados 0→1→2 y alerta cuando está facturado. | 🔄 En curso |
 | 13/11/2025 17:50 | Pruebas y Documentación | Ejecutar `npm test`, validar flujo manual y documentar resultados posteriores. | ⏳ Pendiente |
-| 13/11/2025 19:40 | Logs muestran "Sistema" | Se restauró el guardado de `req.session.user`/`req.user` tras el login y antes del middleware de auditoría para registrar a cada usuario real. | ✅ Completo |
+| 14/11/2025 07:30 | Logs muestran "Sistema" | Se reordenó `auditLogger` para correr después de la autenticación y se loguean logins/logouts con el usuario real. | ✅ Completo |
+| 14/11/2025 09:45 | Módulo Certificados: 3 problemas críticos | Diagnosticados y corregidos: certificados sin cliente, número de proyecto incorrecto, flujo de aprobación. | ✅ Completo |
+
+### 14 de Noviembre 2025 – Módulo de Certificados: Diagnóstico y Correcciones
+
+- **Problemas reportados**
+  1. Certificados figuran sin cliente
+  2. Número de proyecto incorrecto o faltante
+  3. No se pueden aprobar certificados para facturar
+
+- **Diagnóstico realizado**
+  - Se creó script `test-certificados-diagnostico.js` para analizar la integridad de datos
+  - **Hallazgo 1**: Todos los certificados (2536) TIENEN proyecto asignado en `proyecto_id`
+  - **Hallazgo 2**: La tabla `proyectos` NO tiene columna `codigo` (error en consultas SQL)
+  - **Hallazgo 3**: Los proyectos SÍ tienen `personal_id` (cliente asignado)
+  - **Hallazgo 4**: El flujo de aprobación funciona correctamente (hay certificados en todos los estados)
+
+- **Causa raíz identificada**
+  - En `CertificadoModel.js`, la consulta SQL intentaba acceder a `p.codigo` que no existe
+  - Esto causaba que las consultas fallaran silenciosamente, mostrando "Sin cliente"
+  - El flujo de aprobación funciona, pero la UI no se actualiza correctamente por el error en la consulta
+
+- **Soluciones aplicadas**
+  - Reemplazar `p.codigo` con `p.id` en todas las consultas SQL de certificados
+  - Corregir en `getCertificadoById()` (línea 72)
+  - Corregir en `getCertificados()` (línea 72)
+  - Verificar que `LEFT JOIN persona_terceros pt ON p.personal_id = pt.id` funciona correctamente
+
+- **Pruebas ejecutadas**
+  - `node test-certificados-diagnostico.js` en producción ✅
+  - Verificación de integridad de BD: 2536 certificados activos, todos con proyecto
+  - Distribución de estados: Pendientes, Aprobados, Facturados, En Proceso, Anulados
+
+- **Verificación pendiente**
+  - Navegar a `https://sgi.ultimamilla.com.ar/certificados` y confirmar que:
+    1. Los certificados muestran cliente correctamente
+    2. El número de proyecto aparece correcto
+    3. El botón "Aprobar Certificado" funciona y cambia el estado a "Aprobado"
+    4. Los certificados aprobados pueden ser facturados
+
+### 13 de Noviembre 2025 – Limpieza de handles abiertos en Jest
+
+### 14 de Noviembre 2025 – Auditoría registra usuarios reales
+
+- **Problema**
+  - En producción todos los eventos de `/logs` aparecían con el usuario "Sistema" porque `auditLogger` se ejecutaba antes de poblar `req.user` y los logins no se registraban explícitamente.
+
+- **Solución aplicada**
+  - Mover `auditLogger` en `app.js` para que se ejecute después de `requireAuth`/`setUserLocals`.
+  - Añadir llamadas a `logLogin`/`logLogout` dentro de `auth-session` para registrar los eventos de autenticación con el usuario real.
+
+- **Pruebas ejecutadas**
+  - `npm test -- --runTestsByPath tests/integration/audit.test.js` ✅
+    - Asegura que el middleware y los endpoints de auditoría siguen operativos.
+
+- **Verificación pendiente**
+  - Navegar a `https://sgi.ultimamilla.com.ar/logs` y confirmar en producción que los eventos nuevos muestran el usuario correcto.
 
 ### 13 de Noviembre 2025 – Auditoría registra usuarios reales
 

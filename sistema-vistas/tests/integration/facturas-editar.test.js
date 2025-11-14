@@ -33,7 +33,13 @@ jest.mock('../../src/config/app', () => {
       <html>
         <body>
           <h1>Editar Factura</h1>
+          <div class="factura-metadata">
+            <span class="numero_factura">${invoice.numero_factura}</span>
+            <span class="tipo_factura">${invoice.tipo_factura}</span>
+          </div>
           <form>
+            <input name="numero_factura" value="${invoice.numero_factura}" />
+            <input name="tipo_factura" value="${invoice.tipo_factura}" />
             <input name="cliente_id" value="${invoice.cliente_id}" />
             <input name="fecha_vto_pago" value="${invoice.fecha_vto_pago}" />
             <textarea name="observaciones">${invoice.observaciones}</textarea>

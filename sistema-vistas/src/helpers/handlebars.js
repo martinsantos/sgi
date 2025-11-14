@@ -60,7 +60,16 @@ module.exports = {
   truncateText: (text, length = 50) => truncateText(text, length),
   
   // === COMPARISONS ===
-  eq: (a, b) => a == b,
+  eq: function(a, b, options) {
+    const isEqual = a == b;
+    const isBlockHelper = options && typeof options.fn === 'function';
+
+    if (isBlockHelper) {
+      return isEqual ? options.fn(this) : options.inverse(this);
+    }
+
+    return isEqual;
+  },
   ne: (a, b) => a != b,
   gt: (a, b) => parseFloat(a) > parseFloat(b),
   gte: (a, b) => parseFloat(a) >= parseFloat(b),

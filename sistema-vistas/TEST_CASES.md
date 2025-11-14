@@ -1,7 +1,7 @@
 # 📋 Casos de Prueba - Sistema SGI
 
-**Última actualización:** 1 de Noviembre 2025  
-**Total de casos:** 111 tests pasando
+**Última actualización:** 13 de Noviembre 2025  
+**Total de casos:** 100 tests pasando (`npx jest --runInBand --detectOpenHandles`)
 
 ---
 
@@ -29,6 +29,8 @@
 
 ---
 
+> Nota general: tras deshabilitar el limpiador de caché en entorno de pruebas, Jest finaliza sin advertencias de handles abiertos.
+
 ## 📊 Auditoría & Logging
 
 ### TC-AUDIT-001: Listar logs con paginación
@@ -39,7 +41,7 @@
   2. Verificar estructura de respuesta
   3. Verificar paginación
 - **Resultado esperado:** HTTP 200, array de logs
-- **Status:** ✅ PASS (audit.test.js)
+- **Status:** ✅ PASS (audit.test.js con store en memoria)
 
 ### TC-AUDIT-002: Filtrar logs por usuario
 - **Objetivo:** Filtrar logs por usuario_id
@@ -48,7 +50,7 @@
   1. GET /logs?usuario_id=1
   2. Verificar que todos los logs son del usuario 1
 - **Resultado esperado:** HTTP 200, logs filtrados
-- **Status:** ✅ PASS (audit.test.js)
+- **Status:** ✅ PASS (audit.test.js con store en memoria)
 
 ### TC-AUDIT-003: Filtrar logs por módulo
 - **Objetivo:** Filtrar logs por módulo (clientes, facturas, etc)

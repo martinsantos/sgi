@@ -108,7 +108,11 @@ class PresupuestoModel {
         SELECT 
           p.*,
           COALESCE(CONCAT(pt.nombre, ' ', COALESCE(pt.apellido, '')), 'Sin cliente') as cliente_nombre,
+          pt.id AS cliente_id,
+          pt.codigo AS cliente_codigo,
           COALESCE(ps.cuil_cuit, 'N/A') as cliente_cuit,
+          COALESCE(ps.email, '') as cliente_email,
+          COALESCE(ps.telefono, '') as cliente_telefono,
           CASE 
             WHEN p.fecha_cierre IS NOT NULL THEN DATEDIFF(p.fecha_cierre, CURDATE())
             ELSE NULL
@@ -118,18 +122,35 @@ class PresupuestoModel {
         LEFT JOIN personas ps ON pt.id = ps.id
         WHERE p.id = ? AND p.activo = 1
       `;
-      
+
       const [rows] = await pool.execute(query, [id]);
-      
+
       if (rows.length === 0) {
         return null;
       }
-      
+
       const presupuesto = rows[0];
-      presupuesto.estado_nombre = PresupuestoModel.ESTADO_NOMBRES[String(presupuesto.estado)] || 'Desconocido';
-      
+      const estadoKey = String(presupuesto.estado ?? '').trim();
+      const estadoInfo = PresupuestoModel.ESTADO_NOMBRES[estadoKey] || 'Desconocido';
+
+      const tipoKey = (presupuesto.tipo || '').toString().trim().toLowerCase();
+      const TIPO_NOMBRES = {
+        general: 'General',
+        comercial: 'Comercial',
+        licitacion: 'Licitación',
+        licitación: 'Licitación',
+        cotizacion: 'Cotización',
+        cotización: 'Cotización',
+        mantenimiento: 'Mantenimiento'
+      };
+
+      presupuesto.estado_normalizado = estadoKey;
+      presupuesto.estado_nombre = estadoInfo;
+      presupuesto.tipo_normalizado = tipoKey;
+      presupuesto.tipo_nombre = TIPO_NOMBRES[tipoKey] || 'Sin tipo definido';
+
       return presupuesto;
-      
+
     } catch (error) {
       console.error('Error al obtener presupuesto por ID:', error);
       throw error;
@@ -630,6 +651,84 @@ class PresupuestoModel {
       });
     } catch (error) {
       return 'N/A';
+    }
+  }
+
+  /**
+   * Obtiene información relacionada del cliente para la vista de presupuesto
+   */
+  static async getResumenCliente(clienteId, presupuestoId = null) {
+    if (!clienteId) {
+      return {
+        otros_presupuestos: [],
+        proyectos: [],
+        facturas: []
+      };
+    }
+
+    try {
+      const [otrosPresupuestos] = await pool.query(`
+        SELECT 
+          p.id,
+          p.numero,
+          p.descripcion,
+          p.precio_venta as importe_total,
+          p.estado,
+          p.created as fecha_emision,
+          CASE 
+            WHEN p.estado = '0' THEN 'Borrador'
+            WHEN p.estado = '1' THEN 'Enviado'
+            WHEN p.estado = '2' THEN 'Aprobado'
+            WHEN p.estado = '3' THEN 'Rechazado'
+            WHEN p.estado = '4' THEN 'Vencido'
+            ELSE 'Desconocido'
+          END as estado_nombre
+        FROM presupuestos p
+        WHERE p.cliente_id = ? AND p.activo = 1
+        ${presupuestoId ? 'AND p.id <> ?' : ''}
+        ORDER BY p.created DESC
+        LIMIT 10
+      `, presupuestoId ? [clienteId, presupuestoId] : [clienteId]);
+
+      const [proyectosCliente] = await pool.query(`
+        SELECT 
+          pr.id,
+          pr.descripcion as nombre,
+          pr.estado,
+          pr.precio_venta,
+          pr.fecha_inicio,
+          pr.fecha_cierre
+        FROM proyectos pr
+        WHERE pr.personal_id = ? AND pr.activo = 1
+        ORDER BY pr.fecha_inicio DESC
+        LIMIT 10
+      `, [clienteId]);
+
+      const [facturasCliente] = await pool.query(`
+        SELECT 
+          fv.id,
+          fv.numero_factura,
+          fv.fecha_emision,
+          fv.total,
+          fv.estado
+        FROM factura_ventas fv
+        WHERE fv.persona_tercero_id = ? AND fv.activo = 1
+        ORDER BY fv.fecha_emision DESC
+        LIMIT 10
+      `, [clienteId]);
+
+      return {
+        otros_presupuestos: otrosPresupuestos,
+        proyectos: proyectosCliente,
+        facturas: facturasCliente
+      };
+    } catch (error) {
+      console.error('Error al obtener resumen de cliente para presupuesto:', error);
+      return {
+        otros_presupuestos: [],
+        proyectos: [],
+        facturas: []
+      };
     }
   }
 }

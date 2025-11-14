@@ -154,23 +154,37 @@ class PresupuestosController {
     try {
       const { id } = req.params;
       const presupuesto = await PresupuestoModel.getPresupuestoById(id);
-      
+
       if (!presupuesto) {
         return res.status(404).render('error', {
           title: 'Error 404',
           message: 'Presupuesto no encontrado'
         });
       }
-      
+
+      const estadoKey = String(presupuesto.estado_normalizado ?? presupuesto.estado ?? '').trim();
+      const estadoNombre = getEstadoBadge(estadoKey);
+      const estadoClase = getEstadoBadgeClass(estadoKey);
+
+      const resumenCliente = await PresupuestoModel.getResumenCliente(presupuesto.cliente_id, presupuesto.id);
+
       res.render('presupuestos/ver', {
         title: `Presupuesto ${presupuesto.numero_presupuesto} - Sistema Integral`,
         presupuesto: {
           ...presupuesto,
+          estado: estadoKey,
+          estado_nombre: estadoNombre,
+          estado_badge_class: estadoClase,
           fecha_emision_formatted: formatDate(presupuesto.fecha_emision),
           fecha_validez_formatted: formatDate(presupuesto.fecha_validez),
           importe_total_formatted: formatCurrency(presupuesto.importe_total),
-          estado_badge_class: getEstadoBadgeClass(presupuesto.estado)
-        }
+          tipo_nombre: presupuesto.tipo_nombre,
+          tiene_tipo: presupuesto.tipo_nombre && presupuesto.tipo_nombre !== 'Sin tipo definido'
+        },
+        resumenCliente,
+        otrosPresupuestos: resumenCliente.otros_presupuestos,
+        proyectosCliente: resumenCliente.proyectos,
+        facturasCliente: resumenCliente.facturas
       });
     } catch (error) {
       console.error('Error al obtener presupuesto:', error);
