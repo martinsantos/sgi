@@ -217,11 +217,18 @@ class ClienteController {
   // ===== API: Obtener listado de clientes =====
   static async getClientesAPI(req, res, next) {
     try {
-      const { page = 1, limit = 20, sortBy = 'nombre', sortOrder = 'ASC' } = req.query;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const search = req.query.search || '';
+      const sortBy = req.query.sort_by || 'nombre';
+      const sortOrder = (req.query.sort_order || 'ASC').toUpperCase();
+      
+      const filters = search ? { search } : {};
+      
       const { data: clientes, pagination } = await ClienteController.fetchClientesList(
-        parseInt(page),
-        parseInt(limit),
-        {},
+        page,
+        limit,
+        filters,
         sortBy,
         sortOrder
       );
@@ -233,7 +240,11 @@ class ClienteController {
       });
     } catch (error) {
       console.error('Error en getClientesAPI:', error);
-      next(new AppError('Error al obtener el listado de clientes', 500));
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener clientes',
+        error: error.message
+      });
     }
   }
 
@@ -476,33 +487,6 @@ class ClienteController {
    */
   // ===== API ENDPOINTS =====
 
-  /**
-   * Obtiene el listado de clientes (JSON)
-   */
-  static async getClientesAPI(req, res, next) {
-    try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 20;
-      const search = req.query.search || '';
-      const sortBy = req.query.sortBy || req.query.sort_by || '';
-      const sortOrder = req.query.sortOrder || req.query.sort_order || 'ASC';
-      
-      const filters = { search };
-      
-      const { data: clientes, pagination } = await ClienteModel.getClientesCompletos(
-        page, limit, filters, sortBy, sortOrder
-      );
-      
-      res.json({
-        success: true,
-        data: clientes,
-        pagination
-      });
-    } catch (error) {
-      console.error('❌ Error en getClientesAPI:', error);
-      next(new AppError('Error al obtener clientes', 500));
-    }
-  }
 
   /**
    * Crea un nuevo cliente

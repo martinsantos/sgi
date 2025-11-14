@@ -68,6 +68,8 @@ router.post('/nuevo', ClienteController.createCliente); // Alias para crear
 // Formularios de edición (DEBEN ESTAR ANTES DE /:id)
 router.get('/editar/:id', ClienteController.mostrarEditar);
 router.post('/editar/:id', ClienteController.actualizarCliente);
+
+// Eliminar cliente (DEBE ESTAR ANTES DE GET /:id)
 router.delete('/:id', ClienteController.eliminarCliente);
 
 // Ver cliente específico
