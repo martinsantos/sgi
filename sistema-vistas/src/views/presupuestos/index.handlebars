@@ -111,13 +111,13 @@
             <table class="table table-hover" id="presupuestos-table">
               <thead class="table-dark">
                 <tr>
-                  <th>Número</th>
-                  <th>Cliente</th>
-                  <th>Título</th>
-                  <th>Fecha</th>
-                  <th>Vencimiento</th>
-                  <th>Estado</th>
-                  <th>Valor Total</th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="numero_presupuesto">Número <i class="bi bi-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="cliente_nombre">Cliente <i class="bi bi-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="descripcion">Título <i class="bi bi-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="fecha_emision">Fecha <i class="bi bi-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="fecha_validez">Vencimiento <i class="bi bi-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="estado_nombre">Estado <i class="bi bi-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="importe_total">Valor Total <i class="bi bi-arrow-down-up ms-1"></i></th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -144,16 +144,6 @@
                     {{/if}}
                   </td>
                   <td><strong>{{importe_total_formatted}}</strong></td>
-                  <td class="text-center">
-                    {{#if this.tipo}}
-                      <span class="badge badge-contrast-secondary">
-                        <i class="bi bi-file-text me-1"></i>
-                        {{capitalize this.tipo}}
-                      </span>
-                    {{else}}
-                      <span class="text-muted">Sin tipo</span>
-                    {{/if}}
-                  </td>
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
                       <a href="/presupuestos/ver/{{id}}" class="btn btn-outline-primary" title="Ver">
@@ -186,16 +176,39 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize DataTable
+    // Initialize DataTable with sorting
     if (typeof $ !== 'undefined' && $.fn.DataTable) {
         $('#presupuestos-table').DataTable({
             language: {
                 url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
             },
             order: [[0, 'desc']],
-            pageLength: 25
+            pageLength: 25,
+            columnDefs: [
+                { orderable: true, targets: [0, 1, 2, 3, 4, 5, 6] },
+                { orderable: false, targets: [7] }
+            ]
         });
     }
+
+    // Sortable headers
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            const sortField = this.dataset.sort;
+            const currentSort = new URLSearchParams(window.location.search).get('sort');
+            const currentOrder = new URLSearchParams(window.location.search).get('order');
+            
+            let newOrder = 'asc';
+            if (currentSort === sortField && currentOrder === 'asc') {
+                newOrder = 'desc';
+            }
+            
+            const params = new URLSearchParams(window.location.search);
+            params.set('sort', sortField);
+            params.set('order', newOrder);
+            window.location.href = window.location.pathname + '?' + params.toString();
+        });
+    });
 
     // Filter form handling
     document.getElementById('filtros-form').addEventListener('change', function() {
