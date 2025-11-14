@@ -125,16 +125,24 @@ document.getElementById('clienteForm').addEventListener('submit', async function
     try {
         const formData = new FormData(this);
         
+        // Convertir FormData a objeto JSON
+        const data = {};
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        
         // Log de datos enviados
         console.log('📦 Datos del formulario:');
-        for (let [key, value] of formData.entries()) {
-            console.log(`  ${key}: ${value}`);
-        }
+        console.log(data);
         
         const response = await fetch('/clientes/nuevo', {
             method: 'POST',
-            body: formData,
-            credentials: 'include'
+            body: JSON.stringify(data),
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
         });
         
         console.log('📡 Response status:', response.status);
