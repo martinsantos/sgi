@@ -4,18 +4,25 @@
             <h4 class="mb-0">Nuevo Cliente</h4>
         </div>
         <div class="card-body">
+            {{#if error}}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Error:</strong> {{error}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {{/if}}
+            
             <form id="clienteForm" method="POST" action="/clientes/nuevo">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre *</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="apellido" class="form-label">Apellido</label>
-                            <input type="text" class="form-control" id="apellido" name="apellido">
+                            <label for="codigo" class="form-label">Código</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo">
                         </div>
                     </div>
                 </div>
@@ -23,17 +30,21 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="codigo" class="form-label">Código *</label>
-                            <input type="text" class="form-control" id="codigo" name="codigo" required>
+                            <label for="tipo_cliente" class="form-label">Tipo de Cliente</label>
+                            <select class="form-control" id="tipo_cliente" name="tipo_cliente">
+                                <option value="">Seleccionar...</option>
+                                <option value="1">Cliente</option>
+                                <option value="2">Proveedor</option>
+                            </select>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="tipo" class="form-label">Tipo *</label>
-                            <select class="form-control" id="tipo" name="tipo" required>
+                            <label for="tipo_persona" class="form-label">Tipo de Persona</label>
+                            <select class="form-control" id="tipo_persona" name="tipo_persona">
                                 <option value="">Seleccionar...</option>
-                                <option value="1">Cliente</option>
-                                <option value="2">Proveedor</option>
+                                <option value="Física">Persona Física</option>
+                                <option value="Jurídica">Persona Jurídica</option>
                             </select>
                         </div>
                     </div>
@@ -78,27 +89,8 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="tipo_persona" class="form-label">Tipo de Persona</label>
-                            <select class="form-control" id="tipo_persona" name="tipo_persona">
-                                <option value="">Seleccionar...</option>
-                                <option value="Física">Persona Física</option>
-                                <option value="Jurídica" selected>Persona Jurídica</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="mb-3">
-                            <label for="calle" class="form-label">Dirección</label>
-                            <input type="text" class="form-control" id="calle" name="calle" placeholder="Calle y número">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="codigo_postal" class="form-label">Código Postal</label>
-                            <input type="number" class="form-control" id="codigo_postal" name="codigo_postal" placeholder="5500" min="1000" max="9999">
+                            <label for="contacto_principal" class="form-label">Contacto Principal</label>
+                            <input type="text" class="form-control" id="contacto_principal" name="contacto_principal" placeholder="Nombre del contacto">
                         </div>
                     </div>
                 </div>
@@ -119,36 +111,47 @@
 </div>
 
 <script>
-document.getElementById('clienteForm').addEventListener('submit', function(e) {
-    // Validaciones del lado cliente
-    const nombre = document.getElementById('nombre').value.trim();
-    const codigo = document.getElementById('codigo').value.trim();
-    const tipo = document.getElementById('tipo').value;
-    
-    if (!nombre) {
-        alert('El nombre es obligatorio');
-        e.preventDefault();
-        return false;
-    }
-    
-    if (!codigo) {
-        alert('El código es obligatorio');
-        e.preventDefault();
-        return false;
-    }
-    
-    if (!tipo) {
-        alert('Debe seleccionar un tipo de cliente');
-        e.preventDefault();
-        return false;
-    }
+document.getElementById('clienteForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
     
     // Mostrar indicador de carga
     const submitBtn = document.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
     submitBtn.disabled = true;
     
-    // Permitir el envío del formulario
-    return true;
+    try {
+        const formData = new FormData(this);
+        const response = await fetch('/clientes/nuevo', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                // Redirigir al listado
+                window.location.href = '/clientes';
+            } else {
+                alert('Error: ' + (result.message || 'No se pudo guardar el cliente'));
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        } else {
+            const error = await response.text();
+            alert('Error al guardar: ' + error);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión: ' + error.message);
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
 });
 </script>

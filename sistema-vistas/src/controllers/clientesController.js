@@ -549,8 +549,36 @@ class ClienteController {
         condicion_iva, tipo_cliente 
       } = req.body;
 
+      // Validaciones básicas - solo nombre es obligatorio
+      if (!nombre || nombre.trim() === '') {
+        const errorMsg = 'El nombre es obligatorio';
+        console.warn('❌ Validación fallida:', errorMsg);
+        
+        if (req.xhr || req.headers.accept.includes('application/json')) {
+          return res.status(400).json({
+            success: false,
+            message: errorMsg
+          });
+        }
+        
+        return res.status(400).render('clientes/nuevo', {
+          title: 'Nuevo Cliente',
+          layout: 'main',
+          user: req.user,
+          error: errorMsg,
+          cliente: req.body
+        });
+      }
+
       const id = uuidv4();
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      console.log('📝 Creando cliente:', {
+        id,
+        nombre,
+        codigo: codigo || 'auto',
+        tipo_cliente: tipo_cliente || 'N/A'
+      });
 
       await pool.query(
         `INSERT INTO clientes (
@@ -559,11 +587,13 @@ class ClienteController {
           condicion_iva, tipo_cliente,
           created, modified, activo
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-        [id, nombre, codigo, tipo_persona, cuil_cuit, 
-         contacto_principal, email, telefono,
-         condicion_iva, tipo_cliente,
+        [id, nombre, codigo || null, tipo_persona || null, cuil_cuit || null, 
+         contacto_principal || null, email || null, telefono || null,
+         condicion_iva || null, tipo_cliente || null,
          now, now]
       );
+
+      console.log('✅ Cliente creado exitosamente:', id);
 
       // Si es una petición API, devolver JSON
       if (req.xhr || req.headers.accept.includes('application/json')) {
@@ -579,17 +609,24 @@ class ClienteController {
       }
       
       // Si es un formulario, redirigir
-      req.flash('success', 'Cliente creado correctamente');
       res.redirect('/clientes');
     } catch (error) {
-      console.error('Error al crear cliente:', error);
+      console.error('❌ Error al crear cliente:', error);
       
       if (req.xhr || req.headers.accept.includes('application/json')) {
-        return next(new AppError('Error al crear cliente', 500));
+        return res.status(500).json({
+          success: false,
+          message: 'Error al crear cliente: ' + error.message
+        });
       }
       
-      req.flash('error', 'Error al crear el cliente');
-      res.redirect('back');
+      res.status(500).render('clientes/nuevo', {
+        title: 'Nuevo Cliente',
+        layout: 'main',
+        user: req.user,
+        error: 'Error al crear el cliente: ' + error.message,
+        cliente: req.body
+      });
     }
   }
 
