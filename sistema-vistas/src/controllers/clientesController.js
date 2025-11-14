@@ -794,6 +794,141 @@ class ClienteController {
       }
     };
   }
+
+  /**
+   * Mostrar formulario de edición de cliente
+   */
+  static async mostrarEditar(req, res, next) {
+    try {
+      const { id } = req.params;
+      
+      if (!id || id === 'undefined') {
+        return res.status(400).render('error', {
+          title: 'Error',
+          message: 'ID de cliente no proporcionado',
+          layout: 'main',
+          user: req.user
+        });
+      }
+
+      // Obtener datos del cliente desde persona_terceros
+      const [clientes] = await pool.query(
+        `SELECT * FROM persona_terceros WHERE id = ?`,
+        [id]
+      );
+
+      if (clientes.length === 0) {
+        return res.status(404).render('error', {
+          title: 'No encontrado',
+          message: 'El cliente solicitado no existe',
+          layout: 'main',
+          user: req.user
+        });
+      }
+
+      const cliente = clientes[0];
+
+      res.render('clientes/editar', {
+        title: `Editar Cliente: ${cliente.nombre}`,
+        cliente,
+        layout: 'main',
+        user: req.user
+      });
+    } catch (error) {
+      console.error('Error al mostrar formulario de edición:', error);
+      next(new AppError('Error al cargar el formulario de edición', 500));
+    }
+  }
+
+  /**
+   * Actualizar cliente
+   */
+  static async actualizarCliente(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { 
+        nombre, codigo, tipo_persona, cuil_cuit, 
+        contacto_principal, email, telefono,
+        condicion_iva, tipo_cliente 
+      } = req.body;
+
+      if (!id || id === 'undefined') {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de cliente no proporcionado'
+        });
+      }
+
+      // Validar que el cliente existe
+      const [existing] = await pool.query(
+        'SELECT id FROM persona_terceros WHERE id = ?',
+        [id]
+      );
+
+      if (existing.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Cliente no encontrado'
+        });
+      }
+
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      // Normalizar tipo_persona
+      let tipo_persona_normalized = tipo_persona;
+      if (tipo_persona && tipo_persona.toLowerCase().includes('física')) {
+        tipo_persona_normalized = 'F';
+      } else if (tipo_persona && tipo_persona.toLowerCase().includes('jurídica')) {
+        tipo_persona_normalized = 'J';
+      }
+
+      console.log('📝 Actualizando cliente:', {
+        id,
+        nombre,
+        tipo_persona_normalized
+      });
+
+      // Actualizar cliente
+      await pool.query(
+        `UPDATE persona_terceros SET 
+          nombre = ?, codigo = ?, tipo = ?, tipo_persona = ?,
+          condicion_iva = ?, modified = ?
+        WHERE id = ?`,
+        [nombre || null, codigo || null, tipo_cliente || '1', tipo_persona_normalized || null,
+         condicion_iva || null, now, id]
+      );
+
+      console.log('✅ Cliente actualizado exitosamente:', id);
+
+      // Si es AJAX, devolver JSON
+      if (req.xhr || req.headers.accept.includes('application/json')) {
+        return res.json({
+          success: true,
+          message: 'Cliente actualizado correctamente'
+        });
+      }
+
+      // Si es formulario, redirigir
+      res.redirect(`/clientes/ver/${id}`);
+    } catch (error) {
+      console.error('❌ Error al actualizar cliente:', error);
+      
+      if (req.xhr || req.headers.accept.includes('application/json')) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error al actualizar cliente: ' + error.message
+        });
+      }
+
+      res.status(500).render('clientes/editar', {
+        title: 'Editar Cliente',
+        layout: 'main',
+        user: req.user,
+        error: 'Error al actualizar el cliente: ' + error.message,
+        cliente: req.body
+      });
+    }
+  }
 }
 
 module.exports = ClienteController;
