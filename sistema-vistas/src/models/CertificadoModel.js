@@ -141,7 +141,7 @@ class CertificadoModel {
             ELSE 'Desconocido'
           END as estado_nombre,
           p.descripcion as proyecto_nombre,
-          p.codigo as proyecto_codigo,
+          p.id as proyecto_codigo,
           p.id as proyecto_id_rel,
           p.fecha_inicio as proyecto_fecha_inicio,
           p.precio_venta as proyecto_valor,
