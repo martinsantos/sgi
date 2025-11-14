@@ -55,11 +55,22 @@ function requireAuth(req, res, next) {
 
   // Verificar si el usuario está autenticado en la sesión
   if (req.session && req.session.userId) {
-    // Usuario autenticado - continuar
+    // Asegurar que mantenemos los datos del usuario en la sesión
+    if (!req.session.user) {
+      req.session.user = {
+        id: req.session.userId,
+        username: req.session.username,
+        email: req.session.email,
+        nombre: req.session.nombre_completo || req.session.username
+      };
+    }
+
+    // Usuario autenticado - exponerlo en req para el resto de middlewares
     req.user = {
-      id: req.session.userId,
-      username: req.session.username,
-      email: req.session.email,
+      id: req.session.user.id,
+      username: req.session.user.username,
+      email: req.session.user.email,
+      nombre: req.session.user.nombre,
       authenticated: true,
       authMethod: 'session'
     };

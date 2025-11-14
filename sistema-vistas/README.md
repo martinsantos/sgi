@@ -403,6 +403,23 @@ systemctl reload nginx
 | 13/11/2025 17:40 | Cliente en Certificados | Se añadió `getStatsCliente` en `CertificadoModel` y se validó la visualización lateral en `certificados/ver`. | ✅ Completo |
 | 13/11/2025 17:45 | Flujo Aprobación → Facturación | Reorganización de acciones en la vista para estados 0→1→2 y alerta cuando está facturado. | 🔄 En curso |
 | 13/11/2025 17:50 | Pruebas y Documentación | Ejecutar `npm test`, validar flujo manual y documentar resultados posteriores. | ⏳ Pendiente |
+| 13/11/2025 19:40 | Logs muestran "Sistema" | Se restauró el guardado de `req.session.user`/`req.user` tras el login y antes del middleware de auditoría para registrar a cada usuario real. | ✅ Completo |
+
+### 13 de Noviembre 2025 – Auditoría registra usuarios reales
+
+- **Problema**
+  - En producción los eventos de `/logs` mostraban siempre al usuario `Sistema`, porque `auditLogger` se ejecutaba antes de que la sesión expusiera los datos del usuario autenticado.
+
+- **Solución aplicada**
+  - Tras login se guarda el objeto completo del usuario en `req.session.user` y `req.user`.
+  - `requireAuth` reconstruye `req.session.user` si falta y expone `req.user` antes de que otros middlewares (auditLogger) se ejecuten.
+
+- **Pruebas ejecutadas**
+  - `npm test -- --runTestsByPath tests/integration/audit.test.js` ✅
+    - Verifica que el middleware de auditoría registre acciones y que los endpoints sigan operativos.
+
+- **Pendiente**
+  - Validar manualmente en producción que cada login/acción aparece con el usuario correcto en `/logs`.
 
 ### 13 de Noviembre 2025 – Limpieza de handles abiertos en Jest
 

@@ -63,6 +63,20 @@ router.post('/login', async (req, res) => {
     req.session.username = user.username;
     req.session.email = user.email;
     req.session.nombre_completo = user.nombre_completo;
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      nombre: user.nombre_completo || user.username
+    };
+    req.user = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      nombre: user.nombre_completo || user.username,
+      authenticated: true,
+      authMethod: 'session'
+    };
 
     // Registrar último login
     await sessionAuth.updateLastLogin(user.id);
