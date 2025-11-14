@@ -10,11 +10,18 @@ class ClienteController {
   // ===== VISTA: Listado de clientes =====
   static async getClientes(req, res, next) {
     try {
-      const { page = 1, limit = 20, sortBy = 'nombre', sortOrder = 'ASC' } = req.query;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const search = req.query.search || '';
+      const sortBy = req.query.sort_by || 'nombre';
+      const sortOrder = (req.query.sort_order || 'ASC').toUpperCase();
+      
+      const filters = search ? { search } : {};
+      
       const { data: clientes, pagination } = await ClienteController.fetchClientesList(
-        parseInt(page),
-        parseInt(limit),
-        {},
+        page,
+        limit,
+        filters,
         sortBy,
         sortOrder
       );
@@ -23,6 +30,9 @@ class ClienteController {
         title: 'Clientes',
         clientes,
         pagination,
+        search,
+        sort_by: sortBy,
+        sort_order: sortOrder,
         layout: 'main',
         user: req.user
       });
