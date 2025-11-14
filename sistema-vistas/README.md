@@ -436,12 +436,17 @@ systemctl reload nginx
   - Verificación de integridad de BD: 2536 certificados activos, todos con proyecto
   - Distribución de estados: Pendientes, Aprobados, Facturados, En Proceso, Anulados
 
-- **Verificación pendiente**
-  - Navegar a `https://sgi.ultimamilla.com.ar/certificados` y confirmar que:
-    1. Los certificados muestran cliente correctamente
-    2. El número de proyecto aparece correcto
-    3. El botón "Aprobar Certificado" funciona y cambia el estado a "Aprobado"
-    4. Los certificados aprobados pueden ser facturados
+- **Correcciones adicionales**
+  - Se encontró que `getCertificadoById()` también referenciaba `p.codigo` (línea 144)
+  - Se corrigió reemplazando con `p.id` (commit f9b96b8)
+  - PM2 reiniciado en producción
+
+- **Verificación completada** ✅
+  - ✅ Los certificados ahora muestran cliente correctamente
+  - ✅ El número de proyecto aparece correcto
+  - ✅ El botón "Aprobar Certificado" funciona y cambia el estado a "Aprobado"
+  - ✅ Los certificados aprobados pueden ser facturados
+  - ✅ La página de detalle (single) de certificado funciona sin errores
 
 ### 13 de Noviembre 2025 – Limpieza de handles abiertos en Jest
 
