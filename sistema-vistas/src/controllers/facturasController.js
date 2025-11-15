@@ -925,10 +925,12 @@ class FacturasController {
       });
       
       console.log(`📝 Filtros procesados:`, filters);
+      console.log(`🔍 Llamando a FacturaModel.searchFacturas con:`, { filters, page, limit, sort, order });
       
       const resultado = await FacturaModel.searchFacturas(filters, page, limit, sort, order);
       
       console.log(`📊 Resultado de búsqueda: ${resultado.data.length} facturas, Total: ${resultado.pagination.total}`);
+      console.log(`📦 Primeros datos:`, resultado.data.slice(0, 2));
       
       res.json({
         success: true,

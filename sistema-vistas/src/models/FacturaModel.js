@@ -227,9 +227,10 @@ class FacturaModel {
    * @returns {Promise<Object>} - Resultado con datos y paginación
    */
   static async searchFacturas(filters = {}, page = 1, limit = 20, sortBy = 'fecha_emision', sortOrder = 'DESC') {
-    const offset = (page - 1) * limit;
-    const params = [];
-    let whereClause = 'WHERE fv.activo = 1';
+    try {
+      const offset = (page - 1) * limit;
+      const params = [];
+      let whereClause = 'WHERE fv.activo = 1';
     
     // Filtro por número de factura
     if (filters.numero_factura) {
@@ -365,23 +366,27 @@ class FacturaModel {
       LIMIT ? OFFSET ?
     `, queryParams);
     
-    // Contar total de resultados para paginación
-    const [count] = await pool.query(`
-      SELECT COUNT(*) as total 
-      FROM factura_ventas fv
-      INNER JOIN persona_terceros pt ON fv.persona_tercero_id = pt.id
-      ${whereClause}
-    `, params);
-    
-    return {
-      data: rows,
-      pagination: {
-        total: count[0].total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        pages: Math.ceil(count[0].total / limit)
-      }
-    };
+      // Contar total de resultados para paginación
+      const [count] = await pool.query(`
+        SELECT COUNT(*) as total 
+        FROM factura_ventas fv
+        INNER JOIN persona_terceros pt ON fv.persona_tercero_id = pt.id
+        ${whereClause}
+      `, params);
+      
+      return {
+        data: rows,
+        pagination: {
+          total: count[0].total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(count[0].total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error en searchFacturas:', error);
+      throw error;
+    }
   }
 
   /**
