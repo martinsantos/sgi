@@ -62,34 +62,6 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ⚠️ AUTENTICACIÓN CON SESIONES - PROTEGE TODO EL SISTEMA
-if (!isTestEnv) {
-  app.use(requireAuth);
-  app.use(setUserLocals);
-} else {
-  // En tests exponemos un usuario simulado para evitar redirecciones 302
-  app.use((req, res, next) => {
-    req.session = req.session || {};
-    if (!req.session.user) {
-      req.session.user = {
-        id: 0,
-        username: 'test-user',
-        email: 'test@sgi.local'
-      };
-    }
-    req.user = {
-      id: 0,
-      username: 'test-user',
-      email: 'test@sgi.local',
-      authenticated: true,
-      authMethod: 'test-bypass'
-    };
-    res.locals.user = req.user;
-    res.locals.isAuthenticated = true;
-    next();
-  });
-}
-
 // ⚠️ MIDDLEWARE DE AUDITORÍA - Después de tener usuario disponible
 const { auditLogger } = require('./middleware/auditLogger');
 app.use(auditLogger);
@@ -122,9 +94,50 @@ const mountRoute = (route, path, name) => {
   }
 };
 
-// ⚠️ MONTAR RUTAS DE AUTENTICACIÓN PRIMERO (antes de requireAuth)
+// ⚠️ MONTAR RUTAS DE AUTENTICACIÓN PRIMERO (ANTES de requireAuth)
 mountRoute(authSessionRoutes, '/auth', 'auth-session');
 mountRoute(authRoutes, '/auth', 'auth');
+mountRoute(healthRoutes, '/health', 'health');
+
+// Ruta de inicio - redirigir al login (ANTES de requireAuth)
+app.get('/', (req, res) => {
+  // Si ya está autenticado, ir al dashboard
+  if (req.session && req.session.userId) {
+    return res.redirect('/dashboard');
+  }
+  // Si no, ir al login
+  res.redirect('/auth/login');
+});
+
+// ⚠️ AUTENTICACIÓN CON SESIONES - PROTEGE TODO EL SISTEMA (DESPUÉS de rutas públicas)
+if (!isTestEnv) {
+  app.use(requireAuth);
+  app.use(setUserLocals);
+} else {
+  // En tests exponemos un usuario simulado para evitar redirecciones 302
+  app.use((req, res, next) => {
+    req.session = req.session || {};
+    if (!req.session.user) {
+      req.session.user = {
+        id: 0,
+        username: 'test-user',
+        email: 'test@sgi.local'
+      };
+    }
+    req.user = {
+      id: 0,
+      username: 'test-user',
+      email: 'test@sgi.local',
+      authenticated: true,
+      authMethod: 'test-bypass'
+    };
+    res.locals.user = req.user;
+    res.locals.isAuthenticated = true;
+    next();
+  });
+}
+
+// ⚠️ MONTAR RUTAS PROTEGIDAS (DESPUÉS de requireAuth)
 mountRoute(dashboardRoutes, '/dashboard', 'dashboard');
 mountRoute(facturasRoutes, '/facturas', 'facturas');
 mountRoute(facturaAdjuntosRoutes, '/facturas/adjuntos', 'facturaAdjuntos');
@@ -134,7 +147,6 @@ mountRoute(proyectosRoutes, '/proyectos', 'proyectos');
 mountRoute(certificadosRoutes, '/certificados', 'certificados');
 mountRoute(leadsRoutes, '/leads', 'leads');
 mountRoute(prospectosRoutes, '/prospectos', 'prospectos');
-mountRoute(healthRoutes, '/health', 'health');
 mountRoute(logsRoutes, '/logs', 'logs');
 
 // Montar rutas de módulos básicos
@@ -142,16 +154,6 @@ if (modulosBasicos) {
   app.use('/', modulosBasicos);
   console.log('✅ Rutas de módulos básicos montadas');
 }
-
-// Ruta de inicio - redirigir al login
-app.get('/', (req, res) => {
-  // Si ya está autenticado, ir al dashboard
-  if (req.session && req.session.userId) {
-    return res.redirect('/dashboard');
-  }
-  // Si no, ir al login
-  res.redirect('/auth/login');
-});
 
 // Ruta de prueba para diagnosticar handlebars
 app.get('/test-handlebars', (req, res) => {
