@@ -1,11 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 const { engine } = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
 const basicAuth = require('./middleware/basicAuth');
 const { requireAuth, setUserLocals } = require('./middleware/sessionAuth');
+const pool = require('./config/database');
 
 const isTestEnv = process.env.NODE_ENV === 'test';
 
@@ -47,10 +49,25 @@ const app = express();
 app.use(cors());
 
 // ⚠️ SESIONES PRIMERO - CRÍTICO PARA LOGIN
+// Usar MySQL para almacenar sesiones (persistente)
+const sessionStore = new MySQLStore({
+  expiration: 24 * 60 * 60 * 1000, // 24 horas
+  createDatabaseTable: true,
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
+}, pool);
+
 const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'SGI-Secret-Key-2025-UltimaMillaSystem',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
+  store: sessionStore,
   cookie: { 
     secure: false, // Cambiar a true solo con HTTPS completo
     httpOnly: true,
