@@ -561,7 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>
-                                <strong>${cliente.nombre_completo || cliente.nombre || 'Sin nombre'}</strong>
+                                <strong>${cliente.display_nombre || cliente.nombre_completo || cliente.nombre || 'Sin nombre'}</strong>
                                 ${cliente.codigo ? `<br><small class="text-muted">Código: ${cliente.codigo}</small>` : ''}
                             </td>
                             <td>${cliente.codigo || '-'}</td>
@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             </td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-primary select-cliente" data-cliente-id="${cliente.id}" data-cliente-nombre="${cliente.nombre_completo || cliente.nombre || ''}" data-cliente-codigo="${cliente.codigo || ''}">
+                                <button type="button" class="btn btn-sm btn-primary select-cliente" data-cliente-id="${cliente.id}" data-cliente-nombre="${cliente.display_nombre || cliente.nombre_completo || cliente.nombre || ''}" data-cliente-codigo="${cliente.codigo || ''}">
                                     <i class="bi bi-check"></i> Seleccionar
                                 </button>
                             </td>
