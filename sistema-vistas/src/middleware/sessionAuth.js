@@ -81,6 +81,17 @@ function requireAuth(req, res, next) {
   req.session.returnTo = req.originalUrl || req.url;
   console.log(`🔐 Usuario no autenticado. Guardando URL de retorno: ${req.session.returnTo}`);
   
+  // Si es una petición AJAX/JSON, retornar JSON en lugar de redirigir
+  if (req.headers['content-type']?.includes('application/json') || 
+      req.headers['accept']?.includes('application/json') ||
+      req.xhr) {
+    return res.status(401).json({
+      success: false,
+      message: 'No autenticado',
+      redirect: '/auth/login'
+    });
+  }
+  
   res.redirect('/auth/login');
 }
 
