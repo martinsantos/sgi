@@ -64,15 +64,37 @@ app.use(sessionMiddleware);
 // Middleware para asegurar que la sesión se guarda después de cada petición
 app.use((req, res, next) => {
   // Guardar la sesión después de que se envíe la respuesta
+  const originalJson = res.json;
   const originalSend = res.send;
+  const originalRedirect = res.redirect;
+  
+  res.json = function(data) {
+    if (req.session) {
+      req.session.save((err) => {
+        if (err) console.error('Error guardando sesión en json:', err);
+      });
+    }
+    return originalJson.call(this, data);
+  };
+  
   res.send = function(data) {
     if (req.session) {
       req.session.save((err) => {
-        if (err) console.error('Error guardando sesión:', err);
+        if (err) console.error('Error guardando sesión en send:', err);
       });
     }
     return originalSend.call(this, data);
   };
+  
+  res.redirect = function(url) {
+    if (req.session) {
+      req.session.save((err) => {
+        if (err) console.error('Error guardando sesión en redirect:', err);
+      });
+    }
+    return originalRedirect.call(this, url);
+  };
+  
   next();
 });
 
