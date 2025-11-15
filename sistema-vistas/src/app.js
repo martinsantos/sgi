@@ -47,7 +47,7 @@ const app = express();
 app.use(cors());
 
 // ⚠️ SESIONES PRIMERO - CRÍTICO PARA LOGIN
-app.use(session({
+const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || 'SGI-Secret-Key-2025-UltimaMillaSystem',
   resave: true,
   saveUninitialized: true,
@@ -57,7 +57,24 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
     sameSite: 'lax' // Permitir cookies en peticiones POST
   }
-}));
+});
+
+app.use(sessionMiddleware);
+
+// Middleware para asegurar que la sesión se guarda después de cada petición
+app.use((req, res, next) => {
+  // Guardar la sesión después de que se envíe la respuesta
+  const originalSend = res.send;
+  res.send = function(data) {
+    if (req.session) {
+      req.session.save((err) => {
+        if (err) console.error('Error guardando sesión:', err);
+      });
+    }
+    return originalSend.call(this, data);
+  };
+  next();
+});
 
 // ⚠️ BODY PARSERS DESPUÉS DE SESIÓN
 app.use(express.json());
