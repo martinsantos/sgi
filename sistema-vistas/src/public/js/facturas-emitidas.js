@@ -41,6 +41,20 @@ class FacturasManager {
       });
     }
 
+    // Selector rápido de tipo de factura
+    const tipoFacturaRapido = document.getElementById('tipoFacturaRapido');
+    if (tipoFacturaRapido) {
+      tipoFacturaRapido.addEventListener('change', (e) => {
+        this.currentPage = 1;
+        if (e.target.value) {
+          this.currentFilters.tipo_factura = e.target.value;
+        } else {
+          delete this.currentFilters.tipo_factura;
+        }
+        this.loadData();
+      });
+    }
+
     // Filtros avanzados
     const advancedForm = document.getElementById('advancedFiltersForm');
     if (advancedForm) {

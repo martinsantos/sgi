@@ -16,7 +16,7 @@
 
 <!-- Search and Filters Section -->
 <div class="row mb-4">
-  <div class="col-md-6">
+  <div class="col-md-4">
     <div class="input-group">
       <span class="input-group-text">
         <i class="fas fa-search"></i>
@@ -29,7 +29,16 @@
       </button>
     </div>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-3">
+    <select class="form-select" id="tipoFacturaRapido" name="tipo_factura_rapido">
+      <option value="">Todos los tipos</option>
+      <option value="A">Factura A</option>
+      <option value="B">Factura B</option>
+      <option value="C">Factura C</option>
+      <option value="M">Factura M</option>
+    </select>
+  </div>
+  <div class="col-md-5">
     <div class="d-flex justify-content-end align-items-center">
       <small class="text-muted me-3" id="resultsInfo">Cargando facturas...</small>
       <div id="loadingIndicator" class="spinner-border spinner-border-sm text-primary" role="status" style="display: none;">
