@@ -49,12 +49,13 @@ app.use(cors());
 // ⚠️ SESIONES PRIMERO - CRÍTICO PARA LOGIN
 app.use(session({
   secret: process.env.SESSION_SECRET || 'SGI-Secret-Key-2025-UltimaMillaSystem',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   cookie: { 
     secure: false, // Cambiar a true solo con HTTPS completo
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    sameSite: 'lax' // Permitir cookies en peticiones POST
   }
 }));
 
