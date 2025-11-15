@@ -928,6 +928,8 @@ class FacturasController {
       
       const resultado = await FacturaModel.searchFacturas(filters, page, limit, sort, order);
       
+      console.log(`📊 Resultado de búsqueda: ${resultado.data.length} facturas, Total: ${resultado.pagination.total}`);
+      
       res.json({
         success: true,
         data: resultado.data,
