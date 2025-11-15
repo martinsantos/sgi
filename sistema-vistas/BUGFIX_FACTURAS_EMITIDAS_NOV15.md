@@ -27,7 +27,7 @@
 
 ## ✅ SOLUCIONES IMPLEMENTADAS
 
-### 1. Agregar `numero_factura_completo` al Modelo
+### 1. Construir `numero_factura_completo` con CONCAT
 
 **Archivo:** `src/models/FacturaModel.js`
 
@@ -43,12 +43,13 @@ SELECT
 SELECT 
   fv.id,
   fv.numero_factura,
-  fv.numero_factura_completo,  -- ✅ AGREGADO
+  CONCAT(LPAD(fv.punto_venta, 3, '0'), '-', LPAD(fv.numero_factura, 8, '0')) as numero_factura_completo,
   fv.fecha_emision,
   ...
 ```
 
 **Impacto:** El JavaScript ahora puede mostrar el número de factura completo (ej: "001-00000728")
+**Nota:** La columna `numero_factura_completo` no existe en la tabla, se construye dinámicamente con CONCAT
 
 ### 2. Mejorar Mapeo de Parámetros en Controlador
 
@@ -106,7 +107,7 @@ console.log(`📝 Filtros procesados:`, filters);
 
 | Archivo | Cambios | Status |
 |---------|---------|--------|
-| `src/models/FacturaModel.js` | Agregar `numero_factura_completo` al SELECT | ✅ |
+| `src/models/FacturaModel.js` | Construir `numero_factura_completo` con CONCAT en `searchFacturas` y `getFacturasEmitidas` | ✅ |
 | `src/controllers/facturaController.js` | Mejorar mapeo de parámetros y filtros | ✅ |
 
 ---
@@ -114,9 +115,10 @@ console.log(`📝 Filtros procesados:`, filters);
 ## 🚀 DESPLIEGUE
 
 ✅ Archivos copiados al servidor  
-✅ PM2 reiniciado (PID: 23598)  
+✅ PM2 reiniciado (PID: 32356)  
 ✅ Servidor online  
-✅ Sin errores en logs
+✅ Sin errores en logs  
+✅ Verificado: Facturas se cargan correctamente
 
 ---
 
@@ -176,6 +178,16 @@ Response: Facturas con numero_factura_completo incluido
 
 ---
 
+---
+
+## 📌 COMMITS RELACIONADOS
+
+- `567e1dc` - fix: Agregar numero_factura_completo (versión inicial con error)
+- `eed55cd` - docs: Documentar bugfix
+- `bdaf247` - fix: Construir numero_factura_completo con CONCAT (versión corregida)
+
+---
+
 **Desplegado:** 15/11/2025 10:15 UTC-3  
-**Commit:** 567e1dc  
+**Última actualización:** 15/11/2025 10:45 UTC-3  
 **Servidor:** sgi.ultimamilla.com.ar
