@@ -74,8 +74,19 @@ function requireAuth(req, res, next) {
       authenticated: true,
       authMethod: 'session'
     };
+    console.log(`✅ Usuario autenticado: ${req.session.username} (${req.path})`);
     return next();
   }
+  
+  // Debug: Mostrar estado de sesión
+  console.log(`🔐 DEBUG - req.session:`, {
+    sessionId: req.sessionID,
+    userId: req.session?.userId,
+    username: req.session?.username,
+    path: req.path,
+    method: req.method,
+    contentType: req.headers['content-type']
+  });
 
   // Usuario NO autenticado - guardar URL solicitada y redirigir al login
   req.session.returnTo = req.originalUrl || req.url;
