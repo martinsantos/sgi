@@ -701,10 +701,11 @@ class FacturaController {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.length) || parseInt(req.query.limit) || 20;
-      const sortBy = req.query.sort || 'fecha_emision';
-      const sortOrder = (req.query.order || 'desc').toUpperCase();
+      const sortBy = req.query.sort || req.query.sortBy || 'fecha_emision';
+      const sortOrder = (req.query.order || req.query.sortOrder || 'desc').toUpperCase();
       
       console.log(`📝 API: Obteniendo facturas emitidas - Página ${page}, Límite ${limit}, Sort: ${sortBy} ${sortOrder}`);
+      console.log(`📝 Filtros recibidos:`, req.query);
       
       // Obtener filtros del query string
       const filters = {
@@ -717,6 +718,7 @@ class FacturaController {
         monto_desde: req.query.monto_desde,
         monto_hasta: req.query.monto_hasta,
         tipo_factura: req.query.tipo_factura,
+        punto_venta: req.query.punto_venta,
         texto_libre: req.query.search
       };
       
@@ -726,6 +728,8 @@ class FacturaController {
           delete filters[key];
         }
       });
+      
+      console.log(`📝 Filtros procesados:`, filters);
       
       const resultado = await FacturaModel.searchFacturas(filters, page, limit, sortBy, sortOrder);
       

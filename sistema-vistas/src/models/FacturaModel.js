@@ -316,6 +316,7 @@ class FacturaModel {
       SELECT 
         fv.id,
         fv.numero_factura,
+        fv.numero_factura_completo,
         fv.fecha_emision,
         fv.total,
         fv.cancelado,
