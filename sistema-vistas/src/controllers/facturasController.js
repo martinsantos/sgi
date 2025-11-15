@@ -1138,7 +1138,11 @@ class FacturasController {
       console.log('✅ Items insertados correctamente');
 
       // Responder
-      if (req.xhr || req.headers.accept.includes('application/json')) {
+      const isAjax = req.xhr || 
+                     req.headers['content-type']?.includes('application/json') ||
+                     req.headers['accept']?.includes('application/json');
+      
+      if (isAjax) {
         return res.json({
           success: true,
           message: 'Factura creada correctamente',
@@ -1156,7 +1160,11 @@ class FacturasController {
     } catch (error) {
       console.error('❌ Error al crear factura:', error);
       
-      if (req.xhr || req.headers.accept.includes('application/json')) {
+      const isAjax = req.xhr || 
+                     req.headers['content-type']?.includes('application/json') ||
+                     req.headers['accept']?.includes('application/json');
+      
+      if (isAjax) {
         return res.status(500).json({
           success: false,
           message: 'Error al crear factura: ' + error.message
