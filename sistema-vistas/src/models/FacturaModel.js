@@ -34,7 +34,7 @@ class FacturaModel {
         fv.numero_operacion,
         fv.tipo_factura,
         fv.numero_factura,
-        fv.numero_factura_completo,
+        CONCAT(LPAD(fv.punto_venta, 3, '0'), '-', LPAD(fv.numero_factura, 8, '0')) as numero_factura_completo,
         fv.punto_venta,
         fv.fecha_emision,
         fv.total,
@@ -316,7 +316,7 @@ class FacturaModel {
       SELECT 
         fv.id,
         fv.numero_factura,
-        fv.numero_factura_completo,
+        CONCAT(LPAD(fv.punto_venta, 3, '0'), '-', LPAD(fv.numero_factura, 8, '0')) as numero_factura_completo,
         fv.fecha_emision,
         fv.total,
         fv.cancelado,
