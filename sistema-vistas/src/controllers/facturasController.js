@@ -894,7 +894,58 @@ class FacturasController {
   }
 
   static async getFacturasEmitidasAPI(req, res) {
-    res.status(501).json({message: "Método getFacturasEmitidasAPI no implementado aún"});
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
+      const sort = req.query.sort || 'fecha_emision';
+      const order = (req.query.order || 'desc').toUpperCase();
+      
+      console.log(`📝 API: Obteniendo facturas emitidas - Página ${page}, Límite ${limit}, Sort: ${sort} ${order}`);
+      
+      // Obtener filtros del query string
+      const filters = {
+        numero_factura: req.query.numero_factura,
+        cliente_id: req.query.cliente_id,
+        cliente_nombre: req.query.cliente || req.query.search,
+        estado: req.query.estado,
+        fecha_desde: req.query.fecha_desde,
+        fecha_hasta: req.query.fecha_hasta,
+        monto_desde: req.query.monto_desde,
+        monto_hasta: req.query.monto_hasta,
+        tipo_factura: req.query.tipo_factura,
+        punto_venta: req.query.punto_venta,
+        texto_libre: req.query.search
+      };
+      
+      // Limpiar filtros vacíos
+      Object.keys(filters).forEach(key => {
+        if (!filters[key] || filters[key] === '') {
+          delete filters[key];
+        }
+      });
+      
+      console.log(`📝 Filtros procesados:`, filters);
+      
+      const resultado = await FacturaModel.searchFacturas(filters, page, limit, sort, order);
+      
+      res.json({
+        success: true,
+        data: resultado.data,
+        pagination: resultado.pagination,
+        filters: filters,
+        sort: sort,
+        order: order
+      });
+      
+    } catch (error) {
+      console.error('❌ Error en API de facturas emitidas:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error al obtener facturas emitidas',
+        message: error.message,
+        data: []
+      });
+    }
   }
 
   static async getFacturasRecibidasAPI(req, res) {
