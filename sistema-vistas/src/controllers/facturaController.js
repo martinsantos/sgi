@@ -308,6 +308,24 @@ class FacturaController {
 
       console.log('✅ Factura insertada:', resultFactura);
 
+      // Obtener certificacion y centro de costo por defecto
+      const [certificaciones] = await pool.query(
+        'SELECT id FROM certificacions LIMIT 1'
+      );
+      const [centrosCosto] = await pool.query(
+        'SELECT id FROM centro_costos LIMIT 1'
+      );
+
+      const certificacionId = certificaciones[0]?.id || null;
+      const centroCostoId = centrosCosto[0]?.id || null;
+
+      if (!certificacionId || !centroCostoId) {
+        return res.status(400).json({
+          success: false,
+          message: 'No hay certificaciones o centros de costo configurados en el sistema'
+        });
+      }
+
       // Insertar items (detalles)
       for (const item of itemsArray) {
         const itemId = uuidv4();
@@ -326,8 +344,8 @@ class FacturaController {
           [
             itemId,
             facturaId,
-            null, // certificacion_id - puede ser null
-            null, // centro_costo_id - puede ser null
+            certificacionId,
+            centroCostoId,
             subtotalItem,
             ivaItem,
             item.descripcion || '', // alcance
