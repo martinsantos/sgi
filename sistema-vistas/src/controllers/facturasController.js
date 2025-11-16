@@ -1137,25 +1137,18 @@ class FacturasController {
 
       console.log('✅ Items insertados correctamente');
 
-      // Responder
-      const isAjax = req.xhr || 
-                     req.headers['content-type']?.includes('application/json') ||
-                     req.headers['accept']?.includes('application/json');
-      
-      if (isAjax) {
-        return res.json({
-          success: true,
-          message: 'Factura creada correctamente',
-          data: {
-            id: facturaId,
-            numero_factura_completo: numeroFacturaCompleto,
-            total: total.toFixed(2)
-          }
-        });
-      }
-
-      // Redirigir a la vista de detalle
-      res.redirect(`/facturas/ver/${facturaId}`);
+      // SIEMPRE retornar JSON (el JavaScript manejará la redirección)
+      console.log('✅ Retornando JSON con éxito');
+      return res.json({
+        success: true,
+        message: 'Factura creada correctamente',
+        data: {
+          id: facturaId,
+          numero_factura_completo: numeroFacturaCompleto,
+          total: total.toFixed(2),
+          redirect_url: `/facturas/ver/${facturaId}`
+        }
+      });
 
     } catch (error) {
       console.error('❌ Error al crear factura:', error);
