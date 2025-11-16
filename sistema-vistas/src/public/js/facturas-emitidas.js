@@ -218,10 +218,10 @@ class FacturasManager {
             <a href="/facturas/${factura.id}/pdf" class="btn btn-outline-info" title="PDF">
               <i class="bi bi-file-pdf"></i>
             </a>
-            <button type="button" class="btn btn-outline-danger" title="Eliminar" onclick="eliminarFactura('${factura.id}')">
-              <i class="bi bi-trash"></i>
-            </button>
           </div>
+          <button type="button" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar" onclick="eliminarFactura('${factura.id}')">
+            <i class="bi bi-trash"></i>
+          </button>
         </td>
       </tr>
     `).join('');
