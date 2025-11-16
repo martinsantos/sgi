@@ -51,6 +51,12 @@
           </button>
         </li>
         {{/ne}}
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <button class="dropdown-item text-danger" id="deleteBtn">
+            <i class="fas fa-trash me-2"></i>Eliminar Factura
+          </button>
+        </li>
       </ul>
     </div>
   </div>
@@ -770,6 +776,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  // Eliminar factura
+  const deleteBtn = document.getElementById('deleteBtn');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', function() {
+      if (confirm('¿Estás seguro de que deseas eliminar esta factura? Esta acción no se puede deshacer.')) {
+        const facturaId = '{{id}}';
+        fetch(`/facturas/${facturaId}/eliminar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Factura eliminada correctamente');
+            window.location.href = data.redirect_url || '/facturas/emitidas';
+          } else {
+            alert('Error: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al eliminar factura');
+        });
+      }
+    });
   }
 });
 </script>

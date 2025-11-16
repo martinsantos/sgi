@@ -68,6 +68,10 @@ router.post('/:id/marcar-pagada', FacturaController.marcarComoPagada);
 // Anular factura
 router.post('/:id/anular', FacturaController.anularFactura);
 
+// Eliminar factura
+router.delete('/:id', FacturaController.eliminar);
+router.post('/:id/eliminar', FacturaController.eliminar);
+
 // Generar PDF
 router.get('/:id/pdf', FacturaController.generarPDF);
 

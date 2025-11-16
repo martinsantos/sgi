@@ -1511,6 +1511,50 @@ class FacturaController {
       res.redirect(`/facturas/recibidas/editar/${req.params.id}`);
     }
   }
+
+  /**
+   * Eliminar factura (soft delete - marcar como inactiva)
+   */
+  static async eliminar(req, res) {
+    try {
+      const id = req.params.id;
+      console.log('🗑️ Eliminando factura:', id);
+
+      // Validar que la factura exista
+      const [facturas] = await pool.query(
+        'SELECT id FROM factura_ventas WHERE id = ?',
+        [id]
+      );
+
+      if (!facturas || facturas.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Factura no encontrada'
+        });
+      }
+
+      // Soft delete - marcar como inactiva
+      await pool.query(
+        'UPDATE factura_ventas SET activo = 0, modified = NOW() WHERE id = ?',
+        [id]
+      );
+
+      console.log('✅ Factura eliminada correctamente');
+
+      return res.json({
+        success: true,
+        message: 'Factura eliminada correctamente',
+        redirect_url: '/facturas/emitidas'
+      });
+
+    } catch (error) {
+      console.error('❌ Error al eliminar factura:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al eliminar factura: ' + error.message
+      });
+    }
+  }
 }
 
 module.exports = FacturaController;
