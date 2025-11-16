@@ -218,6 +218,9 @@ class FacturasManager {
             <a href="/facturas/${factura.id}/pdf" class="btn btn-outline-info" title="PDF">
               <i class="bi bi-file-pdf"></i>
             </a>
+            <button type="button" class="btn btn-outline-danger" title="Eliminar" onclick="eliminarFactura('${factura.id}')">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
         </td>
       </tr>
@@ -368,20 +371,28 @@ document.addEventListener('DOMContentLoaded', function() {
   window.facturasManager.loadData();
 });
 
-// Función auxiliar para confirmar eliminación
-function confirmarEliminar(id) {
-  if (confirm('¿Estás seguro de que deseas eliminar esta factura?')) {
-    fetch(`/api/facturas/${id}`, { method: 'DELETE' })
-      .then(response => {
-        if (response.ok) {
-          window.facturasManager.loadData();
-        } else {
-          alert('Error al eliminar la factura');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Error al eliminar la factura');
-      });
+// Función para eliminar factura
+function eliminarFactura(id) {
+  if (confirm('¿Estás seguro de que deseas eliminar esta factura? Esta acción no se puede deshacer.')) {
+    fetch(`/facturas/${id}/eliminar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Factura eliminada correctamente');
+        window.facturasManager.loadData();
+      } else {
+        alert('Error: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error al eliminar factura');
+    });
   }
 }
