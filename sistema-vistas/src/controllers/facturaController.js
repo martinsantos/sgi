@@ -1383,7 +1383,8 @@ class FacturaController {
       }
 
       // Obtener clientes para el dropdown
-      const clientes = await ClienteModel.getClientesActivos();
+      // const clientes = await ClienteModel.getClientesActivos();
+      const clientes = []; // TODO: Implementar getClientesActivos
 
       res.render('facturas/editar-emitida', {
         title: `Editar Factura ${factura.numero_factura || factura.numero}`,
