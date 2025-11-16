@@ -189,66 +189,182 @@ class FacturaController {
     try {
       console.log('💾 Creando nueva factura:', req.body);
 
-      const facturaData = {
-        cliente_id: req.body.cliente_id,
-        tipo_factura: req.body.tipo_factura || 'B',
-        punto_venta: parseInt(req.body.punto_venta) || 1,
-        fecha_emision: req.body.fecha_emision || new Date(),
-        fecha_vto_pago: req.body.fecha_vto_pago,
-        observaciones: req.body.observaciones,
-        detalles: req.body.detalles || []
-      };
+      const {
+        cliente_id,
+        proyecto_id,
+        tipo_factura,
+        punto_venta,
+        numero_factura,
+        fecha_emision,
+        fecha_vencimiento,
+        observaciones,
+        items
+      } = req.body;
 
-      // Validaciones básicas
-      if (!facturaData.cliente_id) {
-        return res.status(500).render('error', {
-          title: 'Error 500',
+      // Validaciones
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
           message: 'Debe seleccionar un cliente'
         });
       }
 
-      // Calcular totales
-      let subtotal = 0;
-      if (Array.isArray(facturaData.detalles)) {
-        subtotal = facturaData.detalles.reduce((sum, detalle) => {
-          const cantidad = parseFloat(detalle.cantidad) || 0;
-          const precio = parseFloat(detalle.precio_unitario) || 0;
-          return sum + (cantidad * precio);
-        }, 0);
+      if (!tipo_factura) {
+        return res.status(400).json({
+          success: false,
+          message: 'Debe seleccionar un tipo de factura'
+        });
       }
 
-      const iva = subtotal * 0.21; // 21% IVA por defecto
-      const total = subtotal + iva;
+      if (!punto_venta) {
+        return res.status(400).json({
+          success: false,
+          message: 'Punto de venta es obligatorio'
+        });
+      }
 
-      facturaData.subtotal = subtotal;
-      facturaData.iva = iva;
-      facturaData.total = total;
+      if (!numero_factura) {
+        return res.status(400).json({
+          success: false,
+          message: 'Número de factura es obligatorio'
+        });
+      }
 
-      // En una implementación real, aquí se integraría con AFIP
-      console.log('🏦 Integrando con Web Service de AFIP...');
+      if (!fecha_emision) {
+        return res.status(400).json({
+          success: false,
+          message: 'Fecha de emisión es obligatoria'
+        });
+      }
+
+      // Validar items
+      if (!items || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Debe agregar al menos un item'
+        });
+      }
+
+      // Crear factura
+      const facturaId = uuidv4();
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      // Calcular totales
+      let subtotal = 0;
+      let totalIva = 0;
+
+      const itemsArray = Array.isArray(items) ? items : Object.values(items || {});
       
-      // Simular respuesta de AFIP
-      const afipResponse = {
-        cae: `${Math.floor(Math.random() * 90000000000000) + 10000000000000}`,
-        fecha_vto_cae: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 días
-        numero_factura: `${facturaData.punto_venta.toString().padStart(5, '0')}-${Math.floor(Math.random() * 90000000) + 10000000}`
-      };
+      itemsArray.forEach(item => {
+        const cantidad = parseFloat(item.cantidad) || 0;
+        const precio = parseFloat(item.precio_unitario) || 0;
+        const ivaPorc = parseFloat(item.iva_porcentaje) || 0;
+        
+        const subtotalItem = cantidad * precio;
+        const ivaItem = subtotalItem * (ivaPorc / 100);
+        
+        subtotal += subtotalItem;
+        totalIva += ivaItem;
+      });
 
-      facturaData.cae = afipResponse.cae;
-      facturaData.fecha_vto_cae = afipResponse.fecha_vto_cae;
-      facturaData.numero_factura = afipResponse.numero_factura;
-      facturaData.estado = 1; // Pendiente
+      const total = subtotal + totalIva;
 
-      // Crear la factura (implementación pendiente en el modelo)
-      console.log('✅ Factura procesada con AFIP exitosamente');
-      
-      res.redirect('/facturas/emitidas');
+      // Construir número de factura completo
+      const numeroFacturaCompleto = `${String(punto_venta).padStart(5, '0')}-${String(numero_factura).padStart(8, '0')}`;
+
+      console.log('💾 Insertando factura:', {
+        id: facturaId,
+        numeroFacturaCompleto,
+        cliente_id,
+        tipo_factura,
+        subtotal,
+        totalIva,
+        total
+      });
+
+      // Insertar factura
+      const [resultFactura] = await pool.query(
+        `INSERT INTO factura_ventas (
+          id, persona_tercero_id, numero_factura_completo, numero_factura,
+          punto_venta, tipo_factura, fecha_emision, fecha_vencimiento,
+          subtotal, iva, total, observaciones, estado, activo, created, modified
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+        [
+          facturaId,
+          cliente_id,
+          numeroFacturaCompleto,
+          numero_factura,
+          punto_venta,
+          tipo_factura,
+          fecha_emision,
+          fecha_vencimiento || null,
+          subtotal,
+          totalIva,
+          total,
+          observaciones || null,
+          1, // Estado: 1 = Pendiente
+          now,
+          now
+        ]
+      );
+
+      console.log('✅ Factura insertada:', resultFactura);
+
+      // Insertar items
+      let itemIndex = 0;
+      for (const item of itemsArray) {
+        const itemId = uuidv4();
+        const cantidad = parseFloat(item.cantidad) || 0;
+        const precio = parseFloat(item.precio_unitario) || 0;
+        const ivaPorc = parseFloat(item.iva_porcentaje) || 0;
+        
+        const subtotalItem = cantidad * precio;
+        const ivaItem = subtotalItem * (ivaPorc / 100);
+        const totalItem = subtotalItem + ivaItem;
+
+        await pool.query(
+          `INSERT INTO factura_venta_items (
+            id, factura_venta_id, descripcion, cantidad, precio_unitario,
+            iva_porcentaje, subtotal, iva, total, orden, activo, created, modified
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          [
+            itemId,
+            facturaId,
+            item.descripcion || '',
+            cantidad,
+            precio,
+            ivaPorc,
+            subtotalItem,
+            ivaItem,
+            totalItem,
+            itemIndex++,
+            now,
+            now
+          ]
+        );
+      }
+
+      console.log('✅ Items insertados correctamente');
+
+      // SIEMPRE retornar JSON
+      console.log('✅ Retornando JSON con éxito');
+      return res.json({
+        success: true,
+        message: 'Factura creada correctamente',
+        data: {
+          id: facturaId,
+          numero_factura_completo: numeroFacturaCompleto,
+          total: total.toFixed(2),
+          redirect_url: `/facturas/ver/${facturaId}`
+        }
+      });
 
     } catch (error) {
       console.error('❌ Error al crear factura:', error);
-      res.status(500).render('error', {
-        title: 'Error 500',
-        message: 'Error al emitir factura: ' + error.message
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Error al crear factura: ' + error.message
       });
     }
   }
