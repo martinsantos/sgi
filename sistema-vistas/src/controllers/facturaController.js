@@ -287,8 +287,8 @@ class FacturaController {
         `INSERT INTO factura_ventas (
           id, persona_tercero_id, numero_factura,
           punto_venta, tipo_factura, fecha_emision, fecha_vto_pago,
-          total, observaciones, estado, activo, created, modified
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          total, observaciones, estado, condicion_venta, activo, created, modified
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
         [
           facturaId,
           cliente_id,
@@ -300,6 +300,7 @@ class FacturaController {
           total,
           observaciones || null,
           1, // Estado: 1 = Pendiente
+          1, // condicion_venta: 1 = Contado (por defecto)
           now,
           now
         ]
