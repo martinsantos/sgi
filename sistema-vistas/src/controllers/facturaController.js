@@ -285,21 +285,18 @@ class FacturaController {
       // Insertar factura
       const [resultFactura] = await pool.query(
         `INSERT INTO factura_ventas (
-          id, persona_tercero_id, numero_factura_completo, numero_factura,
-          punto_venta, tipo_factura, fecha_emision, fecha_vencimiento,
-          subtotal, iva, total, observaciones, estado, activo, created, modified
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          id, persona_tercero_id, numero_factura,
+          punto_venta, tipo_factura, fecha_emision, fecha_vto_pago,
+          total, observaciones, estado, activo, created, modified
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
         [
           facturaId,
           cliente_id,
-          numeroFacturaCompleto,
           numero_factura,
           punto_venta,
           tipo_factura,
           fecha_emision,
           fecha_vencimiento || null,
-          subtotal,
-          totalIva,
           total,
           observaciones || null,
           1, // Estado: 1 = Pendiente
@@ -310,8 +307,7 @@ class FacturaController {
 
       console.log('✅ Factura insertada:', resultFactura);
 
-      // Insertar items
-      let itemIndex = 0;
+      // Insertar items (detalles)
       for (const item of itemsArray) {
         const itemId = uuidv4();
         const cantidad = parseFloat(item.cantidad) || 0;
@@ -320,24 +316,21 @@ class FacturaController {
         
         const subtotalItem = cantidad * precio;
         const ivaItem = subtotalItem * (ivaPorc / 100);
-        const totalItem = subtotalItem + ivaItem;
 
         await pool.query(
-          `INSERT INTO factura_venta_items (
-            id, factura_venta_id, descripcion, cantidad, precio_unitario,
-            iva_porcentaje, subtotal, iva, total, orden, activo, created, modified
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          `INSERT INTO factura_venta_detalles (
+            id, factura_venta_id, certificacion_id, centro_costo_id,
+            neto, iva, alcance, activo, observaciones, created, modified
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
           [
             itemId,
             facturaId,
-            item.descripcion || '',
-            cantidad,
-            precio,
-            ivaPorc,
+            null, // certificacion_id - puede ser null
+            null, // centro_costo_id - puede ser null
             subtotalItem,
             ivaItem,
-            totalItem,
-            itemIndex++,
+            item.descripcion || '', // alcance
+            item.descripcion || '', // observaciones
             now,
             now
           ]
