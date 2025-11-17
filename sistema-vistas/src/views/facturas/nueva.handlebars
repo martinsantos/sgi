@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-header bg-primary text-white">
       <h4 class="mb-0">
-        <i class="bi bi-receipt"></i> Nueva Factura de Venta
+        <i class="fas fa-receipt"></i> Nueva Factura de Venta
       </h4>
     </div>
     <div class="card-body">
@@ -72,7 +72,7 @@
                       <div class="input-group">
                         <input type="text" class="form-control" id="clienteSearch" placeholder="Buscar cliente por nombre, código o CUIT..." autocomplete="off">
                         <button class="btn btn-outline-secondary" type="button" id="clienteSearchBtn" data-bs-toggle="modal" data-bs-target="#clienteModal">
-                          <i class="bi bi-search"></i>
+                          <i class="fas fa-search"></i>
                         </button>
                       </div>
                       <input type="hidden" id="clienteId" name="cliente_id" required>
@@ -88,7 +88,7 @@
                           <small class="text-muted d-block" id="cliente_info"></small>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearCliente()">
-                          <i class="bi bi-x"></i>
+                          <i class="fas fa-x"></i>
                         </button>
                       </div>
                     </div>
@@ -113,7 +113,7 @@
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Detalles de la Factura</h5>
             <button type="button" class="btn btn-success btn-sm" id="agregarItem">
-              <i class="bi bi-plus"></i> Agregar Ítem
+              <i class="fas fa-plus"></i> Agregar Ítem
             </button>
           </div>
           <div class="card-body">
@@ -153,7 +153,7 @@
                     </td>
                     <td>
                       <button type="button" class="btn btn-danger btn-sm eliminar-item">
-                        <i class="bi bi-trash"></i>
+                        <i class="fas fa-trash"></i>
                       </button>
                     </td>
                   </tr>
@@ -203,14 +203,14 @@
         <!-- Botones de Acción -->
         <div class="d-flex justify-content-between mt-4">
           <a href="/facturas" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="fas fa-arrow-left"></i> Volver
           </a>
           <div>
             <button type="button" class="btn btn-primary me-2" id="guardarBorrador">
-              <i class="bi bi-save"></i> Guardar Borrador
+              <i class="fas fa-save"></i> Guardar Borrador
             </button>
             <button type="submit" class="btn btn-success" name="action" value="autorizar">
-              <i class="bi bi-check-circle"></i> Generar y Autorizar
+              <i class="fas fa-check-circle"></i> Generar y Autorizar
             </button>
           </div>
         </div>
@@ -225,14 +225,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="clienteModalLabel">
-          <i class="bi bi-search"></i> Buscar Cliente
+          <i class="fas fa-search"></i> Buscar Cliente
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
           <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="text" class="form-control" id="modalClienteSearch" placeholder="Buscar por nombre, código, CUIT..." autocomplete="off">
           </div>
         </div>
@@ -263,7 +263,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Cerrar
+          <i class="fas fa-x-circle"></i> Cerrar
         </button>
       </div>
     </div>
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm eliminar-item">
-                    <i class="bi bi-trash"></i>
+                    <i class="fas fa-trash"></i>
                 </button>
             </td>
         `;
@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-primary select-cliente" data-cliente-id="${cliente.id}" data-cliente-nombre="${cliente.display_nombre || cliente.nombre_completo || cliente.nombre || ''}" data-cliente-codigo="${cliente.codigo || ''}">
-                                    <i class="bi bi-check"></i> Seleccionar
+                                    <i class="fas fa-check"></i> Seleccionar
                                 </button>
                             </td>
                         `;
@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clientesTableBody.innerHTML = `
                     <tr>
                         <td colspan="5" class="text-center text-danger py-3">
-                            <i class="bi bi-exclamation-triangle me-2"></i>Error al cargar clientes
+                            <i class="fas fa-exclamation-triangle me-2"></i>Error al cargar clientes
                         </td>
                     </tr>
                 `;
@@ -658,7 +658,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading state
         const btn = this;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+        btn.innerHTML = '<i class="fas fa-hourglass-split"></i> Guardando...';
         btn.disabled = true;
         
         fetch('/facturas/api/facturas/borrador', {
@@ -757,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading state
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+        submitBtn.innerHTML = '<i class="fas fa-hourglass-split"></i> Generando...';
         submitBtn.disabled = true;
         
         fetch('/facturas/crear', {

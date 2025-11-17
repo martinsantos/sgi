@@ -2,10 +2,10 @@
   <h1>Factura #{{factura.numero_factura}}</h1>
   <div>
     <a href="/facturas/emitidas" class="btn btn-secondary">
-      <i class="bi bi-arrow-left"></i> Volver al listado
+      <i class="fas fa-arrow-left"></i> Volver al listado
     </a>
     <button id="btnImprimir" class="btn btn-primary ms-2">
-      <i class="bi bi-printer"></i> Imprimir
+      <i class="fas fa-printer"></i> Imprimir
     </button>
   </div>
 </div>
@@ -129,7 +129,7 @@
             <p class="mb-1"><strong>Inicio:</strong> {{formatDate proyecto.fecha_inicio}}</p>
             <p class="mb-0"><strong>Fin Est.:</strong> {{formatDate proyecto.fecha_fin_estimada}}</p>
             <a href="/proyectos/ver/{{proyecto.id}}" class="btn btn-outline-primary btn-sm mt-2">
-              <i class="bi bi-folder"></i> Ver Proyecto
+              <i class="fas fa-folder"></i> Ver Proyecto
             </a>
           </div>
         </div>

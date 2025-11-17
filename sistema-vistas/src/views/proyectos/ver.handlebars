@@ -6,13 +6,13 @@
     </div>
     <div>
         <a href="/proyectos" class="btn btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left"></i> Volver al Listado
+            <i class="fas fa-arrow-left"></i> Volver al Listado
         </a>
         <a href="/proyectos/editar/{{proyecto.id}}" class="btn btn-warning me-2">
-            <i class="bi bi-pencil"></i> Editar
+            <i class="fas fa-pencil"></i> Editar
         </a>
         <button class="btn btn-primary" onclick="window.print()">
-            <i class="bi bi-printer"></i> Imprimir
+            <i class="fas fa-printer"></i> Imprimir
         </button>
     </div>
 </div>
@@ -69,7 +69,7 @@
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información del Proyecto</h5>
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información del Proyecto</h5>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -109,13 +109,13 @@
 
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-award"></i> Certificados del Proyecto</h5>
+                <h5 class="mb-0"><i class="fas fa-award"></i> Certificados del Proyecto</h5>
                 <div class="btn-group btn-group-sm">
                     <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-success">
-                        <i class="bi bi-plus"></i> Nuevo Certificado
+                        <i class="fas fa-plus"></i> Nuevo Certificado
                     </a>
                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#asociarCertificadoModal">
-                        <i class="bi bi-link"></i> Asociar Existentes
+                        <i class="fas fa-link"></i> Asociar Existentes
                     </button>
                 </div>
             </div>
@@ -124,7 +124,7 @@
                 <!-- CERTIFICADOS ACTIVOS -->
                 <div class="mb-4">
                     <h6 class="text-success fw-bold mb-3">
-                        <i class="bi bi-check-circle"></i> Certificados Activos ({{certificados.total_activos}})
+                        <i class="fas fa-check-circle"></i> Certificados Activos ({{certificados.total_activos}})
                     </h6>
                     <div class="table-responsive">
                         <table class="table table-hover table-sm">
@@ -177,13 +177,13 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <a href="/certificados/ver/{{this.id}}?return=/proyectos/ver/{{../proyecto.id}}" class="btn btn-outline-primary" title="Ver detalle">
-                                                <i class="bi bi-eye"></i>
+                                                <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="/certificados/editar/{{this.id}}?return=/proyectos/ver/{{../proyecto.id}}" class="btn btn-outline-warning" title="Editar">
-                                                <i class="bi bi-pencil"></i>
+                                                <i class="fas fa-pencil"></i>
                                             </a>
                                             <button type="button" class="btn btn-outline-danger btn-desasociar" data-cert-id="{{this.id}}" title="Desasociar">
-                                                <i class="bi bi-unlink"></i>
+                                                <i class="fas fa-unlink"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -199,7 +199,7 @@
                 <!-- CERTIFICADOS INACTIVOS -->
                 <div class="mb-4">
                     <h6 class="text-danger fw-bold mb-3">
-                        <i class="bi bi-x-circle"></i> Certificados Inactivos ({{certificados.total_inactivos}})
+                        <i class="fas fa-x-circle"></i> Certificados Inactivos ({{certificados.total_inactivos}})
                     </h6>
                     <div class="table-responsive">
                         <table class="table table-hover table-sm opacity-75">
@@ -258,14 +258,14 @@
                 </div>
                 {{else}}
                 <div class="text-center py-4">
-                    <i class="bi bi-award" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <i class="fas fa-award" style="font-size: 3rem; opacity: 0.3;"></i>
                     <p class="text-muted mt-2 mb-3">No hay certificados asociados a este proyecto</p>
                     <div class="btn-group">
                         <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-primary">
-                            <i class="bi bi-plus"></i> Crear Primer Certificado
+                            <i class="fas fa-plus"></i> Crear Primer Certificado
                         </a>
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#asociarCertificadoModal">
-                            <i class="bi bi-link"></i> Asociar Existentes
+                            <i class="fas fa-link"></i> Asociar Existentes
                         </button>
                     </div>
                 </div>
@@ -279,27 +279,27 @@
         <!-- Project Actions -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-gear"></i> Acciones del Proyecto</h5>
+                <h5 class="mb-0"><i class="fas fa-gear"></i> Acciones del Proyecto</h5>
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="/proyectos/editar/{{proyecto.id}}" class="btn btn-warning">
-                        <i class="bi bi-pencil"></i> Editar Proyecto
+                        <i class="fas fa-pencil"></i> Editar Proyecto
                     </a>
                     <a href="/certificados/nuevo?proyecto={{proyecto.id}}" class="btn btn-success">
-                        <i class="bi bi-award"></i> Nuevo Certificado
+                        <i class="fas fa-award"></i> Nuevo Certificado
                     </a>
                     {{#if proyecto.cliente_id}}
                     <a href="/clientes/ver/{{proyecto.cliente_id}}" class="btn btn-outline-info">
-                        <i class="bi bi-person"></i> Ver Cliente
+                        <i class="fas fa-person"></i> Ver Cliente
                     </a>
                     {{/if}}
                     <hr>
                     <button class="btn btn-outline-primary" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Imprimir Proyecto
+                        <i class="fas fa-printer"></i> Imprimir Proyecto
                     </button>
                     <a href="/proyectos/reporte/{{proyecto.id}}" class="btn btn-outline-secondary">
-                        <i class="bi bi-file-earmark-pdf"></i> Generar Reporte
+                        <i class="fas fa-file-earmark-pdf"></i> Generar Reporte
                     </a>
                 </div>
             </div>
@@ -308,7 +308,7 @@
         <!-- Project Timeline -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Timeline</h5>
+                <h5 class="mb-0"><i class="fas fa-clock-history"></i> Timeline</h5>
             </div>
             <div class="card-body">
                 <div class="timeline">
@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="text-end">
                         <div class="fw-bold text-success">$${parseFloat(cert.importe).toLocaleString('es-AR')}</div>
                         <button class="btn btn-sm btn-primary mt-2 btn-asociar" data-cert-id="${cert.id}">
-                            <i class="bi bi-link"></i> Asociar
+                            <i class="fas fa-link"></i> Asociar
                         </button>
                     </div>
                 </div>

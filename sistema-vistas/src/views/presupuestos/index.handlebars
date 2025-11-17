@@ -59,13 +59,13 @@
             <table class="table table-hover" id="presupuestos-table">
               <thead class="table-dark">
                 <tr>
-                  <th style="cursor: pointer;" class="sortable" data-sort="numero_presupuesto">Número <i class="bi bi-arrow-down-up ms-1"></i></th>
-                  <th style="cursor: pointer;" class="sortable" data-sort="cliente_nombre">Cliente <i class="bi bi-arrow-down-up ms-1"></i></th>
-                  <th style="cursor: pointer;" class="sortable" data-sort="descripcion">Título <i class="bi bi-arrow-down-up ms-1"></i></th>
-                  <th style="cursor: pointer;" class="sortable" data-sort="fecha_emision">Fecha <i class="bi bi-arrow-down-up ms-1"></i></th>
-                  <th style="cursor: pointer;" class="sortable" data-sort="fecha_validez">Vencimiento <i class="bi bi-arrow-down-up ms-1"></i></th>
-                  <th style="cursor: pointer;" class="sortable" data-sort="estado_nombre">Estado <i class="bi bi-arrow-down-up ms-1"></i></th>
-                  <th style="cursor: pointer;" class="sortable" data-sort="importe_total">Valor Total <i class="bi bi-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="numero_presupuesto">Número <i class="fas fa-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="cliente_nombre">Cliente <i class="fas fa-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="descripcion">Título <i class="fas fa-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="fecha_emision">Fecha <i class="fas fa-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="fecha_validez">Vencimiento <i class="fas fa-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="estado_nombre">Estado <i class="fas fa-arrow-down-up ms-1"></i></th>
+                  <th style="cursor: pointer;" class="sortable" data-sort="importe_total">Valor Total <i class="fas fa-arrow-down-up ms-1"></i></th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -95,15 +95,15 @@
                   <td>
                     <div class="btn-group btn-group-sm" role="group">
                       <a href="/presupuestos/ver/{{id}}" class="btn btn-outline-primary" title="Ver">
-                        <i class="bi bi-eye"></i>
+                        <i class="fas fa-eye"></i>
                       </a>
                       <a href="/presupuestos/editar/{{id}}" class="btn btn-outline-warning" title="Editar">
-                        <i class="bi bi-pencil"></i>
+                        <i class="fas fa-pencil"></i>
                       </a>
                       <button type="button" class="btn btn-outline-danger"
                               title="Eliminar"
                               onclick="abrirModalEliminar('{{id}}', '{{numero_presupuesto}}')">
-                        <i class="bi bi-trash"></i>
+                        <i class="fas fa-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -163,14 +163,14 @@ function abrirModalEliminar(presupuestoId, numeroPresupuesto) {
                 <div class="modal-content">
                     <div class="modal-header bg-danger text-white">
                         <h5 class="modal-title">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <i class="fas fa-exclamation-triangle me-2"></i>
                             Eliminar Presupuesto
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="alert alert-warning mb-3">
-                            <i class="bi bi-exclamation-circle me-2"></i>
+                            <i class="fas fa-exclamation-circle me-2"></i>
                             <strong>Advertencia:</strong> Esta acción no se puede deshacer.
                         </div>
                         <p class="mb-3">
@@ -189,14 +189,14 @@ function abrirModalEliminar(presupuestoId, numeroPresupuesto) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                            <i class="fas fa-x-circle me-1"></i>Cancelar
                         </button>
                         <button type="button"
                                 id="btnConfirmarEliminar"
                                 class="btn btn-danger"
                                 disabled
                                 onclick="confirmarEliminacionPresupuesto('${presupuestoId}')">
-                            <i class="bi bi-trash me-1"></i>Eliminar Presupuesto
+                            <i class="fas fa-trash me-1"></i>Eliminar Presupuesto
                         </button>
                     </div>
                 </div>
@@ -229,7 +229,7 @@ function validarConfirmacion() {
 function confirmarEliminacionPresupuesto(presupuestoId) {
     const btnConfirmar = document.getElementById('btnConfirmarEliminar');
     btnConfirmar.disabled = true;
-    btnConfirmar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Eliminando...';
+    btnConfirmar.innerHTML = '<i class="fas fa-hourglass-split me-1"></i>Eliminando...';
 
     fetch(`/presupuestos/${presupuestoId}`, {
         method: 'DELETE',
@@ -242,7 +242,7 @@ function confirmarEliminacionPresupuesto(presupuestoId) {
         if (data.success) {
             const alertHTML = `
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle me-2"></i>
+                    <i class="fas fa-check-circle me-2"></i>
                     <strong>Éxito:</strong> Presupuesto eliminado correctamente.
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -258,14 +258,14 @@ function confirmarEliminacionPresupuesto(presupuestoId) {
         } else {
             alert('Error al eliminar presupuesto: ' + data.message);
             btnConfirmar.disabled = false;
-            btnConfirmar.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar Presupuesto';
+            btnConfirmar.innerHTML = '<i class="fas fa-trash me-1"></i>Eliminar Presupuesto';
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Error al eliminar el presupuesto');
         btnConfirmar.disabled = false;
-        btnConfirmar.innerHTML = '<i class="bi bi-trash me-1"></i>Eliminar Presupuesto';
+        btnConfirmar.innerHTML = '<i class="fas fa-trash me-1"></i>Eliminar Presupuesto';
     });
 }
 </script>

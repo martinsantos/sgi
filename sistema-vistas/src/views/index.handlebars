@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <h1 class="h2"><i class="bi bi-speedometer2"></i> Dashboard - Sistema de Gestión Integral</h1>
+            <h1 class="h2"><i class="fas fa-speedometer2"></i> Dashboard - Sistema de Gestión Integral</h1>
             <p class="text-muted">Resumen general del sistema</p>
         </div>
     </div>
@@ -18,12 +18,12 @@
                             <h2 class="mb-0">{{stats.proyectos.total_proyectos}}</h2>
                             <small>Activos: {{stats.proyectos.proyectos_activos}}</small>
                         </div>
-                        <i class="bi bi-folder2-open" style="font-size: 2rem; opacity: 0.7;"></i>
+                        <i class="fas fa-folder2-open" style="font-size: 2rem; opacity: 0.7;"></i>
                     </div>
                 </div>
                 <div class="card-footer">
                     <a href="/proyectos" class="text-white text-decoration-none">
-                        <i class="bi bi-arrow-right"></i> Ver proyectos
+                        <i class="fas fa-arrow-right"></i> Ver proyectos
                     </a>
                 </div>
             </div>
@@ -38,12 +38,12 @@
                             <h2 class="mb-0">{{stats.clientes.total_clientes}}</h2>
                             <small>Registrados</small>
                         </div>
-                        <i class="bi bi-people-fill" style="font-size: 2rem; opacity: 0.7;"></i>
+                        <i class="fas fa-people-fill" style="font-size: 2rem; opacity: 0.7;"></i>
                     </div>
                 </div>
                 <div class="card-footer">
                     <a href="/clientes" class="text-white text-decoration-none">
-                        <i class="bi bi-arrow-right"></i> Ver clientes
+                        <i class="fas fa-arrow-right"></i> Ver clientes
                     </a>
                 </div>
             </div>
@@ -58,12 +58,12 @@
                             <h2 class="mb-0">{{stats.facturas.total_facturas}}</h2>
                             <small>{{formatCurrency stats.facturas.monto_total_mes}}</small>
                         </div>
-                        <i class="bi bi-receipt" style="font-size: 2rem; opacity: 0.7;"></i>
+                        <i class="fas fa-receipt" style="font-size: 2rem; opacity: 0.7;"></i>
                     </div>
                 </div>
                 <div class="card-footer">
                     <a href="/facturas" class="text-white text-decoration-none">
-                        <i class="bi bi-arrow-right"></i> Ver facturas
+                        <i class="fas fa-arrow-right"></i> Ver facturas
                     </a>
                 </div>
             </div>
@@ -78,12 +78,12 @@
                             <h2 class="mb-0">{{stats.certificados.total_certificados}}</h2>
                             <small>Emitidos: {{stats.certificados.certificados_emitidos}}</small>
                         </div>
-                        <i class="bi bi-award" style="font-size: 2rem; opacity: 0.7;"></i>
+                        <i class="fas fa-award" style="font-size: 2rem; opacity: 0.7;"></i>
                     </div>
                 </div>
                 <div class="card-footer">
                     <a href="/certificados" class="text-dark text-decoration-none">
-                        <i class="bi bi-arrow-right"></i> Ver certificados
+                        <i class="fas fa-arrow-right"></i> Ver certificados
                     </a>
                 </div>
             </div>
@@ -95,7 +95,7 @@
         <div class="col-lg-6 col-md-12 mb-3">
             <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Ingresos por Mes</h5>
+                    <h5 class="mb-0"><i class="fas fa-bar-chart"></i> Ingresos por Mes</h5>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height: 300px;">
@@ -108,7 +108,7 @@
         <div class="col-lg-6 col-md-12 mb-3">
             <div class="card h-100">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Estados de Proyectos</h5>
+                    <h5 class="mb-0"><i class="fas fa-pie-chart"></i> Estados de Proyectos</h5>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height: 300px;">
@@ -124,7 +124,7 @@
         <div class="col-lg-8 mb-4">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-kanban"></i> Proyectos Activos</h5>
+                    <h5 class="mb-0"><i class="fas fa-kanban"></i> Proyectos Activos</h5>
                     <a href="/proyectos" class="btn btn-sm btn-outline-primary">Ver todos</a>
                 </div>
                 <div class="card-body">
@@ -161,7 +161,7 @@
                     </div>
                     {{else}}
                     <div class="text-center py-4 text-muted">
-                        <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
+                        <i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
                         <p class="mt-2 mb-0">No hay proyectos activos en este momento</p>
                     </div>
                     {{/if}}
@@ -173,21 +173,21 @@
         <div class="col-lg-4 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h5>
+                    <h5 class="mb-0"><i class="fas fa-lightning"></i> Acciones Rápidas</h5>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="/proyectos/nuevo" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Nuevo Proyecto
+                            <i class="fas fa-plus-circle"></i> Nuevo Proyecto
                         </a>
                         <a href="/clientes/nuevo" class="btn btn-success">
-                            <i class="bi bi-person-plus"></i> Nuevo Cliente
+                            <i class="fas fa-person-plus"></i> Nuevo Cliente
                         </a>
                         <a href="/certificados/nuevo" class="btn btn-info">
-                            <i class="bi bi-file-earmark-plus"></i> Nuevo Certificado
+                            <i class="fas fa-file-earmark-plus"></i> Nuevo Certificado
                         </a>
                         <a href="/certificados" class="btn btn-outline-secondary">
-                            <i class="bi bi-list-check"></i> Ver Certificados
+                            <i class="fas fa-list-check"></i> Ver Certificados
                         </a>
                     </div>
                 </div>
@@ -196,7 +196,7 @@
             {{#if recentFacturas}}
             <div class="card mt-3">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-clock"></i> Facturas Recientes</h5>
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Facturas Recientes</h5>
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">

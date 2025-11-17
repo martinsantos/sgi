@@ -2,13 +2,13 @@
   <h1>Certificado N° {{certificado.numero}}</h1>
   <div>
     <a href="{{returnUrl}}" class="btn btn-outline-secondary me-2">
-      <i class="bi bi-arrow-left"></i> Volver
+      <i class="fas fa-arrow-left"></i> Volver
     </a>
     <a href="/certificados/editar/{{certificado.id}}?return={{returnUrl}}" class="btn btn-warning me-2">
-      <i class="bi bi-pencil"></i> Editar
+      <i class="fas fa-pencil"></i> Editar
     </a>
     <a href="/certificados/imprimir/{{certificado.id}}" class="btn btn-primary" target="_blank">
-      <i class="bi bi-printer"></i> Imprimir
+      <i class="fas fa-printer"></i> Imprimir
     </a>
   </div>
 </div>
@@ -79,7 +79,7 @@
     {{#if proyecto}}
     <div class="card mb-4">
       <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-folder"></i> Proyecto Asociado</h5>
+        <h5 class="mb-0"><i class="fas fa-folder"></i> Proyecto Asociado</h5>
       </div>
       <div class="card-body">
         <h6><a href="/proyectos/ver/{{proyecto.id}}">{{proyecto.nombre}}</a></h6>
@@ -105,7 +105,7 @@
     {{#if (gt otrosCertificadosProyecto.length 0)}}
     <div class="card mb-4">
       <div class="card-header bg-info text-white">
-        <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> Otros Certificados del Proyecto ({{otrosCertificadosProyecto.length}})</h6>
+        <h6 class="mb-0"><i class="fas fa-file-earmark-text"></i> Otros Certificados del Proyecto ({{otrosCertificadosProyecto.length}})</h6>
       </div>
       <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
         {{#each otrosCertificadosProyecto}}
@@ -127,7 +127,7 @@
     {{#if (gt otrosProyectosCliente.length 0)}}
     <div class="card mb-4">
       <div class="card-header bg-success text-white">
-        <h6 class="mb-0"><i class="bi bi-briefcase"></i> Otros Proyectos del Cliente ({{otrosProyectosCliente.length}})</h6>
+        <h6 class="mb-0"><i class="fas fa-briefcase"></i> Otros Proyectos del Cliente ({{otrosProyectosCliente.length}})</h6>
       </div>
       <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
         {{#each otrosProyectosCliente}}
@@ -151,7 +151,7 @@
     {{#if certificado.cliente_nombre}}
     <div class="card mb-4">
       <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="bi bi-person-circle"></i> Cliente</h5>
+        <h5 class="mb-0"><i class="fas fa-person-circle"></i> Cliente</h5>
       </div>
       <div class="card-body">
         <h6>{{certificado.cliente_nombre}}</h6>
@@ -163,7 +163,7 @@
             <li><strong>Monto Total:</strong> {{formatCurrency montoTotalCliente}}</li>
           </ul>
           <a href="/certificados?cliente_id={{certificado.cliente_id}}&cliente_display={{certificado.cliente_nombre}}" class="btn btn-sm btn-outline-primary w-100">
-            <i class="bi bi-search"></i> Ver todos sus certificados
+            <i class="fas fa-search"></i> Ver todos sus certificados
           </a>
         </div>
         {{/if}}
@@ -172,7 +172,7 @@
     {{else}}
     <div class="card mb-4">
       <div class="card-header bg-warning text-dark">
-        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Sin Cliente</h5>
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Sin Cliente</h5>
       </div>
       <div class="card-body">
         <p class="text-muted">Este certificado no tiene cliente asociado.</p>
@@ -188,41 +188,41 @@
       <div class="card-body d-grid gap-2">
         {{#eq certificado.estado 0}}
         <button type="button" class="btn btn-success" onclick="cambiarEstado(1)">
-          <i class="bi bi-check-circle"></i> Aprobar Certificado
+          <i class="fas fa-check-circle"></i> Aprobar Certificado
         </button>
         <button type="button" class="btn btn-outline-danger" onclick="cambiarEstado(4)">
-          <i class="bi bi-x-circle"></i> Anular Certificado
+          <i class="fas fa-x-circle"></i> Anular Certificado
         </button>
         {{/eq}}
 
         {{#eq certificado.estado 1}}
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#facturarModal">
-          <i class="bi bi-receipt"></i> Facturar Certificado
+          <i class="fas fa-receipt"></i> Facturar Certificado
         </button>
         <button type="button" class="btn btn-outline-danger" onclick="cambiarEstado(4)">
-          <i class="bi bi-x-circle"></i> Anular Certificado
+          <i class="fas fa-x-circle"></i> Anular Certificado
         </button>
         {{/eq}}
 
         {{#eq certificado.estado 2}}
         <div class="alert alert-success" role="alert">
-          <i class="bi bi-check2-circle"></i> Certificado facturado {{#if certificado.fecha_factura}}el {{formatDate certificado.fecha_factura}}{{/if}}
+          <i class="fas fa-check2-circle"></i> Certificado facturado {{#if certificado.fecha_factura}}el {{formatDate certificado.fecha_factura}}{{/if}}
         </div>
         {{/eq}}
 
         {{#if (ne certificado.estado 4)}}
         <a href="/certificados/editar/{{certificado.id}}?return={{returnUrl}}" class="btn btn-warning">
-          <i class="bi bi-pencil"></i> Editar
+          <i class="fas fa-pencil"></i> Editar
         </a>
         {{/if}}
         
         <a href="/certificados/imprimir/{{certificado.id}}" class="btn btn-outline-primary" target="_blank">
-          <i class="bi bi-printer"></i> Imprimir/PDF
+          <i class="fas fa-printer"></i> Imprimir/PDF
         </a>
         
         <hr>
         <a href="{{returnUrl}}" class="btn btn-outline-secondary">
-          <i class="bi bi-arrow-left"></i> Volver
+          <i class="fas fa-arrow-left"></i> Volver
         </a>
       </div>
     </div>

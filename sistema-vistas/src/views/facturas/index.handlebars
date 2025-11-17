@@ -2,10 +2,10 @@
   <h1>{{title}}</h1>
   <div>
     <a href="/facturas/search" class="btn btn-primary me-2">
-      <i class="bi bi-search"></i> Búsqueda Avanzada
+      <i class="fas fa-search"></i> Búsqueda Avanzada
     </a>
     <a href="/" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left"></i> Volver
+      <i class="fas fa-arrow-left"></i> Volver
     </a>
   </div>
 </div>
@@ -15,7 +15,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card border-success">
       <div class="card-body text-center">
-        <i class="bi bi-receipt-cutoff fs-1 text-success mb-2"></i>
+        <i class="fas fa-receipt-cutoff fs-1 text-success mb-2"></i>
         <h3 class="text-success">{{estadisticas.total_facturas}}</h3>
         <p class="text-muted mb-1">Total Facturas</p>
         <small class="text-success">{{estadisticas.valor_total_formatted}}</small>
@@ -26,7 +26,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card border-warning">
       <div class="card-body text-center">
-        <i class="bi bi-clock-history fs-1 text-warning mb-2"></i>
+        <i class="fas fa-clock-history fs-1 text-warning mb-2"></i>
         <h3 class="text-warning">{{estadisticas.pendientes}}</h3>
         <p class="text-muted mb-1">Pendientes</p>
         <small class="text-warning">Por cobrar</small>
@@ -37,7 +37,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card border-info">
       <div class="card-body text-center">
-        <i class="bi bi-check-circle fs-1 text-info mb-2"></i>
+        <i class="fas fa-check-circle fs-1 text-info mb-2"></i>
         <h3 class="text-info">{{estadisticas.pagadas}}</h3>
         <p class="text-muted mb-1">Pagadas</p>
         <small class="text-info">{{estadisticas.valor_cobrado_formatted}}</small>
@@ -48,7 +48,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card border-danger">
       <div class="card-body text-center">
-        <i class="bi bi-exclamation-triangle fs-1 text-danger mb-2"></i>
+        <i class="fas fa-exclamation-triangle fs-1 text-danger mb-2"></i>
         <h3 class="text-danger">{{estadisticas.saldo_pendiente_formatted}}</h3>
         <p class="text-muted mb-1">Saldo Pendiente</p>
         <small class="text-danger">Por cobrar</small>
@@ -68,22 +68,22 @@
         <div class="row">
           <div class="col-md-3 mb-2">
             <a href="/facturas/search" class="btn btn-outline-primary w-100">
-              <i class="bi bi-search"></i> Búsqueda Avanzada
+              <i class="fas fa-search"></i> Búsqueda Avanzada
             </a>
           </div>
           <div class="col-md-3 mb-2">
             <a href="/facturas/export/excel" class="btn btn-outline-success w-100">
-              <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+              <i class="fas fa-file-earmark-excel"></i> Exportar Excel
             </a>
           </div>
           <div class="col-md-3 mb-2">
             <a href="/facturas/dashboard" class="btn btn-outline-info w-100">
-              <i class="bi bi-graph-up"></i> Dashboard
+              <i class="fas fa-graph-up"></i> Dashboard
             </a>
           </div>
           <div class="col-md-3 mb-2">
             <a href="/facturas/emitidas" class="btn btn-outline-secondary w-100">
-              <i class="bi bi-list-ul"></i> Ver Todas
+              <i class="fas fa-list-ul"></i> Ver Todas
             </a>
           </div>
         </div>
@@ -121,13 +121,13 @@
             <td>
               <div class="btn-group btn-group-sm">
                 <a href="/facturas/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
-                  <i class="bi bi-eye"></i>
+                  <i class="fas fa-eye"></i>
                 </a>
                 <a href="/facturas/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
-                  <i class="bi bi-pencil"></i>
+                  <i class="fas fa-pencil"></i>
                 </a>
                 <a href="/facturas/imprimir/{{this.id}}" class="btn btn-outline-secondary" title="Imprimir" target="_blank">
-                  <i class="bi bi-printer"></i>
+                  <i class="fas fa-printer"></i>
                 </a>
               </div>
             </td>
@@ -141,11 +141,11 @@
 {{else}}
 <div class="card">
   <div class="card-body text-center py-5">
-    <i class="bi bi-receipt fs-1 text-muted mb-3"></i>
+    <i class="fas fa-receipt fs-1 text-muted mb-3"></i>
     <h5>No hay facturas registradas</h5>
     <p class="text-muted">Comienza creando tu primera factura</p>
     <a href="/facturas/nueva" class="btn btn-success">
-      <i class="bi bi-plus-circle"></i> Nueva Factura
+      <i class="fas fa-plus-circle"></i> Nueva Factura
     </a>
   </div>
 </div>

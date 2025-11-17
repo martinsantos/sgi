@@ -202,17 +202,17 @@
     <div class="card mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-                <i class="bi bi-paperclip me-2"></i>
+                <i class="fas fa-paperclip me-2"></i>
                 Adjuntos
             </h5>
             <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadAdjuntoModalRecibida">
-                <i class="bi bi-plus-circle me-1"></i>Agregar Adjunto
+                <i class="fas fa-plus-circle me-1"></i>Agregar Adjunto
             </button>
         </div>
         <div class="card-body">
             <div id="adjuntosContainerRecibida">
                 <div class="text-center text-muted py-4">
-                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <i class="fas fa-inbox" style="font-size: 2rem;"></i>
                     <p class="mt-2">Cargando adjuntos...</p>
                 </div>
             </div>
@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .finally(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-upload me-1"></i>Subir Archivo';
+                btn.innerHTML = '<i class="fas fa-upload me-1"></i>Subir Archivo';
             });
         });
     }
@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('ℹ️ No hay adjuntos');
                     container.innerHTML = `
                         <div class="text-center text-muted py-4">
-                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <i class="fas fa-inbox" style="font-size: 2rem;"></i>
                             <p class="mt-2">No hay adjuntos</p>
                         </div>
                     `;
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${data.adjuntos.map(adj => `
                                     <tr>
                                         <td>
-                                            <i class="bi bi-file-earmark"></i>
+                                            <i class="fas fa-file-earmark"></i>
                                             ${adj.nombre_archivo}
                                         </td>
                                         <td>${adj.descripcion || '-'}</td>
@@ -500,10 +500,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <td><small>${formatBytesRecibida(adj.tamaño_bytes)}</small></td>
                                         <td>
                                             <a href="/facturas/adjuntos/descargar/${adj.id}" class="btn btn-sm btn-outline-primary" title="Descargar">
-                                                <i class="bi bi-download"></i>
+                                                <i class="fas fa-download"></i>
                                             </a>
                                             <button class="btn btn-sm btn-outline-danger" onclick="eliminarAdjuntoRecibida('${adj.id}')" title="Eliminar">
-                                                <i class="bi bi-trash"></i>
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>

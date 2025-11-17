@@ -55,34 +55,34 @@
             <thead class="table-light sticky-top">
                 <tr>
                     <th style="width: 8%; cursor: pointer;" title="Ordenar por ID" onclick="ordenarPor('id')">
-                        ID <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        ID <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 14%; cursor: pointer;" title="Ordenar por Proyecto" onclick="ordenarPor('descripcion')">
-                        Proyecto <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Proyecto <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 12%; cursor: pointer;" title="Ordenar por Cliente" onclick="ordenarPor('cliente_nombre')">
-                        Cliente <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Cliente <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 8%; cursor: pointer;" title="Ordenar por Estado" onclick="ordenarPor('estado')">
-                        Estado <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Estado <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 10%; cursor: pointer;" title="Ordenar por Inicio" onclick="ordenarPor('fecha_inicio')">
-                        Inicio <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Inicio <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 10%; cursor: pointer;" title="Ordenar por Cierre" onclick="ordenarPor('fecha_cierre')">
-                        Cierre <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Cierre <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 8%; cursor: pointer;" title="Ordenar por Certificados" onclick="ordenarPor('total_certificados')">
-                        Certs <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Certs <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 10%; cursor: pointer;" title="Ordenar por Monto Certificados" onclick="ordenarPor('monto_certificados')">
-                        Monto Certs <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Monto Certs <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 10%; cursor: pointer;" title="Ordenar por Facturado" onclick="ordenarPor('monto_facturado')">
-                        Facturado <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Facturado <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 10%; cursor: pointer;" title="Ordenar por Presupuesto" onclick="ordenarPor('precio_venta')">
-                        Presupuesto <i class="bi bi-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
+                        Presupuesto <i class="fas fa-arrow-down-up" style="font-size: 0.8rem; opacity: 0.5;"></i>
                     </th>
                     <th style="width: 7%">Acciones</th>
                 </tr>
@@ -403,13 +403,13 @@
         <div class="modal-content border-danger">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title" id="modalEliminarLabel">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Proyecto
+                    <i class="fas fa-exclamation-triangle-fill me-2"></i>Eliminar Proyecto
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning mb-3">
-                    <i class="bi bi-exclamation-circle me-2"></i>
+                    <i class="fas fa-exclamation-circle me-2"></i>
                     <strong>Advertencia:</strong> Esta acción no se puede deshacer.
                 </div>
                 <p class="mb-3">
@@ -434,7 +434,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-danger" id="btnConfirmarEliminar" disabled>
-                    <i class="bi bi-trash me-2"></i>Eliminar Proyecto
+                    <i class="fas fa-trash me-2"></i>Eliminar Proyecto
                 </button>
             </div>
         </div>
@@ -525,7 +525,7 @@
                         alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
                         alertDiv.style.zIndex = '9999';
                         alertDiv.innerHTML = `
-                            <i class="bi bi-check-circle me-2"></i>
+                            <i class="fas fa-check-circle me-2"></i>
                             <strong>Éxito:</strong> ${data.message}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         `;
@@ -542,13 +542,13 @@
                     } else {
                         alert('Error: ' + (data.error || 'No se pudo eliminar el proyecto'));
                         this.disabled = false;
-                        this.innerHTML = '<i class="bi bi-trash me-2"></i>Eliminar Proyecto';
+                        this.innerHTML = '<i class="fas fa-trash me-2"></i>Eliminar Proyecto';
                     }
                 } catch (error) {
                     console.error('Error:', error);
                     alert('Error al eliminar el proyecto: ' + error.message);
                     this.disabled = false;
-                    this.innerHTML = '<i class="bi bi-trash me-2"></i>Eliminar Proyecto';
+                    this.innerHTML = '<i class="fas fa-trash me-2"></i>Eliminar Proyecto';
                 }
             });
         }

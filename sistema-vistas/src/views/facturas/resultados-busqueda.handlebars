@@ -2,10 +2,10 @@
   <h1>Resultados de Búsqueda</h1>
   <div>
     <button id="btnExportarBusqueda" class="btn btn-success">
-      <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+      <i class="fas fa-file-earmark-excel"></i> Exportar a Excel
     </button>
     <a href="/facturas/emitidas" class="btn btn-secondary ms-2">
-      <i class="bi bi-arrow-left"></i> Volver al listado
+      <i class="fas fa-arrow-left"></i> Volver al listado
     </a>
   </div>
 </div>
@@ -72,10 +72,10 @@
       
       <div class="col-12">
         <button type="submit" class="btn btn-primary">
-          <i class="bi bi-search"></i> Buscar
+          <i class="fas fa-search"></i> Buscar
         </button>
         <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
-          <i class="bi bi-eraser"></i> Limpiar
+          <i class="fas fa-eraser"></i> Limpiar
         </button>
       </div>
     </form>
@@ -109,7 +109,7 @@
                 </td>
                 <td>
                   <a href="/facturas/emitidas/{{this.id}}" class="btn btn-sm btn-primary" title="Ver detalle">
-                    <i class="bi bi-eye"></i>
+                    <i class="fas fa-eye"></i>
                   </a>
                 </td>
               </tr>
@@ -122,7 +122,7 @@
       
     {{else}}
       <div class="alert alert-info mb-0">
-        <i class="bi bi-info-circle"></i> No se encontraron facturas que coincidan con los criterios de búsqueda.
+        <i class="fas fa-info-circle"></i> No se encontraron facturas que coincidan con los criterios de búsqueda.
       </div>
     {{/if}}
   </div>

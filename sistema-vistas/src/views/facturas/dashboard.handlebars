@@ -2,10 +2,10 @@
   <h1>{{title}}</h1>
   <div>
     <a href="/facturas/search" class="btn btn-primary me-2">
-      <i class="bi bi-search"></i> Búsqueda Avanzada
+      <i class="fas fa-search"></i> Búsqueda Avanzada
     </a>
     <a href="/facturas" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left"></i> Volver
+      <i class="fas fa-arrow-left"></i> Volver
     </a>
   </div>
 </div>
@@ -15,7 +15,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card text-center h-100">
       <div class="card-body">
-        <i class="bi bi-receipt fs-1 text-primary mb-3"></i>
+        <i class="fas fa-receipt fs-1 text-primary mb-3"></i>
         <h2 class="text-primary">{{estadisticas.total_facturas}}</h2>
         <p class="text-muted mb-2">Total Facturas</p>
         <h5 class="text-success">{{estadisticas.valor_total_formatted}}</h5>
@@ -27,7 +27,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card text-center h-100">
       <div class="card-body">
-        <i class="bi bi-clock-history fs-1 text-warning mb-3"></i>
+        <i class="fas fa-clock-history fs-1 text-warning mb-3"></i>
         <h2 class="text-warning">{{estadisticas.pendientes}}</h2>
         <p class="text-muted mb-2">Pendientes</p>
         <h5 class="text-danger">{{estadisticas.saldo_pendiente_formatted}}</h5>
@@ -39,7 +39,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card text-center h-100">
       <div class="card-body">
-        <i class="bi bi-check-circle fs-1 text-success mb-3"></i>
+        <i class="fas fa-check-circle fs-1 text-success mb-3"></i>
         <h2 class="text-success">{{estadisticas.pagadas}}</h2>
         <p class="text-muted mb-2">Pagadas</p>
         <h5 class="text-info">{{estadisticas.valor_cobrado_formatted}}</h5>
@@ -51,7 +51,7 @@
   <div class="col-lg-3 col-md-6 mb-3">
     <div class="card text-center h-100">
       <div class="card-body">
-        <i class="bi bi-graph-up fs-1 text-info mb-3"></i>
+        <i class="fas fa-graph-up fs-1 text-info mb-3"></i>
         <h2 class="text-info">{{estadisticas.ticket_promedio_formatted}}</h2>
         <p class="text-muted mb-2">Ticket Promedio</p>
         <div class="progress mb-2">
@@ -78,7 +78,7 @@
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">
-          <i class="bi bi-calendar-month"></i> Resumen del Último Mes
+          <i class="fas fa-calendar-month"></i> Resumen del Último Mes
         </h5>
       </div>
       <div class="card-body">
@@ -125,7 +125,7 @@
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
-          <i class="bi bi-clock"></i> Últimas Facturas
+          <i class="fas fa-clock"></i> Últimas Facturas
         </h5>
         <a href="/facturas/search" class="btn btn-sm btn-outline-primary">Ver Todas</a>
       </div>
@@ -170,7 +170,7 @@
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0 text-danger">
-          <i class="bi bi-exclamation-triangle"></i> Facturas Vencidas
+          <i class="fas fa-exclamation-triangle"></i> Facturas Vencidas
         </h5>
         <span class="badge bg-danger">{{facturasVencidas.length}}</span>
       </div>
@@ -190,7 +190,7 @@
             <div class="text-end">
               <span class="fw-bold text-danger">{{this.saldo_pendiente_formatted}}</span><br>
               <a href="/facturas/ver/{{this.id}}" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-eye"></i>
+                <i class="fas fa-eye"></i>
               </a>
             </div>
           </div>
@@ -198,7 +198,7 @@
         </div>
         {{else}}
         <div class="text-center py-3">
-          <i class="bi bi-check-circle fs-1 text-success mb-2"></i>
+          <i class="fas fa-check-circle fs-1 text-success mb-2"></i>
           <p class="text-success mb-0">¡No hay facturas vencidas!</p>
         </div>
         {{/if}}
@@ -213,7 +213,7 @@
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">
-          <i class="bi bi-pie-chart"></i> Distribución por Estados
+          <i class="fas fa-pie-chart"></i> Distribución por Estados
         </h5>
       </div>
       <div class="card-body">
@@ -289,35 +289,35 @@
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">
-          <i class="bi bi-lightning"></i> Acciones Rápidas
+          <i class="fas fa-lightning"></i> Acciones Rápidas
         </h5>
       </div>
       <div class="card-body">
         <div class="row">
           <div class="col-md-3 mb-2">
             <a href="/facturas/search?estado=1" class="btn btn-outline-warning w-100">
-              <i class="bi bi-clock-history"></i><br>
+              <i class="fas fa-clock-history"></i><br>
               Ver Pendientes<br>
               <small>({{estadisticas.pendientes}})</small>
             </a>
           </div>
           <div class="col-md-3 mb-2">
             <a href="/facturas/search?fecha_desde={{dateRange 7}}" class="btn btn-outline-primary w-100">
-              <i class="bi bi-calendar-week"></i><br>
+              <i class="fas fa-calendar-week"></i><br>
               Últimos 7 días<br>
               <small>Filtrar por fecha</small>
             </a>
           </div>
           <div class="col-md-3 mb-2">
             <a href="/facturas/export/excel" class="btn btn-outline-success w-100">
-              <i class="bi bi-file-earmark-excel"></i><br>
+              <i class="fas fa-file-earmark-excel"></i><br>
               Exportar Todo<br>
               <small>{{estadisticas.total_facturas}} facturas</small>
             </a>
           </div>
           <div class="col-md-3 mb-2">
             <a href="/facturas/search?monto_desde=10000" class="btn btn-outline-info w-100">
-              <i class="bi bi-currency-dollar"></i><br>
+              <i class="fas fa-currency-dollar"></i><br>
               Facturas Grandes<br>
               <small>Más de $10,000</small>
             </a>

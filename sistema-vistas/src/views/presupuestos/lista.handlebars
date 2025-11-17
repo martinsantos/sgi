@@ -100,7 +100,7 @@
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="card-title mb-0">Presupuestos</h5>
     <a href="/presupuestos/nuevo" class="btn btn-primary">
-      <i class="bi bi-plus"></i> Nuevo Presupuesto
+      <i class="fas fa-plus"></i> Nuevo Presupuesto
     </a>
   </div>
   <div class="card-body">
@@ -140,17 +140,17 @@
               <td class="text-end">
                 <div class="btn-group">
                   <a href="/presupuestos/{{id}}" class="btn btn-sm btn-outline-primary" title="Ver">
-                    <i class="bi bi-eye"></i>
+                    <i class="fas fa-eye"></i>
                   </a>
                   {{#eq estado 0}}
                     <a href="/presupuestos/{{id}}/editar" class="btn btn-sm btn-outline-secondary" title="Editar">
-                      <i class="bi bi-pencil"></i>
+                      <i class="fas fa-pencil"></i>
                     </a>
                     <button type="button" 
                             class="btn btn-sm btn-outline-danger" 
                             title="Eliminar"
                             onclick="eliminarPresupuesto({{id}})">
-                      <i class="bi bi-trash"></i>
+                      <i class="fas fa-trash"></i>
                     </button>
                   {{/eq}}
                   {{#eq estado 1}}
@@ -158,13 +158,13 @@
                             class="btn btn-sm btn-outline-success" 
                             title="Aprobar"
                             onclick="aprobarPresupuesto({{id}})">
-                      <i class="bi bi-check2"></i>
+                      <i class="fas fa-check2"></i>
                     </button>
                     <button type="button" 
                             class="btn btn-sm btn-outline-danger" 
                             title="Rechazar"
                             onclick="rechazarPresupuesto({{id}})">
-                      <i class="bi bi-x"></i>
+                      <i class="fas fa-x"></i>
                     </button>
                   {{/eq}}
                 </div>

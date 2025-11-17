@@ -2,7 +2,7 @@
   <div class="row mb-4">
     <div class="col-12">
       <h1 class="h2 mb-3">
-        <i class="bi bi-speedometer2"></i>
+        <i class="fas fa-speedometer2"></i>
         Dashboard - Sistema de Gestión Integral
       </h1>
       <p class="text-muted">Resumen ejecutivo de la actividad del sistema</p>
@@ -11,7 +11,7 @@
 
   {{#if error}}
     <div class="alert alert-warning" role="alert">
-      <i class="bi bi-exclamation-triangle"></i>
+      <i class="fas fa-exclamation-triangle"></i>
       {{error}}
     </div>
   {{/if}}
@@ -27,13 +27,13 @@
               <h2 class="mb-0">{{formatNumber stats.presupuestos.total_presupuestos}}</h2>
               <small class="opacity-75">Total: {{formatCurrency stats.presupuestos.importe_total_todos}}</small>
             </div>
-            <i class="bi bi-file-earmark-text fa-2x"></i>
+            <i class="fas fa-file-earmark-text fa-2x"></i>
           </div>
         </div>
         <a href="/presupuestos?estado=aprobado" class="text-decoration-none text-white">
           <div class="card-footer bg-primary bg-opacity-75">
             <small>
-              <i class="bi bi-check-circle"></i>
+              <i class="fas fa-check-circle"></i>
               Aprobados: {{stats.presupuestos.total_aprobados}} ({{formatPercentage stats.presupuestos.tasa_aprobacion}}%)
             </small>
           </div>
@@ -50,12 +50,12 @@
               <h2 class="mb-0">{{formatNumber stats.clientes.total_clientes}}</h2>
               <small class="opacity-75">Activos: {{formatNumber stats.clientes.clientes_activos}}</small>
             </div>
-            <i class="bi bi-people-fill fa-2x"></i>
+            <i class="fas fa-people-fill fa-2x"></i>
           </div>
         </div>
         <div class="card-footer bg-success bg-opacity-75">
           <small>
-            <i class="bi bi-person-plus"></i>
+            <i class="fas fa-person-plus"></i>
             Nuevos este mes: {{stats.clientes.nuevos_este_mes}}
           </small>
         </div>
@@ -71,12 +71,12 @@
               <h2 class="mb-0">{{formatNumber stats.facturas.total_facturas}}</h2>
               <small class="opacity-75">Total: {{formatCurrency stats.facturas.valor_total_facturas}}</small>
             </div>
-            <i class="bi bi-receipt fa-2x"></i>
+            <i class="fas fa-receipt fa-2x"></i>
           </div>
         </div>
         <div class="card-footer bg-info bg-opacity-75">
           <small>
-            <i class="bi bi-exclamation-circle"></i>
+            <i class="fas fa-exclamation-circle"></i>
             Pendientes: {{stats.facturas.facturas_pendientes}} ({{formatCurrency stats.facturas.valor_pendiente}})
           </small>
         </div>
@@ -92,12 +92,12 @@
               <h2 class="mb-0">{{formatNumber stats.proyectos.total_proyectos}}</h2>
               <small class="opacity-75">Total: {{formatCurrency stats.proyectos.valor_total_proyectos}}</small>
             </div>
-            <i class="bi bi-gear-fill fa-2x"></i>
+            <i class="fas fa-gear-fill fa-2x"></i>
           </div>
         </div>
         <div class="card-footer bg-warning bg-opacity-75">
           <small>
-            <i class="bi bi-play-circle"></i>
+            <i class="fas fa-play-circle"></i>
             Activos: {{stats.proyectos.proyectos_activos}} | Finalizados: {{stats.proyectos.proyectos_finalizados}}
           </small>
         </div>
@@ -111,7 +111,7 @@
       <div class="card">
         <div class="card-header bg-light">
           <h5 class="mb-0">
-            <i class="bi bi-graph-up"></i>
+            <i class="fas fa-graph-up"></i>
             Resumen General
           </h5>
         </div>
@@ -153,7 +153,7 @@
       <div class="card">
         <div class="card-header bg-light">
           <h5 class="mb-0">
-            <i class="bi bi-speedometer"></i>
+            <i class="fas fa-speedometer"></i>
             Métricas de Rendimiento
           </h5>
         </div>
@@ -184,7 +184,7 @@
       <div class="card h-100">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">
-            <i class="bi bi-file-earmark-text"></i>
+            <i class="fas fa-file-earmark-text"></i>
             Presupuestos Recientes
           </h5>
           <a href="/presupuestos" class="btn btn-outline-primary btn-sm">
@@ -217,7 +217,7 @@
       <div class="card h-100">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">
-            <i class="bi bi-gear-fill"></i>
+            <i class="fas fa-gear-fill"></i>
             Proyectos Activos
           </h5>
           <a href="/proyectos" class="btn btn-outline-info btn-sm">
@@ -251,7 +251,7 @@
       <div class="card">
         <div class="card-header bg-light">
           <h5 class="mb-0">
-            <i class="bi bi-lightning-charge"></i>
+            <i class="fas fa-lightning-charge"></i>
             Acciones Rápidas
           </h5>
         </div>
@@ -259,37 +259,37 @@
           <div class="row g-3">
             <div class="col-md-2">
               <a href="/presupuestos/crear" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center">
-                <i class="bi bi-plus-circle fs-4 mb-2"></i>
+                <i class="fas fa-plus-circle fs-4 mb-2"></i>
                 <span>Nuevo Presupuesto</span>
               </a>
             </div>
             <div class="col-md-2">
               <a href="/proyectos/crear" class="btn btn-outline-info w-100 d-flex flex-column align-items-center">
-                <i class="bi bi-gear fs-4 mb-2"></i>
+                <i class="fas fa-gear fs-4 mb-2"></i>
                 <span>Nuevo Proyecto</span>
               </a>
             </div>
             <div class="col-md-2">
               <a href="/clientes/crear" class="btn btn-outline-success w-100 d-flex flex-column align-items-center">
-                <i class="bi bi-person-plus fs-4 mb-2"></i>
+                <i class="fas fa-person-plus fs-4 mb-2"></i>
                 <span>Nuevo Cliente</span>
               </a>
             </div>
             <div class="col-md-2">
               <a href="/certificados/crear" class="btn btn-outline-warning w-100 d-flex flex-column align-items-center">
-                <i class="bi bi-award fs-4 mb-2"></i>
+                <i class="fas fa-award fs-4 mb-2"></i>
                 <span>Nueva Certificación</span>
               </a>
             </div>
             <div class="col-md-2">
               <a href="/leads/crear" class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center">
-                <i class="bi bi-person-plus-fill fs-4 mb-2"></i>
+                <i class="fas fa-person-plus-fill fs-4 mb-2"></i>
                 <span>Nuevo Lead</span>
               </a>
             </div>
             <div class="col-md-2">
               <a href="/facturas/crear" class="btn btn-outline-danger w-100 d-flex flex-column align-items-center">
-                <i class="bi bi-receipt fs-4 mb-2"></i>
+                <i class="fas fa-receipt fs-4 mb-2"></i>
                 <span>Nueva Factura</span>
               </a>
             </div>

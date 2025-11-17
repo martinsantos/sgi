@@ -4,10 +4,10 @@
             <h4 class="mb-0">Listado de Clientes</h4>
             <div class="btn-group" role="group">
                 <a href="/api/clientes/exportar" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    <i class="fas fa-file-earmark-excel"></i> Exportar Excel
                 </a>
                 <a href="/clientes/nuevo" class="btn btn-light">
-                    <i class="bi bi-plus"></i> Nuevo Cliente
+                    <i class="fas fa-plus"></i> Nuevo Cliente
                 </a>
             </div>
         </div>
@@ -22,7 +22,7 @@
                                     <input type="hidden" name="sort_by" value="{{sort_by}}">
                                     <input type="hidden" name="sort_order" value="{{sort_order}}">
                                     <button class="btn btn-outline-secondary" type="submit">
-                                        <i class="bi bi-search"></i> Buscar
+                                        <i class="fas fa-search"></i> Buscar
                                     </button>
                                 </div>
                             </form>
@@ -173,10 +173,10 @@
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="/clientes/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
+                                                <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="/clientes/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
-                                                <i class="bi bi-pencil"></i>
+                                                <i class="fas fa-pencil"></i>
                                             </a>
                                         </div>
                                     </td>
@@ -206,13 +206,13 @@
                             {{#if pagination.hasPrev}}
                                 <li class="page-item">
                                     <a class="page-link" href="?page=1{{#if sort_by}}&sort_by={{sort_by}}{{/if}}{{#if sort_order}}&sort_order={{sort_order}}{{/if}}{{#if search}}&search={{search}}{{/if}}" title="Primera página">
-                                        <i class="bi bi-chevron-double-left"></i>
+                                        <i class="fas fa-chevron-double-left"></i>
                                     </a>
                                 </li>
                             {{else}}
                                 <li class="page-item disabled">
                                     <span class="page-link">
-                                        <i class="bi bi-chevron-double-left"></i>
+                                        <i class="fas fa-chevron-double-left"></i>
                                     </span>
                                 </li>
                             {{/if}}
@@ -221,13 +221,13 @@
                             {{#if pagination.hasPrev}}
                                 <li class="page-item">
                                     <a class="page-link" href="?page={{pagination.prevPage}}{{#if sort_by}}&sort_by={{sort_by}}{{/if}}{{#if sort_order}}&sort_order={{sort_order}}{{/if}}{{#if search}}&search={{search}}{{/if}}" title="Página anterior">
-                                        <i class="bi bi-chevron-left"></i>
+                                        <i class="fas fa-chevron-left"></i>
                                     </a>
                                 </li>
                             {{else}}
                                 <li class="page-item disabled">
                                     <span class="page-link">
-                                        <i class="bi bi-chevron-left"></i>
+                                        <i class="fas fa-chevron-left"></i>
                                     </span>
                                 </li>
                             {{/if}}
@@ -272,13 +272,13 @@
                             {{#if pagination.hasNext}}
                                 <li class="page-item">
                                     <a class="page-link" href="?page={{pagination.nextPage}}{{#if sort_by}}&sort_by={{sort_by}}{{/if}}{{#if sort_order}}&sort_order={{sort_order}}{{/if}}{{#if search}}&search={{search}}{{/if}}" title="Página siguiente">
-                                        <i class="bi bi-chevron-right"></i>
+                                        <i class="fas fa-chevron-right"></i>
                                     </a>
                                 </li>
                             {{else}}
                                 <li class="page-item disabled">
                                     <span class="page-link">
-                                        <i class="bi bi-chevron-right"></i>
+                                        <i class="fas fa-chevron-right"></i>
                                     </span>
                                 </li>
                             {{/if}}
@@ -287,13 +287,13 @@
                             {{#if pagination.hasNext}}
                                 <li class="page-item">
                                     <a class="page-link" href="?page={{pagination.total}}{{#if sort_by}}&sort_by={{sort_by}}{{/if}}{{#if sort_order}}&sort_order={{sort_order}}{{/if}}{{#if search}}&search={{search}}{{/if}}" title="Última página">
-                                        <i class="bi bi-chevron-double-right"></i>
+                                        <i class="fas fa-chevron-double-right"></i>
                                     </a>
                                 </li>
                             {{else}}
                                 <li class="page-item disabled">
                                     <span class="page-link">
-                                        <i class="bi bi-chevron-double-right"></i>
+                                        <i class="fas fa-chevron-double-right"></i>
                                     </span>
                                 </li>
                             {{/if}}

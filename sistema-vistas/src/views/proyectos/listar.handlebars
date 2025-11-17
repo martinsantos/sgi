@@ -2,13 +2,13 @@
   <h1>{{title}}</h1>
   <div>
     <a href="/" class="btn btn-outline-secondary me-2">
-      <i class="bi bi-arrow-left"></i> Volver
+      <i class="fas fa-arrow-left"></i> Volver
     </a>
     <a href="/api/proyectos/exportar" class="btn btn-info me-2">
-      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+      <i class="fas fa-file-excel"></i> Exportar Excel
     </a>
     <a href="/proyectos/nuevo" class="btn btn-success">
-      <i class="bi bi-plus-circle"></i> Nuevo Proyecto
+      <i class="fas fa-plus-circle"></i> Nuevo Proyecto
     </a>
   </div>
 </div>
@@ -43,10 +43,10 @@
       </div>
       <div class="col-md-2 d-flex align-items-end">
         <button type="submit" class="btn btn-primary me-2">
-          <i class="bi bi-search"></i> Buscar
+          <i class="fas fa-search"></i> Buscar
         </button>
         <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
-          <i class="bi bi-x-circle"></i>
+          <i class="fas fa-times-circle"></i>
         </button>
       </div>
     </form>
@@ -103,10 +103,10 @@
             <td>
               <div class="btn-group btn-group-sm">
                 <a href="/proyectos/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver detalle">
-                  <i class="bi bi-eye"></i>
+                  <i class="fas fa-eye"></i>
                 </a>
                 <a href="/proyectos/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
-                  <i class="bi bi-pencil"></i>
+                  <i class="fas fa-pencil"></i>
                 </a>
               </div>
             </td>
@@ -204,10 +204,10 @@
             return `
               <div class="btn-group btn-group-sm">
                 <a href="/proyectos/ver/${data}" class="btn btn-outline-primary" title="Ver detalle">
-                  <i class="bi bi-eye"></i>
+                  <i class="fas fa-eye"></i>
                 </a>
                 <a href="/proyectos/editar/${data}" class="btn btn-outline-warning" title="Editar">
-                  <i class="bi bi-pencil"></i>
+                  <i class="fas fa-pencil"></i>
                 </a>
               </div>
             `;

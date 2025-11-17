@@ -2,13 +2,13 @@
   <h1>{{title}}</h1>
   <div>
     <a href="/" class="btn btn-outline-secondary me-2">
-      <i class="bi bi-arrow-left"></i> Volver
+      <i class="fas fa-arrow-left"></i> Volver
     </a>
     <a href="/api/certificados/exportar" class="btn btn-info me-2">
-      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+      <i class="fas fa-file-earmark-excel"></i> Exportar Excel
     </a>
     <a href="/certificados/nuevo" class="btn btn-success">
-      <i class="bi bi-plus-circle"></i> Nuevo Certificado
+      <i class="fas fa-plus-circle"></i> Nuevo Certificado
     </a>
   </div>
 </div>
@@ -33,13 +33,13 @@
                  readonly
                  value="{{query.cliente_display}}">
           <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalClientes">
-            <i class="bi bi-search"></i> Buscar
+            <i class="fas fa-search"></i> Buscar
           </button>
           <input type="hidden" id="cliente_id" name="cliente_id" value="{{query.cliente_id}}">
         </div>
         {{#if query.cliente_id}}
         <button type="button" class="btn btn-sm btn-link text-danger" onclick="limpiarCliente()">
-          <i class="bi bi-x-circle"></i> Limpiar selección
+          <i class="fas fa-x-circle"></i> Limpiar selección
         </button>
         {{/if}}
       </div>
@@ -60,10 +60,10 @@
       </div>
       <div class="col-md-3 d-flex align-items-end">
         <button type="submit" class="btn btn-primary me-2">
-          <i class="bi bi-search"></i> Buscar
+          <i class="fas fa-search"></i> Buscar
         </button>
         <button type="button" id="btnLimpiar" class="btn btn-outline-secondary">
-          <i class="bi bi-x-circle"></i>
+          <i class="fas fa-x-circle"></i>
         </button>
       </div>
     </form>
@@ -77,23 +77,23 @@
         <thead class="table-dark">
           <tr>
             <th style="width: 8%; cursor: pointer;" onclick="sortBy('numero')" title="Click para ordenar">
-              N° Cert. <i class="bi bi-arrow-down-up" id="sort-numero"></i>
+              N° Cert. <i class="fas fa-arrow-down-up" id="sort-numero"></i>
             </th>
             <th style="width: 18%; cursor: pointer;" onclick="sortBy('cliente')" title="Click para ordenar">
-              Cliente/Proyecto <i class="bi bi-arrow-down-up" id="sort-cliente"></i>
+              Cliente/Proyecto <i class="fas fa-arrow-down-up" id="sort-cliente"></i>
             </th>
             <th style="width: 20%;">Descripción</th>
             <th style="width: 10%; cursor: pointer;" onclick="sortBy('fecha')" title="Click para ordenar">
-              F. Emisión <i class="bi bi-arrow-down-up" id="sort-fecha"></i>
+              F. Emisión <i class="fas fa-arrow-down-up" id="sort-fecha"></i>
             </th>
             <th style="width: 10%;">F. Factura</th>
             <th style="width: 8%;">Cant.</th>
             <th style="width: 10%;">P. Unit.</th>
             <th style="width: 10%; cursor: pointer;" onclick="sortBy('importe')" title="Click para ordenar">
-              Monto <i class="bi bi-arrow-down-up" id="sort-importe"></i>
+              Monto <i class="fas fa-arrow-down-up" id="sort-importe"></i>
             </th>
             <th style="width: 10%; cursor: pointer;" onclick="sortBy('estado')" title="Click para ordenar">
-              Estado <i class="bi bi-arrow-down-up" id="sort-estado"></i>
+              Estado <i class="fas fa-arrow-down-up" id="sort-estado"></i>
             </th>
             <th style="width: 10%; min-width: 90px;">Acciones</th>
           </tr>
@@ -145,10 +145,10 @@
             <td class="text-center" style="white-space: nowrap;">
               <div class="btn-group btn-group-sm" role="group">
                 <a href="/certificados/ver/{{this.id}}" class="btn btn-outline-primary btn-sm" title="Ver detalle">
-                  <i class="bi bi-eye"></i>
+                  <i class="fas fa-eye"></i>
                 </a>
                 <a href="/certificados/editar/{{this.id}}" class="btn btn-outline-warning btn-sm" title="Editar">
-                  <i class="bi bi-pencil"></i>
+                  <i class="fas fa-pencil"></i>
                 </a>
               </div>
             </td>
@@ -176,7 +176,7 @@
             <!-- Anterior -->
             <li class="page-item {{#if pagination.isFirstPage}}disabled{{/if}}">
               <a class="page-link" href="{{buildPageUrl pagination.previousPage query}}" {{#if pagination.isFirstPage}}tabindex="-1"{{/if}}>
-                <i class="bi bi-chevron-left"></i> Anterior
+                <i class="fas fa-chevron-left"></i> Anterior
               </a>
             </li>
 
@@ -210,7 +210,7 @@
             <!-- Siguiente -->
             <li class="page-item {{#if pagination.isLastPage}}disabled{{/if}}">
               <a class="page-link" href="{{buildPageUrl pagination.nextPage query}}" {{#if pagination.isLastPage}}tabindex="-1"{{/if}}>
-                Siguiente <i class="bi bi-chevron-right"></i>
+                Siguiente <i class="fas fa-chevron-right"></i>
               </a>
             </li>
           </ul>
@@ -227,7 +227,7 @@
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
         <h5 class="modal-title" id="modalClientesLabel">
-          <i class="bi bi-people"></i> Seleccionar Cliente
+          <i class="fas fa-people"></i> Seleccionar Cliente
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -235,7 +235,7 @@
         <!-- Búsqueda dentro del modal -->
         <div class="mb-3">
           <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="text" 
                    class="form-control form-control-lg" 
                    id="buscarClienteModal" 
@@ -282,7 +282,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Cancelar
+          <i class="fas fa-x-circle"></i> Cancelar
         </button>
       </div>
     </div>
@@ -338,7 +338,7 @@
     if (currentSort) {
       const icon = document.getElementById(`sort-${currentSort}`);
       if (icon) {
-        icon.className = currentOrder === 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+        icon.className = currentOrder === 'asc' ? 'fas fa-arrow-up' : 'fas fa-arrow-down';
       }
     }
     
@@ -402,11 +402,11 @@
             document.getElementById('clientesModalBody').innerHTML = `
               <tr>
                 <td colspan="5" class="text-center text-danger">
-                  <i class="bi bi-exclamation-triangle"></i> 
+                  <i class="fas fa-exclamation-triangle"></i> 
                   <p class="mb-2">Error al cargar clientes</p>
                   <small>${error.message}</small><br>
                   <button class="btn btn-sm btn-primary mt-2" onclick="cargarTodosLosClientes()">
-                    <i class="bi bi-arrow-clockwise"></i> Reintentar
+                    <i class="fas fa-arrow-clockwise"></i> Reintentar
                   </button>
                 </td>
               </tr>
@@ -428,7 +428,7 @@
         document.getElementById('clientesModalBody').innerHTML = `
           <tr>
             <td colspan="5" class="text-center text-muted">
-              <i class="bi bi-inbox"></i> No se encontraron clientes
+              <i class="fas fa-inbox"></i> No se encontraron clientes
             </td>
           </tr>
         `;
@@ -455,7 +455,7 @@
               <button class="btn btn-sm btn-success seleccionar-cliente" 
                       data-id="${cliente.id}" 
                       data-nombre="${nombreCompleto}">
-                <i class="bi bi-check-circle"></i> Seleccionar
+                <i class="fas fa-check-circle"></i> Seleccionar
               </button>
             </td>
           </tr>
