@@ -748,6 +748,87 @@ class ProyectoModel {
       throw error;
     }
   }
+
+  /**
+   * Obtiene estadísticas de proyectos
+   */
+  static async getEstadisticas() {
+    try {
+      const [stats] = await pool.query(`
+        SELECT 
+          COUNT(*) as total_proyectos,
+          SUM(CASE WHEN estado = 1 THEN 1 ELSE 0 END) as pendientes,
+          SUM(CASE WHEN estado = 2 THEN 1 ELSE 0 END) as en_progreso,
+          SUM(CASE WHEN estado = 3 THEN 1 ELSE 0 END) as finalizados,
+          SUM(CASE WHEN estado = 4 THEN 1 ELSE 0 END) as cancelados,
+          SUM(precio_venta) as monto_total,
+          COUNT(DISTINCT personal_id) as total_clientes
+        FROM proyectos
+        WHERE activo = 1
+      `);
+      
+      return stats[0] || {
+        total_proyectos: 0,
+        pendientes: 0,
+        en_progreso: 0,
+        finalizados: 0,
+        cancelados: 0,
+        monto_total: 0,
+        total_clientes: 0
+      };
+    } catch (error) {
+      console.error('Error al obtener estadísticas de proyectos:', error);
+      return {
+        total_proyectos: 0,
+        pendientes: 0,
+        en_progreso: 0,
+        finalizados: 0,
+        cancelados: 0,
+        monto_total: 0,
+        total_clientes: 0
+      };
+    }
+  }
+
+  /**
+   * Obtiene proyectos activos limitados
+   */
+  static async getProyectosActivos(limit = 10) {
+    try {
+      const [proyectos] = await pool.query(`
+        SELECT 
+          p.id,
+          p.descripcion,
+          p.estado,
+          p.fecha_inicio,
+          p.precio_venta,
+          CASE p.estado
+            WHEN 1 THEN 'Pendiente'
+            WHEN 2 THEN 'En Progreso' 
+            WHEN 3 THEN 'Finalizado'
+            WHEN 4 THEN 'Cancelado'
+            ELSE 'Desconocido'
+          END as estado_nombre,
+          COALESCE(
+            CASE 
+              WHEN pt.apellido IS NOT NULL AND pt.apellido != '' THEN CONCAT(pt.apellido, ', ', COALESCE(pt.nombre, ''))
+              ELSE COALESCE(pt.nombre, pt.apellido, 'Sin cliente')
+            END,
+            'Sin cliente'
+          ) as cliente_nombre
+        FROM proyectos p
+        LEFT JOIN persona_terceros pt ON p.personal_id = pt.id
+        WHERE p.activo = 1 AND p.estado IN (1, 2)
+        ORDER BY p.fecha_inicio DESC
+        LIMIT ?
+      `, [limit]);
+      
+      return proyectos;
+    } catch (error) {
+      console.error('Error al obtener proyectos activos:', error);
+      return [];
+    }
+  }
 }
 
 module.exports = ProyectoModel;
