@@ -5,14 +5,14 @@
         <p class="text-muted mb-0">Proyectos ordenados por fecha más reciente</p>
     </div>
     <a href="/proyectos/nuevo" class="btn btn-success">
-        <i class="bi bi-plus-circle"></i> Nuevo Proyecto
+        <i class="fas fa-plus-circle"></i> Nuevo Proyecto
     </a>
 </div>
 
 <!-- Filtros -->
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+        <h5 class="mb-0"><i class="fas fa-filter"></i> Filtros</h5>
     </div>
     <div class="card-body">
         <form id="formBusqueda" class="row g-3" method="GET" action="/proyectos">
@@ -36,12 +36,12 @@
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-search"></i> Buscar
+                    <i class="fas fa-search"></i> Buscar
                 </button>
             </div>
             <div class="col-md-2">
                 <button type="button" class="btn btn-outline-secondary w-100" onclick="location.href='/proyectos'">
-                    <i class="bi bi-x-circle"></i> Limpiar
+                    <i class="fas fa-times-circle"></i> Limpiar
                 </button>
             </div>
         </form>
@@ -157,29 +157,29 @@
                     <td class="text-nowrap">
                         <div class="btn-group btn-group-sm flex-wrap" role="group">
                             <a href="/proyectos/ver/{{this.id}}" class="btn btn-outline-primary" title="Ver">
-                                <i class="bi bi-eye"></i>
+                                <i class="fas fa-eye"></i>
                             </a>
                             <a href="/proyectos/editar/{{this.id}}" class="btn btn-outline-warning" title="Editar">
-                                <i class="bi bi-pencil"></i>
+                                <i class="fas fa-edit"></i>
                             </a>
                             {{#if this.total_certificados}}
                             {{#if (gt this.total_certificados 0)}}
                             <button type="button" class="btn btn-outline-info toggle-certs" title="Certificados" onclick="toggleCertificados('{{this.id}}')">
-                                <i class="bi bi-award"></i>
+                                <i class="fas fa-certificate"></i>
                                 <span class="badge bg-info">{{this.total_certificados}}</span>
                             </button>
                             {{else}}
                             <button type="button" class="btn btn-outline-info" title="Sin certificados" disabled>
-                                <i class="bi bi-award"></i>
+                                <i class="fas fa-certificate"></i>
                             </button>
                             {{/if}}
                             {{else}}
                             <button type="button" class="btn btn-outline-info" title="Sin certificados" disabled>
-                                <i class="bi bi-award"></i>
+                                <i class="fas fa-certificate"></i>
                             </button>
                             {{/if}}
                             <button type="button" class="btn btn-outline-danger" title="Eliminar" onclick="abrirModalEliminar('{{this.id}}', '{{this.descripcion}}')">
-                                <i class="bi bi-trash"></i>
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </td>
@@ -192,12 +192,12 @@
                     <td class="certs-cell" style="padding: 1.25rem; background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);">
                         <div class="ps-3">
                             <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
-                                <i class="bi bi-award-fill text-primary me-2" style="font-size: 1.4rem;"></i>
+                                <i class="fas fa-certificate text-primary me-2" style="font-size: 1.4rem;"></i>
                                 <strong class="text-dark" style="font-size: 1.1rem;">Certificados del Proyecto ({{this.total_certificados}})</strong>
                             </div>
                             <div class="d-flex flex-wrap gap-3">
                                 <a href="/proyectos/ver/{{this.id}}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-award me-1"></i>
+                                    <i class="fas fa-certificate me-1"></i>
                                     Ver {{this.total_certificados}} certificado{{#if (gt this.total_certificados 1)}}s{{/if}}
                                 </a>
                             </div>
@@ -210,7 +210,7 @@
                 {{else}}
                 <tr>
                     <td colspan="10" class="text-center py-5">
-                        <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
                         <p class="text-muted mt-3 mb-0">No se encontraron proyectos</p>
                     </td>
                 </tr>

@@ -210,17 +210,17 @@ class FacturasManager {
         <td class="text-center">
           <div class="btn-group btn-group-sm" role="group">
             <a href="/facturas/ver/${factura.id}" class="btn btn-outline-primary" title="Ver">
-              <i class="bi bi-eye"></i>
+              <i class="fas fa-eye"></i>
             </a>
             <a href="/facturas/editar/${factura.id}" class="btn btn-outline-warning" title="Editar">
-              <i class="bi bi-pencil"></i>
+              <i class="fas fa-edit"></i>
             </a>
             <a href="/facturas/${factura.id}/pdf" class="btn btn-outline-info" title="PDF">
-              <i class="bi bi-file-pdf"></i>
+              <i class="fas fa-file-pdf"></i>
             </a>
           </div>
           <button type="button" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar" onclick="eliminarFactura('${factura.id}')">
-            <i class="bi bi-trash"></i>
+            <i class="fas fa-trash"></i>
           </button>
         </td>
       </tr>
